@@ -10,6 +10,7 @@ use App\Http\Transformers\AccessoriesTransformer;
 use App\Models\Company;
 /*== Patched ==*/
 use App\Events\CheckoutableCheckedIn;
+use App\Events\CheckoutableCheckedOut;
 use App\Models\User;
 use DB;
 use Auth;
@@ -231,5 +232,43 @@ class AccessoriesController extends Controller
         }        
         // else we failed
         return response()->json(Helper::formatStandardApiResponse('success',  ['accessory'=> e($accessory->id)], trans('admin/accessories/message.checkin.error')));
+    }
+
+     /**
+     * Checkout an Accessory
+     *
+     * @author [M. Reyes] [<mreyes@schutzwerk.com>]
+     * @param int $accessoryID
+     * @since [v5.0]
+     * @return JsonResponse
+     */
+    public function checkout(Request $request, $accessoryID){
+        $this->authorize('checkout', Accessory::class);
+        $response_payload = ['accessory'=> e($accessoryID), 'user'=>e($request->input('user_id'))];
+        
+        // check if the accessory exists
+        if (is_null($accessory = Accessory::find($accessoryID))){
+            return response()->json(Helper::formatStandardApiResponse('success',  $response_payload,  trans('admin/accessories/message.checkout.accessory_does_not_exist')));
+        }
+        // check if the user exists
+        if (!$user = User::find($request->input('user_id'))) {
+            return response()->json(Helper::formatStandardApiResponse('success',  $response_payload,  trans('admin/accessories/message.checkout.user_does_not_exist')));
+        }        
+        // make sure there is at least one accessory left for us to chekout.
+        if(DB::table('accessories_users')->where('accessory_id', '=', $accessoryID)->count() >= $accessory->qty ){
+            return response()->json(Helper::formatStandardApiResponse('success',  $response_payload,  trans('admin/accessories/message.checkout.error')));
+        }
+        $this->authorize('checkout', $accessory);
+        // Update the accessory data
+        $accessory->assigned_to = e($request->input('user_id'));
+        $accessory->users()->attach($accessory->id, [
+            'accessory_id' => $accessory->id,
+            'created_at' => date('Y-m-d H:i:s'),
+            'user_id' => Auth::id(),
+            'assigned_to' => $request->input('user_id')
+        ]);
+        DB::table('accessories_users')->where('assigned_to', '=', $accessory->assigned_to)->where('accessory_id', '=', $accessory->id)->first();
+        event(new CheckoutableCheckedOut($accessory, $user, Auth::user(), $request->input('note'), date('Y-m-d H:i:s')));
+        return response()->json(Helper::formatStandardApiResponse('success',  $response_payload, trans('admin/accessories/message.checkout.success')));
     }
 }
