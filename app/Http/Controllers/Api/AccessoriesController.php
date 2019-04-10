@@ -215,7 +215,7 @@ class AccessoriesController extends Controller
             return response()->json(Helper::formatStandardApiResponse('success',  $response_payload,  trans('admin/accessories/message.checkin.accessory_does_not_exist')));
         }
         // check if the user exists
-        if (is_null(User::find($request->input('user_id')))) {
+        if (is_null($user = User::find($request->input('user_id')))) {
             return response()->json(Helper::formatStandardApiResponse('success',  $response_payload,  trans('admin/accessories/message.checkin.user_does_not_exist')));
         }
         // Check if the accessory_user entry exists        
@@ -226,11 +226,11 @@ class AccessoriesController extends Controller
         // Delete the entry. if the table changed
         if (DB::table('accessories_users')->where('id', '=', $accessory_user->id)->delete()) {
             // We succeeded
-            //event(new CheckoutableCheckedIn($accessory, User::find($user_id), Auth::user(), $request->input('note'), date('Y-m-d H:i:s')));
-            return response()->json(Helper::formatStandardApiResponse('success', ['accessory'=> e($accessory->id)], trans('admin/accessories/message.checkin.success')));
+            $accessory->logCheckin($user, e($request->input('note')));
+            return response()->json(Helper::formatStandardApiResponse('success', $response_payload, trans('admin/accessories/message.checkin.success')));
         }        
         // else we failed
-        return response()->json(Helper::formatStandardApiResponse('success',  ['accessory'=> e($accessory->id)], trans('admin/accessories/message.checkin.error')));
+        return response()->json(Helper::formatStandardApiResponse('success',  $response_payload, trans('admin/accessories/message.checkin.error')));
     }
 
      /**
@@ -269,6 +269,7 @@ class AccessoriesController extends Controller
         ]);
         DB::table('accessories_users')->where('assigned_to', '=', $accessory->assigned_to)->where('accessory_id', '=', $accessory->id)->first();
         //event(new CheckoutableCheckedOut($accessory, $user, Auth::user(), $request->input('note'), date('Y-m-d H:i:s')));
+        $accessory->logCheckout(e($request->input('note')), $user);
         return response()->json(Helper::formatStandardApiResponse('success',  $response_payload, trans('admin/accessories/message.checkout.success')));
     }
 }
