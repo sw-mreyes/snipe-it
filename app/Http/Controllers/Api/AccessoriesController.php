@@ -9,8 +9,6 @@ use App\Models\Accessory;
 use App\Http\Transformers\AccessoriesTransformer;
 use App\Models\Company;
 /*== Patched ==*/
-use App\Events\CheckoutableCheckedIn;
-use App\Events\CheckoutableCheckedOut;
 use App\Models\User;
 use Carbon\Carbon;
 use Auth;
