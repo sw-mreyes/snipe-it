@@ -211,17 +211,18 @@ class AccessoriesController extends Controller
     public function checkin(Request $request, $accessoryID){
         $this->authorize('checkin', Accessory::class);
         $user_id = $request->input('user_id');
+        $response_payload = ['accessory'=> e($accessoryID), 'user'=>e($user_id)];
         // check if the accessory exists
         if (is_null($accessory = Accessory::find($accessoryID))){
-            return response()->json(Helper::formatStandardApiResponse('success',  ['accessory'=> e($accessoryID)],  trans('admin/accessories/message.checkin.accessory_does_not_exist')));
+            return response()->json(Helper::formatStandardApiResponse('success',  $response_payload,  trans('admin/accessories/message.checkin.accessory_does_not_exist')));
         }
         // check if the user exists
         if (is_null(User::find($request->input('user_id')))) {
-            return response()->json(Helper::formatStandardApiResponse('success',  ['accessory'=> e($accessoryID)],  trans('admin/accessories/message.checkin.user_does_not_exist')));
+            return response()->json(Helper::formatStandardApiResponse('success',  $response_payload,  trans('admin/accessories/message.checkin.user_does_not_exist')));
         }
         // Check if the accessory_user entry exists        
         if (is_null($accessory_user = DB::table('accessories_users')->where('assigned_to', $user_id)->first())) {
-            return response()->json(Helper::formatStandardApiResponse('error', ['accessory'=> e($accessoryID), 'user'=> e($user_id)], trans('admin/accessories/message.checkin.not_checkedout')));
+            return response()->json(Helper::formatStandardApiResponse('error', $response_payload, trans('admin/accessories/message.checkin.not_checkedout')));
         }
         $this->authorize('checkin', $accessory);        
         // Delete the entry. if the table changed
