@@ -56,6 +56,13 @@ Route::group(['prefix' => 'v1','namespace' => 'Api'], function () {
                 'uses' => 'AccessoriesController@checkedout'
             ]
         );
+
+        Route::post('{accessoryID}/checkin',
+            [
+                'as' => 'api.accessories.checkin',
+                'uses' => 'AccessoriesController@checkin'
+            ]
+        );
     }); // Accessories group
 
 
