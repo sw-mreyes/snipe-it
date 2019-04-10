@@ -199,7 +199,7 @@ class AccessoriesController extends Controller
     }
 
     /* PATCH: Checkin/Checkout API */
-    /**
+      /**
      * Checkin an Accessory
      *
      * @author [M. Reyes] [<mreyes@schutzwerk.com>]
@@ -209,28 +209,27 @@ class AccessoriesController extends Controller
      */
     public function checkin(Request $request, $accessoryID){
         $this->authorize('checkin', Accessory::class);
-        $accessory = Accessory::findOrFail($accessoryID);
-        $this->authorize('checkin', $accessory);
-            
-        if(! $request->filled('user_id')){
-            // TODO: use proper string
-            return response()->json(Helper::formatStandardApiResponse('error', ['accessory'=> e($accessory->id)], 'DBG: user id required'));
-        }
         $user_id = $request->input('user_id');
-        // Check if the accessory_user entry exists
-        
-        if (is_null($accessory_user = DB::table('accessories_users')->where('assigned_to', $user_id)->first())) {
-            // Redirect to the accessory management page with error
-            return response()->json(Helper::formatStandardApiResponse('error', ['accessory'=> e($accessory->id), 'user'=> e($user_id)], trans('admin/accessories/message.checkin.not_checkedout')));
+        // check if the accessory exists
+        if (is_null($accessory = Accessory::find($accessoryID))){
+            return response()->json(Helper::formatStandardApiResponse('success',  ['accessory'=> e($accessoryID)],  trans('admin/accessories/message.checkin.accessory_does_not_exist')));
         }
+        // check if the user exists
+        if (is_null(User::find($request->input('user_id')))) {
+            return response()->json(Helper::formatStandardApiResponse('success',  ['accessory'=> e($accessoryID)],  trans('admin/accessories/message.checkin.user_does_not_exist')));
+        }
+        // Check if the accessory_user entry exists        
+        if (is_null($accessory_user = DB::table('accessories_users')->where('assigned_to', $user_id)->first())) {
+            return response()->json(Helper::formatStandardApiResponse('error', ['accessory'=> e($accessoryID), 'user'=> e($user_id)], trans('admin/accessories/message.checkin.not_checkedout')));
+        }
+        $this->authorize('checkin', $accessory);        
         // Delete the entry. if the table changed
         if (DB::table('accessories_users')->where('id', '=', $accessory_user->id)->delete()) {
             // We succeeded
             event(new CheckoutableCheckedIn($accessory, User::find($user_id), Auth::user(), $request->input('note'), date('Y-m-d H:i:s')));
             return response()->json(Helper::formatStandardApiResponse('success', ['accessory'=> e($accessory->id)], trans('admin/accessories/message.checkin.success')));
-        }
-        
+        }        
         // else we failed
-        return response()->json(Helper::formatStandardApiResponse('success', ['accessory'=> e($asset->asset_tag)], trans('admin/accessories/message.checkin.error')));
+        return response()->json(Helper::formatStandardApiResponse('success',  ['accessory'=> e($accessory->id)], trans('admin/accessories/message.checkin.error')));
     }
 }
