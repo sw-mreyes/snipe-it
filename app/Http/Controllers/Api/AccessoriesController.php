@@ -226,7 +226,7 @@ class AccessoriesController extends Controller
         // Delete the entry. if the table changed
         if (DB::table('accessories_users')->where('id', '=', $accessory_user->id)->delete()) {
             // We succeeded
-            event(new CheckoutableCheckedIn($accessory, User::find($user_id), Auth::user(), $request->input('note'), date('Y-m-d H:i:s')));
+            //event(new CheckoutableCheckedIn($accessory, User::find($user_id), Auth::user(), $request->input('note'), date('Y-m-d H:i:s')));
             return response()->json(Helper::formatStandardApiResponse('success', ['accessory'=> e($accessory->id)], trans('admin/accessories/message.checkin.success')));
         }        
         // else we failed
@@ -268,7 +268,7 @@ class AccessoriesController extends Controller
             'assigned_to' => $user_id
         ]);
         DB::table('accessories_users')->where('assigned_to', '=', $accessory->assigned_to)->where('accessory_id', '=', $accessory->id)->first();
-        event(new CheckoutableCheckedOut($accessory, $user, Auth::user(), $request->input('note'), date('Y-m-d H:i:s')));
+        //event(new CheckoutableCheckedOut($accessory, $user, Auth::user(), $request->input('note'), date('Y-m-d H:i:s')));
         return response()->json(Helper::formatStandardApiResponse('success',  $response_payload, trans('admin/accessories/message.checkout.success')));
     }
 }
