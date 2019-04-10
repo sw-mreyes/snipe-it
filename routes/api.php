@@ -70,7 +70,6 @@ Route::group(['prefix' => 'v1','namespace' => 'Api', 'middleware' => 'api'], fun
                 'uses' => 'AccessoriesController@checkin'
             ]
         );
-
     }); // Accessories group
 
 
