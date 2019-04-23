@@ -20,16 +20,18 @@ return array(
         'success' => 'The component was deleted successfully.'
     ),
 
-     'checkout' => array(
+    'checkout' => array(
         'error'   		=> 'Component was not checked out, please try again',
         'success' 		=> 'Component checked out successfully.',
-        'user_does_not_exist' => 'That user is invalid. Please try again.'
+        'asset_does_not_exist' => 'That asset is invalid. Please try again.',
+        'component_does_not_exist' => 'That component is invalid. Please try again.'
     ),
 
     'checkin' => array(
         'error'   		=> 'Component was not checked in, please try again',
         'success' 		=> 'Component checked in successfully.',
-        'user_does_not_exist' => 'That user is invalid. Please try again.'
+        'asset_does_not_exist' => 'That asset is invalid. Please try again.',
+        'component_does_not_exist' => 'That component is invalid. Please try again.'
     )
 
 

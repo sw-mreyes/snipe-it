@@ -184,6 +184,21 @@ Route::group(['prefix' => 'v1','namespace' => 'Api'], function () {
                 'uses' => 'ComponentsController@getAssets',
             ]
         );
+
+        Route::post('{componentID}/checkout',
+            [
+                'as' => 'api.components.checkout',
+                'uses' => 'ComponentsController@checkout'
+            ]
+        );
+
+        Route::post('{componentID}/checkin',
+            [
+                'as' => 'api.components.checkin',
+                'uses' => 'ComponentsController@checkin'
+            ]
+        );
+
     }); // Components group
 
 
