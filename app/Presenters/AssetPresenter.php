@@ -263,7 +263,8 @@ class AssetPresenter extends Presenter
                 "field" => 'custom_fields.'.$field->convertUnicodeDbSlug(),
                 "searchable" => true,
                 "sortable" => true,
-                "switchable" => true,
+		"switchable" => true,
+		"visible" => false,
                 "title" => ($field->field_encrypted=='1') ?'<i class="fa fa-lock"></i> '.e($field->name) : e($field->name),
                 "formatter" => "customFieldsFormatter"
             ];
