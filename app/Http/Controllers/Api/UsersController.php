@@ -350,7 +350,9 @@ class UsersController extends Controller
     {
         $this->authorize('view', User::class);
         $user = User::findOrFail($id);
-        $this->authorize('view', Accessory::class);
+        // FIXME: Workaround: use asset permissions instead of accessories
+        // since they are broken.
+        $this->authorize('view', Asset::class);
         $accessories = $user->accessories;
         return (new AccessoriesTransformer)->transformAccessories($accessories, $accessories->count());
     }
