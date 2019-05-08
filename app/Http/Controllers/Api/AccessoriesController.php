@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Helpers\Helper;
 use App\Models\Accessory;
+use App\Models\Asset;
 use App\Http\Transformers\AccessoriesTransformer;
 use App\Models\Company;
 /*== Patched ==*/
@@ -242,7 +243,10 @@ class AccessoriesController extends Controller
      * @return JsonResponse
      */
     public function checkout(Request $request, $accessoryID){
-        $this->authorize('checkout', Accessory::class);
+        // FIXME: Workaround: 
+        // use Asset permissions for authorization of
+        // Accessory Checkin/Checkout until Im able to find & fix the bug
+        $this->authorize('checkout', Asset::class);
         $user_id = $request->input('user_id');
         $response_payload = ['accessory'=> e($accessoryID), 'user'=>e($user_id)];
         
@@ -258,7 +262,10 @@ class AccessoriesController extends Controller
         if(DB::table('accessories_users')->where('accessory_id', '=', $accessoryID)->count() >= $accessory->qty ){
             return response()->json(Helper::formatStandardApiResponse('success',  $response_payload,  trans('admin/accessories/message.checkout.error')));
         }
-        $this->authorize('checkout', $accessory);
+
+        // FIXME
+        //$this->authorize('checkout', $accessory);
+
         // Update the accessory data
         $accessory->assigned_to = e($user_id);
         $accessory->users()->attach($accessory->id, [
