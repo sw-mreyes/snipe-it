@@ -208,7 +208,11 @@ class AccessoriesController extends Controller
      * @return JsonResponse
      */
     public function checkin(Request $request, $accessoryID){
-        $this->authorize('checkin', Accessory::class);
+        // FIXME: Workaround: 
+        // use Asset permissions for authorization of
+        // Accessory Checkin/Checkout until Im able to find & fix the bug
+        $this->authorize('checkin', Asset::class);
+        //
         $user_id = $request->input('user_id');
         $response_payload = ['accessory'=> e($accessoryID), 'user'=>e($user_id)];
         // check if the accessory exists
@@ -223,7 +227,10 @@ class AccessoriesController extends Controller
         if (is_null($accessory_user = DB::table('accessories_users')->where('assigned_to', $user_id)->first())) {
             return response()->json(Helper::formatStandardApiResponse('error', $response_payload, trans('admin/accessories/message.checkin.not_checkedout')));
         }
-        $this->authorize('checkin', $accessory);        
+
+        // FIXME
+        //$this->authorize('checkin', $accessory);        
+
         // Delete the entry. if the table changed
         if (DB::table('accessories_users')->where('id', '=', $accessory_user->id)->delete()) {
             // We succeeded
