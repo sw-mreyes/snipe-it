@@ -1,3 +1,19 @@
+# [!!!] WARNING [!!!]
+This repository contains some hacky workarounds & fixes.
+One of them changes the way Permissions are used, especially
+the accessory & components API routes which partially use the Asset permissions 
+as a quick hack to prevent an issue where access is not granted altough the
+permissions are given. Do not use this patched branch if your policy relies
+on the Accessory permission!
+
+see 
+
+[This](https://github.com/sw-mreyes/snipe-it/commit/c0eb5ef43dc1c8df03a9654236ab449f59d11d20),
+[this](https://github.com/sw-mreyes/snipe-it/commit/912a07ee33d728a4cb541edbb7935e68e9372c29),
+[and this](https://github.com/sw-mreyes/snipe-it/commit/aaf93ac2431442b65be2c65309e82fc480386f76) commit.
+
+# original readme.md
+
 [![Build Status](https://travis-ci.org/snipe/snipe-it.svg?branch=master)](https://travis-ci.org/snipe/snipe-it) [![Crowdin](https://d322cqt584bo4o.cloudfront.net/snipe-it/localized.svg)](https://crowdin.com/project/snipe-it) [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/snipe/snipe-it?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Docker Pulls](https://img.shields.io/docker/pulls/snipe/snipe-it.svg)](https://hub.docker.com/r/snipe/snipe-it/) [![Twitter Follow](https://img.shields.io/twitter/follow/snipeitapp.svg?style=social)](https://twitter.com/snipeitapp)  [![Codacy Badge](https://api.codacy.com/project/badge/Grade/553ce52037fc43ea99149785afcfe641)](https://www.codacy.com/app/snipe/snipe-it?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=snipe/snipe-it&amp;utm_campaign=Badge_Grade)
 [![All Contributors](https://img.shields.io/badge/all_contributors-182-orange.svg?style=flat-square)](#contributors) [![Open Source Helpers](https://www.codetriage.com/snipe/snipe-it/badges/users.svg)](https://www.codetriage.com/snipe/snipe-it)
 
