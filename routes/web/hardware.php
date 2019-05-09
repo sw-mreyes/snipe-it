@@ -60,6 +60,11 @@ Route::group(
             'uses' => 'AssetsController@getClone'
         ]);
 
+        Route::get('{assetId}/printlabel', [
+            'as' => 'asset.printlabel',
+            'uses' => 'AssetsController@printLabel'
+        ]);
+
         Route::post('{assetId}/clone', 'AssetsController@postCreate');
 
         Route::get('{assetId}/checkout', [

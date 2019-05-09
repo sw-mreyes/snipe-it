@@ -35,6 +35,10 @@
       @can('audit', \App\Models\Asset::class)
       <li role="presentation"><a href="{{ route('asset.audit.create', $asset->id)  }}">{{ trans('general.audit') }}</a></li>
      @endcan
+
+     @can('view', \App\Models\Asset::class)
+      <li role="presentation"><a href="{{ route('asset.printlabel', $asset->id)  }}">{{ trans('general.print_label') }}</a></li>
+     @endcan
   </ul>
 </div>
 @endcan

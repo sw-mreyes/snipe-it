@@ -10,6 +10,7 @@ use App\Http\Requests\ItemImportRequest;
 use App\Models\Actionlog;
 use App\Models\Asset;
 use App\Models\AssetModel;
+use App\Models\Category;
 use App\Models\Company;
 use App\Models\CustomField;
 use App\Models\Import;
@@ -39,6 +40,7 @@ use TCPDF;
 use Validator;
 use View;
 use App\Models\CheckoutRequest;
+
 
 /**
  * This class controls all actions related to assets for
@@ -801,6 +803,37 @@ class AssetsController extends Controller
         $requestedItems = $requestedItems->orderBy('created_at', 'desc')->get();
 
         return view('hardware/requested', compact('requestedItems'));
+    }
+
+    /**
+     * Print a label.
+     */
+    public function printLabel($asset_id = null){
+        $asset = Asset::where('id', '=', $asset_id)->first();
+        $model = AssetModel::where('id', '=', $asset->model_id)->first();
+        $category = Category::where('id', '=', $model->category_id)->first();
+
+        $data =  base64_encode(
+            $asset->asset_tag.
+            '|'.$asset->name.
+            '|'.$category->name
+        );
+
+        $asset = Asset::where('id', '=', $asset_id)->first();
+        // create curl resource
+        $ch = curl_init();
+        // set url
+        curl_setopt($ch, CURLOPT_URL, "label.printer:66666/print?&data=".$data);
+        //return the transfer as a string
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        // Use POST
+        curl_setopt($ch, CURLOPT_POST, 1);
+        // $output contains the output string
+        $output = curl_exec($ch);
+        // close curl resource to free up system resources
+        curl_close($ch);    
+          
+        return redirect()->route('hardware.view', $asset_id)->with('success', 'Print Job queued!');
     }
 
 }
