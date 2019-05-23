@@ -841,17 +841,26 @@ class AssetsController extends Controller
         // create curl resource
         $ch = curl_init();
         // set url
-        curl_setopt($ch, CURLOPT_URL, "label.printer:66666/print?&data=".$data);
+        $print_server = env('PRINT_SERVER', "127.0.0.1:1130")."/print?&data=".$data;
+        curl_setopt($ch, CURLOPT_URL, $print_server);
         //return the transfer as a string
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         // Use POST
         curl_setopt($ch, CURLOPT_POST, 1);
-        // $output contains the output string
+        // get status
         $output = curl_exec($ch);
+        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         // close curl resource to free up system resources
         curl_close($ch);    
-          
-        return redirect()->route('hardware.view', $asset_id)->with('success', 'Print Job queued!');
+
+        if ($httpcode == 200){
+            return redirect()->route('hardware.view', $asset_id)->with('success', 'Print Job queued!');
+        }
+        if ($httpcode == 403){
+            return redirect()->route('hardware.view', $asset_id)->with('error', 'Could not queue print job: Permission denied!');
+        }
+        return redirect()->route('hardware.view', $asset_id)->with('error', 'Could not queue print job!');
+
     }
 
 }
