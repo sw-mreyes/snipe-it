@@ -859,7 +859,7 @@ class AssetsController extends Controller
         if ($httpcode == 403){
             return redirect()->route('hardware.view', $asset_id)->with('error', 'Could not queue print job: Permission denied!');
         }
-        return redirect()->route('hardware.view', $asset_id)->with('error', 'Could not queue print job!');
+        return redirect()->route('hardware.view', $asset_id)->with('error', 'Could not queue print job! ('.$httpcode.')');
 
     }
 
