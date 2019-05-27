@@ -142,6 +142,16 @@ class AssetsController extends Controller
             $assets->ByDepreciationId($request->input('depreciation_id'));
         }
 
+        if ($request->has('custom_field')) {
+            if ($request->has('custom_field_value')){
+                $assets->where($request->input('custom_field'),'=',$request->input('custom_field_value'));
+            }else{
+                $assets->whereNotNull($request->input('custom_field'));
+            }
+        }
+
+
+
         $request->has('order_number') ? $assets = $assets->where('assets.order_number', '=', e($request->get('order_number'))) : '';
 
         $offset = (($assets) && (request('offset') > $assets->count())) ? 0 : request('offset', 0);
