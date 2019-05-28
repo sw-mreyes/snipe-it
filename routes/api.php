@@ -225,6 +225,14 @@ Route::group(['prefix' => 'v1','namespace' => 'Api', 'middleware' => 'api'], fun
         ]
     );
 
+    Route::group(['prefix' => 'consumables'], function () {
+        Route::post('{consumableID}/checkout',[
+            'as' => 'api.consumables.checkout',
+            'uses' => 'ConsumablesController@checkout'
+        ]);
+
+    });
+
     /*--- Depreciations API ---*/
 
     Route::resource('depreciations', 'DepreciationsController',

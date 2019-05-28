@@ -8,6 +8,9 @@ use App\Models\Company;
 use App\Models\Consumable;
 use App\Http\Transformers\ConsumablesTransformer;
 use App\Helpers\Helper;
+use App\Models\User;
+use DB;
+use Auth;
 
 class ConsumablesController extends Controller
 {
@@ -193,5 +196,44 @@ class ConsumablesController extends Controller
         $consumableCount = $consumable->users->count();
         $data = array('total' => $consumableCount, 'rows' => $rows);
         return $data;
+    }
+
+    /**
+     * Checkout a consumable to a user.
+     * 
+     * @author [M. Reyes] [<mreyes@schutzwerk.com>]
+     */
+    public function checkout(Request $request, $consumableID){
+        $this->authorize('checkout', Consumable::class);
+        $user_id = $request->input('user_id');
+        $response_payload = ['consumable'=> e($consumableID), 'user'=>e($user_id)];
+        
+        // check if consumable exists
+        if (is_null($consumable = Consumable::find($consumableID))){
+            return response()->json(Helper::formatStandardApiResponse('success',  $response_payload,  trans('admin/consumable/message.checkout.consumable_does_not_exist')));
+        }
+        // check if the user exists
+        if (!$user = User::find($user_id)) {
+            return response()->json(Helper::formatStandardApiResponse('success',  $response_payload,  trans('admin/consumable/message.checkout.user_does_not_exist')));
+        }
+        // make sure there is at least one consumable left for us to chekout.
+        if(DB::table('consumables_users')->where('consumable_id', '=', $consumableID)->count() >= $consumable->qty ){
+            return response()->json(Helper::formatStandardApiResponse('success',  $response_payload,  trans('admin/consumable/message.checkout.none_left')));
+        }
+        $this->authorize('checkout', $consumable);
+        // Update the consumable data
+        $consumable->assigned_to = e($user_id);
+        $consumable->users()->attach($consumableID, [
+            'consumable_id' => $consumableID,
+            'created_at' => date('Y-m-d H:i:s'),
+            'user_id' => Auth::id(),
+            'assigned_to' => $user_id,
+        ]);
+        DB::table('consumables_users')->where('assigned_to', '=', $consumable->assigned_to)->where('consumable_id', '=', $consumable->id)->first();
+
+        $logaction = $consumable->logCheckout(e($request->input('note')), $user);
+        return response()->json(Helper::formatStandardApiResponse('success',  $response_payload, trans('admin/consumables/message.checkout.success')));
+
+        
     }
 }

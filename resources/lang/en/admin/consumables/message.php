@@ -23,13 +23,15 @@ return array(
      'checkout' => array(
         'error'   		=> 'Consumable was not checked out, please try again',
         'success' 		=> 'Consumable checked out successfully.',
-        'user_does_not_exist' => 'That user is invalid. Please try again.'
+        'user_does_not_exist' => 'That user is invalid. Please try again.',
+        'consumable_does_not_exist' => 'That consumable does not exist. Please try again.',
+        'none_left' => 'no consumable left for checkout'
     ),
 
     'checkin' => array(
         'error'   		=> 'Consumable was not checked in, please try again',
         'success' 		=> 'Consumable checked in successfully.',
-        'user_does_not_exist' => 'That user is invalid. Please try again.'
+        'consumable_does_not_exist' => 'That consumable does not exist. Please try again.'
     )
 
 
