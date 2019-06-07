@@ -15,6 +15,11 @@ Route::group([ 'prefix' => 'accessories', 'middleware' => ['auth']], function ()
     );
 
     Route::get(
+        '{accessoryID}/printlabel',
+        [ 'as' => 'accessories.printlabel', 'uses' => 'AccessoriesController@printLabel']
+    );
+
+    Route::get(
         '{accessoryID}/checkin/{backto?}',
         [ 'as' => 'checkin/accessory', 'uses' => 'AccessoriesController@getCheckin' ]
     );

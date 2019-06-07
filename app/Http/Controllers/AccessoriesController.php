@@ -5,6 +5,7 @@ use App\Helpers\Helper;
 use App\Models\Accessory;
 use App\Models\Company;
 use App\Models\User;
+use App\Models\Category;
 use Auth;
 use Carbon\Carbon;
 use Config;
@@ -395,6 +396,44 @@ class AccessoriesController extends Controller
         // Redirect to the accessory management page with error
         return redirect()->route('accessories.index')->with('error', trans('admin/accessories/message.checkin.error'));
     }
+    
+    /**
+     * Print a label.
+     */
+    public function printLabel($accessoryID = null){
+        $accessory = Accessory::find($accessoryID);
+        $category = Category::where('id', '=', $accessory->category_id)->first();
 
+        $data = $accessoryID.'|'.$accessory->name.'|'.$category->name;
+        $data_b64 =  base64_encode(
+            $accessoryID.
+            '|'.$accessory->name.
+            '|'.$category->name
+        );
+
+        // create curl resource
+        $ch = curl_init();
+        // set url
+        $print_server = env('PRINT_SERVER', "127.0.0.1:1130")."/print?&data=".$data_b64;
+        curl_setopt($ch, CURLOPT_URL, $print_server);
+        //return the transfer as a string
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        // Use POST
+        curl_setopt($ch, CURLOPT_POST, 1);
+        // get status
+        $output = curl_exec($ch);
+        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        // close curl resource to free up system resources
+        curl_close($ch);    
+
+        if ($httpcode == 200){
+            return redirect()->route('accessories.show', $accessoryID)->with('success', 'Print Job queued!');
+        }
+        if ($httpcode == 403){
+            return redirect()->route('accessories.show', $accessoryID)->with('error', 'Could not queue print job: Permission denied!');
+        }
+        return redirect()->route('accessories.show', $accessoryID)->with('error', 'Could not queue print job! ('.$httpcode.')');
+
+    }
 
 }
