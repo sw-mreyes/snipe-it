@@ -406,7 +406,7 @@ class AccessoriesController extends Controller
 
         $data = $accessoryID.'|'.$accessory->name.'|'.$category->name;
         $data_b64 =  base64_encode(
-            $accessoryID.
+            'AC-'.$accessoryID.
             '|'.$accessory->name.
             '|'.$category->name
         );
