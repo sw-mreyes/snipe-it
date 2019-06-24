@@ -289,7 +289,7 @@ class ConsumablesController extends Controller
             return redirect()->route('consumables.index')->with('error', trans('admin/consumables/message.not_found'));
         }
         $data =  base64_encode(
-            $consumableID.
+            'CS-'.$consumableID.
             '|'.$consumable->name.
             '|'.$consumable->category->name
         );
