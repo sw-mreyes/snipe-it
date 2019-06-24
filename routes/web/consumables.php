@@ -11,6 +11,10 @@
             '{consumableID}/checkout',
             [ 'as' => 'checkout/consumable', 'uses' => 'ConsumablesController@postCheckout' ]
         );
+        Route::get(
+            '{consumableID}/printlabel',
+            [ 'as' => 'consumables.printlabel', 'uses' => 'ConsumablesController@printLabel' ]
+        );
     });
 
     Route::resource('consumables', 'ConsumablesController', [
