@@ -116,10 +116,18 @@
         {{ $consumable->order_number }}
       </div>
     @endif
+    
       <div class="col-md-12" style="padding-bottom: 5px;">
         <h4>{{ trans('admin/consumables/general.about_consumables_title') }}</h4>
         <p>{{ trans('admin/consumables/general.about_consumables_text') }} </p>
       </div>
+
+    @if ($consumable->id)
+    <div class="col-md-12" style="padding-bottom: 5px;">
+        <a href="{{ route('consumables.printlabel', $consumable->id)  }}" class="btn btn-primary pull-right">
+        {{ trans('general.print_label') }}</a>
+    </div>
+    @endif
   </div> <!-- /.col-md-3-->
 </div> <!-- /.row-->
 
