@@ -809,7 +809,10 @@ class AssetsController extends Controller
      * Print a label.
      */
     public function printLabel($asset_id = null){
-        $asset = Asset::where('id', '=', $asset_id)->first();
+        if (is_null($asset = Asset::find($asset_id))) {
+            return redirect()->route('hardware.index')->with('error', trans('admin/hardware/message.not_found'));
+        }
+
         $model = AssetModel::where('id', '=', $asset->model_id)->first();
         $category = Category::where('id', '=', $model->category_id)->first();
 
@@ -818,8 +821,6 @@ class AssetsController extends Controller
             '|'.$asset->name.
             '|'.$category->name
         );
-
-        $asset = Asset::where('id', '=', $asset_id)->first();
         // create curl resource
         $ch = curl_init();
         // set url
