@@ -26,8 +26,8 @@
           @endcan
         @endif
 
-        @can('update', $component)
-        <li role="presentation"><a href="{{ route('components.edit', $component->id) }}">{{ trans('admin/components/general.edit') }}</a></li>
+        @can('view', $component)
+        <li role="presentation"><a href="{{ route('components.printlabel', $component->id) }}">{{ trans('general.print_label') }}</a></li>
         @endcan
       </ul>
     </div>

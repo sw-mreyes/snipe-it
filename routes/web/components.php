@@ -7,6 +7,10 @@ Route::group([ 'prefix' => 'components','middleware' => ['auth'] ], function () 
         '{componentID}/checkout',
         [ 'as' => 'checkout/component', 'uses' => 'ComponentsController@getCheckout' ]
     );
+    Route::get(
+        '{componentID}/printlabel',
+        [ 'as' => 'components.printlabel', 'uses' => 'ComponentsController@printLabel' ]
+    );
     Route::post(
         '{componentID}/checkout',
         [ 'as' => 'checkout/component', 'uses' => 'ComponentsController@postCheckout' ]
