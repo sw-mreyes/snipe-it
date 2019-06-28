@@ -20,6 +20,7 @@
                 <th class="col-md-1">{{ trans('general.tag') }} / {{ trans('general.id') }}</th>
                 <th class="col-md-2">{{ trans('general.name') }}</th>
                 <th class="col-md-1">{{ trans('general.category') }}</th>
+                <th class="col-md-1">{{ trans('general.location') }}</th>
             </tr>
         </thead>
         <tbody>
@@ -27,7 +28,7 @@
             <tr>
                 <!-- Type -->
                 <td>{{$e->type}}</td>
-                <!-- Tag / ID -->                
+                <!-- Tag / ID -->
                 <td>
                     @if ($e->type == 'Asset')
                     <a href="{{ route('hardware.view', $e->id)}}">{{$e->tag}}</a>
@@ -37,22 +38,26 @@
                     <a href="{{ route('components.show', $e->id)}}">{{$e->tag}}</a>
                     @elseif ($e->type == 'Consumable')
                     <a href="{{ route('consumables.show', $e->id)}}">{{$e->tag}}</a>
-                    @elseif ($e->type == 'Location')
-                    <a href="{{ route('locations.show', $e->id)}}">{{$e->tag}}</a>
-                    @elseif ($e->type == 'Category')
-                    <a href="{{ route('categories.show', $e->id)}}">{{$e->id}}</a>
-                    @elseif ($e->type == 'Asset Model')
-                    <a href="{{ route('models.show', $e->id)}}">{{$e->id}}</a>
                     @else
                     ERROR
                     @endif
                 </td>
-                <!-- Name -->                
+                <!-- Name -->
                 <td>
-                    {{$e->name}}            
+                    {{$e->name}}
                 </td>
-                <!-- Category -->                
-                <td>{{$e->category}}</td>
+                <!-- Category -->
+                <td>
+                    @if($e->category)
+                    <a href="{{ route('categories.show', $e->category->id)}}">{{$e->category->name}}</a>
+                    @endif
+                </td>
+                <!-- Location -->
+                <td>
+                    @if($e->location)
+                    <a href="{{ route('locations.show', $e->location->id)}}">{{$e->location->name}}</a>
+                    @endif
+                </td>
             </tr>
             @endforeach
         </tbody>
