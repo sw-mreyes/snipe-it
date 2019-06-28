@@ -94,6 +94,17 @@ class SearchController extends Controller
         return $e;
     }
 
+    function parse_category($category)
+    {
+        $e = new stdClass();
+        $e->name = $category->name;
+        $e->category = '-';
+        $e->tag = '-';
+        $e->type = 'Category';
+        $e->id = $category->id;
+        return $e;
+    }
+
     function parse_location($location)
     {
         $e = new stdClass();
@@ -111,6 +122,7 @@ class SearchController extends Controller
      */
     function get_by_tag($tag)
     {
+        $tag = strtoupper($tag);
         switch (substr($tag, 0, 2)) {
             case 'SW':
                 $asset = Asset::where('asset_tag', '=', $this->fix_tag_len($tag))->first();
@@ -150,6 +162,11 @@ class SearchController extends Controller
         return null;
     }
 
+    /**
+     * Search [assets, accessories, consumables, components, locations]
+     * names (and asset notes) for the given string.
+     * 
+     */
     function search_string($str)
     {
         $results = [];
@@ -162,14 +179,14 @@ class SearchController extends Controller
         $components = Component::where('name', 'LIKE', "%{$str}%")->get();
         $consumables = Consumable::where('name', 'LIKE', "%{$str}%")->get();
         $locations = Location::where('name', 'LIKE', "%{$str}%")->get();
-
+        $categories = Category::where('name', 'LIKE', "%{$str}%")->get();
 
         foreach ($assets as $asset) array_push($results, $this->parse_asset($asset));
         foreach ($accesories as $acc) array_push($results, $this->parse_accessory($acc));
         foreach ($components as $cmp) array_push($results, $this->parse_component($cmp));
         foreach ($consumables as $cs) array_push($results, $this->parse_consumable($cs));
         foreach ($locations as $loc) array_push($results, $this->parse_location($loc));
-
+        foreach ($categories as $cat) array_push($results, $this->parse_category($cat));      
 
         return $results;
     }
@@ -184,7 +201,7 @@ class SearchController extends Controller
         $terms = explode(',', $search);
         foreach ($terms as $term) {
             // Check if the term is a tag
-            if ($n_matches = preg_match('/(?:BX|SW|AC|CS|CM)-[0-9]{1,10}/', $term, $tag_pattern_result)) {
+            if ($n_matches = preg_match('/(?:BX|SW|AC|CS|CM|bx|sw|ac|cs|cm)-[0-9]{1,10}/', $term, $tag_pattern_result)) {
                 foreach ($tag_pattern_result as $tag) {
                     if ($result = $this->get_by_tag($tag)) {
                         array_push($search_result, $result);
