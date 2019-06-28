@@ -823,45 +823,6 @@ class AssetsController extends Controller
         return view('hardware/requested', compact('requestedItems'));
     }
 
-    /**
-     * Print a label.
-     */
-    public function printLabel($asset_id = null){
-        if (is_null($asset = Asset::find($asset_id))) {
-            return redirect()->route('hardware.index')->with('error', trans('admin/hardware/message.not_found'));
-        }
 
-        $model = AssetModel::where('id', '=', $asset->model_id)->first();
-        $category = Category::where('id', '=', $model->category_id)->first();
-
-        $data =  base64_encode(
-            $asset->asset_tag.
-            '|'.$asset->name.
-            '|'.$category->name
-        );
-        // create curl resource
-        $ch = curl_init();
-        // set url
-        $print_server = env('PRINT_SERVER', "127.0.0.1:1130")."/print?&data=".$data;
-        curl_setopt($ch, CURLOPT_URL, $print_server);
-        //return the transfer as a string
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        // Use POST
-        curl_setopt($ch, CURLOPT_POST, 1);
-        // get status
-        $output = curl_exec($ch);
-        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        // close curl resource to free up system resources
-        curl_close($ch);    
-
-        if ($httpcode == 200){
-            return redirect()->route('hardware.view', $asset_id)->with('success', 'Print Job queued!');
-        }
-        if ($httpcode == 403){
-            return redirect()->route('hardware.view', $asset_id)->with('error', 'Could not queue print job: Permission denied!');
-        }
-        return redirect()->route('hardware.view', $asset_id)->with('error', 'Could not queue print job! ('.$httpcode.')');
-
-    }
 
 }

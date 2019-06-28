@@ -393,41 +393,5 @@ class ComponentsController extends Controller
         return redirect()->route('components.index')->with('error', trans('admin/components/message.not_found'));
     }
 
-    public function printLabel($componentID){
-        if (is_null($component = Component::find($componentID))) {
-            return redirect()->route('components.index')->with('error', trans('admin/components/message.not_found'));
-        }
-        
-
-        $data =  base64_encode(
-            'CM-'.$componentID.
-            '|'.$component->name.
-            '|'.$component->category->name
-        );
-
-        // create curl resource
-        $ch = curl_init();
-        // set url
-        $print_server = env('PRINT_SERVER', "127.0.0.1:1130")."/print?&data=".$data;
-        curl_setopt($ch, CURLOPT_URL, $print_server);
-        //return the transfer as a string
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        // Use POST
-        curl_setopt($ch, CURLOPT_POST, 1);
-        // get status
-        $output = curl_exec($ch);
-        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        // close curl resource to free up system resources
-        curl_close($ch);    
-
-        if ($httpcode == 200){
-            return redirect()->back()->with('success', 'Print Job queued!');
-        }
-        if ($httpcode == 403){
-            return redirect()->back()->with('error', 'Could not queue print job: Permission denied!');
-        }
-        return redirect()->back()->with('error', 'Could not queue print job! ('.$httpcode.')');
-        
-    }
 
 }
