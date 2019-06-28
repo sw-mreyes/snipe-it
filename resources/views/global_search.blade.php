@@ -17,7 +17,7 @@
         <thead>
             <tr>
                 <th class="col-md-1">{{ trans('general.type') }}</th>
-                <th class="col-md-1">{{ trans('general.tag') }}</th>
+                <th class="col-md-1">{{ trans('general.tag') }} / {{ trans('general.id') }}</th>
                 <th class="col-md-2">{{ trans('general.name') }}</th>
                 <th class="col-md-1">{{ trans('general.category') }}</th>
             </tr>
@@ -25,32 +25,33 @@
         <tbody>
             @foreach ($search_result as $e)
             <tr>
+                <!-- Type -->
                 <td>{{$e->type}}</td>
-
+                <!-- Tag / ID -->                
                 <td>
                     @if ($e->type == 'Asset')
                     <a href="{{ route('hardware.view', $e->id)}}">{{$e->tag}}</a>
-                    @endif
-                    @if ($e->type == 'Accessory')
+                    @elseif ($e->type == 'Accessory')
                     <a href="{{ route('accessories.show', $e->id)}}">{{$e->tag}}</a>
-                    @endif
-                    @if ($e->type == 'Component')
+                    @elseif ($e->type == 'Component')
                     <a href="{{ route('components.show', $e->id)}}">{{$e->tag}}</a>
-                    @endif
-                    @if ($e->type == 'Consumable')
+                    @elseif ($e->type == 'Consumable')
                     <a href="{{ route('consumables.show', $e->id)}}">{{$e->tag}}</a>
-                    @endif
-                    @if ($e->type == 'Location')
+                    @elseif ($e->type == 'Location')
                     <a href="{{ route('locations.show', $e->id)}}">{{$e->tag}}</a>
-                    @endif
-                </td>
-                <td>
-                    @if ($e->type == 'Category')
-                    <a href="{{ route('categories.show', $e->id)}}">{{$e->name}}</a>
+                    @elseif ($e->type == 'Category')
+                    <a href="{{ route('categories.show', $e->id)}}">{{$e->id}}</a>
+                    @elseif ($e->type == 'Asset Model')
+                    <a href="{{ route('models.show', $e->id)}}">{{$e->id}}</a>
                     @else
-                    {{$e->name}}
+                    ERROR
                     @endif
                 </td>
+                <!-- Name -->                
+                <td>
+                    {{$e->name}}            
+                </td>
+                <!-- Category -->                
                 <td>{{$e->category}}</td>
             </tr>
             @endforeach
