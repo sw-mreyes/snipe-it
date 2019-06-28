@@ -9,7 +9,7 @@ Route::group([ 'prefix' => 'components','middleware' => ['auth'] ], function () 
     );
     Route::get(
         '{componentID}/printlabel',
-        [ 'as' => 'components.printlabel', 'uses' => 'ComponentsController@printLabel' ]
+        [ 'as' => 'components.printlabel', 'uses' => 'LabelPrinterController@printComponentLabel' ]
     );
     Route::post(
         '{componentID}/checkout',

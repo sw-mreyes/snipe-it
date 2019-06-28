@@ -16,7 +16,7 @@ Route::group([ 'prefix' => 'accessories', 'middleware' => ['auth']], function ()
 
     Route::get(
         '{accessoryID}/printlabel',
-        [ 'as' => 'accessories.printlabel', 'uses' => 'AccessoriesController@printLabel']
+        [ 'as' => 'accessories.printlabel', 'uses' => 'LabelPrinterController@printAccessoryLabel']
     );
 
     Route::get(

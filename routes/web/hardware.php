@@ -62,7 +62,7 @@ Route::group(
 
         Route::get('{assetId}/printlabel', [
             'as' => 'asset.printlabel',
-            'uses' => 'AssetsController@printLabel'
+            'uses' => 'LabelPrinterController@printAssetLabel'
         ]);
 
         Route::post('{assetId}/clone', 'AssetsController@postCreate');

@@ -13,7 +13,7 @@
         );
         Route::get(
             '{consumableID}/printlabel',
-            [ 'as' => 'consumables.printlabel', 'uses' => 'ConsumablesController@printLabel' ]
+            [ 'as' => 'consumables.printlabel', 'uses' => 'LabelPrinterController@printConsumableLabel' ]
         );
     });
 

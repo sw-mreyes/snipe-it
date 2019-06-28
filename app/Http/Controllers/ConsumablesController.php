@@ -283,40 +283,6 @@ class ConsumablesController extends Controller
 
     }
 
-    public function printLabel($consumableID)
-    {
-        if (is_null($consumable = Consumable::find($consumableID))) {
-            return redirect()->route('consumables.index')->with('error', trans('admin/consumables/message.not_found'));
-        }
-        $data =  base64_encode(
-            'CS-'.$consumableID.
-            '|'.$consumable->name.
-            '|'.$consumable->category->name
-        );
-        //
-        // create curl resource
-        $ch = curl_init();
-        // set url
-        $print_server = env('PRINT_SERVER', "127.0.0.1:1130")."/print?&data=".$data;
-        curl_setopt($ch, CURLOPT_URL, $print_server);
-        //return the transfer as a string
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        // Use POST
-        curl_setopt($ch, CURLOPT_POST, 1);
-        // get status
-        $output = curl_exec($ch);
-        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        // close curl resource to free up system resources
-        curl_close($ch);    
-        //
-        if ($httpcode == 200){
-            return redirect()->route('consumables.index')->with('success', 'Print Job queued!');
-        }
-        if ($httpcode == 403){
-            return redirect()->route('consumables.index')->with('error', 'Could not queue print job: Permission denied!');
-        }
-        return redirect()->route('consumables.index')->with('error', 'Could not queue print job! ('.$httpcode.')');
-        //
-    }
+
 
 }
