@@ -57,74 +57,87 @@ class SearchController extends Controller
         $e = new stdClass();
         $e->name = $asset->name;
         $model = AssetModel::where('id', '=', $asset->model_id)->first();
-        $e->category = Category::where('id', '=', $model->category_id)->first()->name;;
+        $e->category = Category::where('id', '=', $model->category_id)->first();
         $e->tag = $asset->asset_tag;
         $e->type = 'Asset';
         $e->id = $asset->id;
+        $e->location = $asset->location;
         return $e;
     }
     function parse_accessory($accessory)
     {
         $e = new stdClass();
         $e->name = $accessory->name;
-        $e->category = Category::where('id', '=', $accessory->category_id)->first()->name;
+        $e->category = Category::where('id', '=', $accessory->category_id)->first();
         $e->tag = $this->fix_tag_len('AC-' . $accessory->id);
         $e->type = 'Accessory';
         $e->id = $accessory->id;
+        $e->location = $accessory->location;
         return $e;
     }
     function parse_component($component)
     {
         $e = new stdClass();
         $e->name = $component->name;
-        $e->category = Category::where('id', '=', $component->category_id)->first()->name;
+        $e->category = Category::where('id', '=', $component->category_id)->first();
         $e->tag = $this->fix_tag_len('CM-' . $component->id);
         $e->type = 'Component';
         $e->id = $component->id;
+        $e->location = $component->location;
         return $e;
     }
     function parse_consumable($consumable)
     {
         $e = new stdClass();
         $e->name = $consumable->name;
-        $e->category = Category::where('id', '=', $consumable->category_id)->first()->name;
+        $e->category = Category::where('id', '=', $consumable->category_id)->first();
         $e->tag = $this->fix_tag_len('CS-' . $consumable->id);
         $e->type = 'Consumable';
         $e->id = $consumable->id;
+        $e->location = $consumable->location;
         return $e;
     }
 
     function parse_category($category)
     {
-        $e = new stdClass();
-        $e->name = $category->name;
-        $e->category = '-';
-        $e->tag = '-';
-        $e->type = 'Category';
-        $e->id = $category->id;
-        return $e;
+        $results = [];
+        //
+        $assets         = Asset::join('models', 'models.id', '=', 'model_id')->where('category_id', '=', $category->id)->get();
+        $accesories     = Accessory::where('category_id', '=', $category->id)->get();
+        $components     = Component::where('category_id', '=', $category->id)->get();
+        $consumables    = Consumable::where('category_id', '=', $category->id)->get();
+        foreach ($assets as $asset)     array_push($results, $this->parse_asset($asset));
+        foreach ($accesories as $acc)   array_push($results, $this->parse_accessory($acc));
+        foreach ($components as $cmp)   array_push($results, $this->parse_component($cmp));
+        foreach ($consumables as $cs)   array_push($results, $this->parse_consumable($cs));
+        //
+        return $results;
     }
 
     function parse_location($location)
     {
-        $e = new stdClass();
-        $e->name = $location->name;
-        $e->category = '-';
-        $e->tag = $this->fix_tag_len('BX-' . $location->id);
-        $e->type = 'Location';
-        $e->id = $location->id;
-        return $e;
+        $results = [];
+        //
+        $assets         = Asset::where('location_id', '=', $location->id)->get();
+        $accesories     = Accessory::where('location_id', '=', $location->id)->get();
+        $components     = Component::where('location_id', '=', $location->id)->get();
+        $consumables    = Consumable::where('location_id', '=', $location->id)->get();
+        foreach ($assets as $asset)     array_push($results, $this->parse_asset($asset));
+        foreach ($accesories as $acc)   array_push($results, $this->parse_accessory($acc));
+        foreach ($components as $cmp)   array_push($results, $this->parse_component($cmp));
+        foreach ($consumables as $cs)   array_push($results, $this->parse_consumable($cs));
+        //
+        return $results;
     }
 
     function parse_model($model)
     {
-        $e = new stdClass();
-        $e->name = $model->name;
-        $e->category = '-';
-        $e->tag = '';
-        $e->type = 'Asset Model';
-        $e->id = $model->id;
-        return $e;
+        $results = [];
+        //
+        $assets = Asset::where('model_id', '=', $model->id)->get();
+        foreach ($assets as $asset) array_push($results, $this->parse_asset($asset));
+        //
+        return $results;
     }
 
     /**
@@ -182,24 +195,41 @@ class SearchController extends Controller
     {
         $results = [];
 
+        //  Direct results
+        //
         $assets = Asset::where('name', 'LIKE', "%{$str}%")
             ->orWhere('notes', 'LIKE', "%{$str}%")
             ->get();
-
         $accesories = Accessory::where('name', 'LIKE', "%{$str}%")->get();
         $components = Component::where('name', 'LIKE', "%{$str}%")->get();
         $consumables = Consumable::where('name', 'LIKE', "%{$str}%")->get();
-        $locations = Location::where('name', 'LIKE', "%{$str}%")->get();
-        $categories = Category::where('name', 'LIKE', "%{$str}%")->get();
-        $models = AssetModel::where('name', 'LIKE', "%{$str}%")->get();        
-
         foreach ($assets as $asset) array_push($results, $this->parse_asset($asset));
         foreach ($accesories as $acc) array_push($results, $this->parse_accessory($acc));
         foreach ($components as $cmp) array_push($results, $this->parse_component($cmp));
         foreach ($consumables as $cs) array_push($results, $this->parse_consumable($cs));
-        foreach ($locations as $loc) array_push($results, $this->parse_location($loc));
-        foreach ($categories as $cat) array_push($results, $this->parse_category($cat));      
-        foreach ($models as $mdl) array_push($results, $this->parse_model($mdl));      
+
+        // Indirect results
+        $locations = Location::where('name', 'LIKE', "%{$str}%")->get();
+        $categories = Category::where('name', 'LIKE', "%{$str}%")->get();
+        $models = AssetModel::where('name', 'LIKE', "%{$str}%")->get();
+        foreach ($locations as $loc) {
+            $items = $this->parse_location($loc);
+            if (count($items)) {
+                array_push($results, ...$items);
+            }
+        }
+        foreach ($categories as $cat) {
+            $items = $this->parse_category($cat);
+            if (count($items)) {
+                array_push($results, ...$items);
+            }
+        }
+        foreach ($models as $mdl) {
+            $items =  $this->parse_model($mdl);
+            if (count($items)) {
+                array_push($results, ...$items);
+            }
+        }
 
         return $results;
     }
