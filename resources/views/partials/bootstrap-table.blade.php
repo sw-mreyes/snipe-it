@@ -553,6 +553,21 @@
         return 'not an array';
     }
 
+    function id2tag(pre, id){
+        let result = pre + '-';
+        let tmp = result+id;
+        while(tmp.length < 13) {
+            result += '0';
+            tmp = result+id;
+        }
+        return result + id;
+    }
+
+
+    function acID2TagFormatter(data){ return id2tag('AC', data); }
+    function cmID2TagFormatter(data){ return id2tag('CM', data); }
+    function csID2TagFormatter(data){ return id2tag('CS', data); }
+    
 
     $(function () {
         $('#bulkEdit').click(function () {

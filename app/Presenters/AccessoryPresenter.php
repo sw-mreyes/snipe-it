@@ -23,7 +23,15 @@ class AccessoryPresenter extends Presenter
                 "sortable" => true,
                 "switchable" => true,
                 "title" => trans('general.id'),
-                "visible" => false
+                "visible" => false,
+            ],[
+                "field" => "id",
+                "searchable" => false,
+                "sortable" => true,
+                "switchable" => true,
+                "title" => trans('general.tag'),
+                "visible" => true,
+                "formatter" => "acID2TagFormatter"
             ],[
                 "field" => "image",
                 "searchable" => false,
