@@ -44,8 +44,13 @@
                     <a href="{{ route('locations.show', $e->id)}}">{{$e->tag}}</a>
                     @endif
                 </td>
-
-                <td>{{$e->name}}</td>
+                <td>
+                    @if ($e->type == 'Category')
+                    <a href="{{ route('categories.show', $e->id)}}">{{$e->name}}</a>
+                    @else
+                    {{$e->name}}
+                    @endif
+                </td>
                 <td>{{$e->category}}</td>
             </tr>
             @endforeach
