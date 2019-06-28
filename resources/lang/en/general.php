@@ -224,4 +224,5 @@
     'login_enabled'             => 'Login Enabled',
     'print_label'           => 'Print Label',
     'tag'				    => 'Tag',    
+    'global_search'         => 'Global Search'
     ];

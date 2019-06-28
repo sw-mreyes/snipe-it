@@ -172,12 +172,14 @@
                   </li>
                   @endcan
 
-                  @can('index', \App\Models\Asset::class)
-                  <form class="navbar-form navbar-left form-horizontal" role="search" action="{{ route('findbytag/hardware') }}" method="get">
+                  <!-- Allow everyone to use the search. The SearchController should only return results that
+                       the user is allowed to see. -->
+                  <!-- @can('index', \App\Models\Asset::class) -->                  
+                  <form class="navbar-form navbar-left form-horizontal" role="search" action="{{ route('search/global') }}" method="get">
                       <div class="col-xs-12 col-md-12">
                           <div class="col-xs-12 form-group">
-                              <label class="sr-only" for="tagSearch">{{ trans('general.lookup_by_tag') }}</label>
-                              <input type="text" class="form-control" id="tagSearch" name="assetTag" placeholder="{{ trans('general.lookup_by_tag') }}">
+                              <label class="sr-only" for="tagSearch">{{ trans('general.global_search') }}</label>
+                              <input type="text" class="form-control" id="tagSearch" name="search" placeholder="{{ trans('general.global_search') }}">
                               <input type="hidden" name="topsearch" value="true">
                           </div>
                           <div class="col-xs-1">
@@ -185,7 +187,7 @@
                           </div>
                       </div>
                   </form>
-                  @endcan
+                  <!-- @endcan -->
 
                   @can('admin')
                   <li class="dropdown">
