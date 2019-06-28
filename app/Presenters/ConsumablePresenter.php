@@ -24,6 +24,14 @@ class ConsumablePresenter extends Presenter
                 "switchable" => true,
                 "title" => trans('general.id'),
                 "visible" => false
+            ],[
+                "field" => "id",
+                "searchable" => false,
+                "sortable" => true,
+                "switchable" => true,
+                "title" => trans('general.tag'),
+                "visible" => true,
+                "formatter" => "csID2TagFormatter"
             ],
             [
                 "field" => "company",

@@ -25,6 +25,14 @@ class ComponentPresenter extends Presenter
                 "switchable" => true,
                 "title" => trans('general.id'),
                 "visible" => false
+            ],[
+                "field" => "id",
+                "searchable" => false,
+                "sortable" => true,
+                "switchable" => true,
+                "title" => trans('general.tag'),
+                "visible" => true,
+                "formatter" => "cmID2TagFormatter"
             ],
             [
                 "field" => "company",

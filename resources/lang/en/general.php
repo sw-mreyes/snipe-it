@@ -223,4 +223,5 @@
     'token_expired'             => 'Your form session has expired. Please try again.',
     'login_enabled'             => 'Login Enabled',
     'print_label'           => 'Print Label',
+    'tag'				    => 'Tag',    
     ];
