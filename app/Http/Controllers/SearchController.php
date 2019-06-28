@@ -116,6 +116,17 @@ class SearchController extends Controller
         return $e;
     }
 
+    function parse_model($model)
+    {
+        $e = new stdClass();
+        $e->name = $model->name;
+        $e->category = '-';
+        $e->tag = '';
+        $e->type = 'Asset Model';
+        $e->id = $model->id;
+        return $e;
+    }
+
     /**
      * Get an entity by its tag.
      * Works for assets, accessories, consumables, components, locations
@@ -180,6 +191,7 @@ class SearchController extends Controller
         $consumables = Consumable::where('name', 'LIKE', "%{$str}%")->get();
         $locations = Location::where('name', 'LIKE', "%{$str}%")->get();
         $categories = Category::where('name', 'LIKE', "%{$str}%")->get();
+        $models = AssetModel::where('name', 'LIKE', "%{$str}%")->get();        
 
         foreach ($assets as $asset) array_push($results, $this->parse_asset($asset));
         foreach ($accesories as $acc) array_push($results, $this->parse_accessory($acc));
@@ -187,6 +199,7 @@ class SearchController extends Controller
         foreach ($consumables as $cs) array_push($results, $this->parse_consumable($cs));
         foreach ($locations as $loc) array_push($results, $this->parse_location($loc));
         foreach ($categories as $cat) array_push($results, $this->parse_category($cat));      
+        foreach ($models as $mdl) array_push($results, $this->parse_model($mdl));      
 
         return $results;
     }
