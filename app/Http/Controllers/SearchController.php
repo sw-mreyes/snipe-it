@@ -195,6 +195,8 @@ class SearchController extends Controller
      */
     function search_string($str)
     {
+        app('debugbar')->startMeasure('gs_single_term', 'term query for `'.$str.'`');         
+        
         $results = [];
 
         //  Direct results
@@ -233,6 +235,7 @@ class SearchController extends Controller
             }
         }
 
+        app('debugbar')->stopMeasure('gs_single_term');
         return $results;
     }
 
@@ -248,27 +251,31 @@ class SearchController extends Controller
         app('debugbar')->startMeasure('global_search','Global search for query "'.$search.'"');
 
         foreach ($terms as $term) {
-            // Check if the term is a tag
+            // Check if the term is a tag            
             if (preg_match('/(?:BX|SW|AC|CS|CM|bx|sw|ac|cs|cm)-[0-9]{1,10}/', $term, $tag_pattern_result)) {
+                app('debugbar')->startMeasure('gs_bytag','bytag-search for query "'.$search.'"');
                 foreach ($tag_pattern_result as $tag) {
                     if ($result = $this->get_by_tag($tag)) {
                         array_push($search_result, $result);
                     }
                 }
+                app('debugbar')->stopMeasure('gs_bytag');
             } else {
+                app('debugbar')->startMeasure('gs_byterms','by-terms-search for query "'.$search.'"');
                 foreach ($this->search_string($term) as $result) {
                     array_push($search_result, $result);
                 }
+                app('debugbar')->stopMeasure('gs_byterms');
             }
         }
 
         // Remove duplicates
+        app('debugbar')->startMeasure('gs_dedupe','de-dupe and sort results');                
         $objects = array();
         $objects['Asset'] = array();
         $objects['Accessory'] = array();
         $objects['Component'] = array();
         $objects['Consumable'] = array();
-
         $final_result = [];
         foreach ($search_result as $e) {
             if (!in_array($e->id, $objects[$e->type], true)) {
@@ -276,11 +283,12 @@ class SearchController extends Controller
                 array_push($final_result, $e);
             }
         }
-
         usort($final_result, function ($a, $b) {
             return strcmp($a->tag, $b->tag)*-1;
         });
-
+        //
+        app('debugbar')->stopMeasure('gs_dedupe');
+        //
         app('debugbar')->stopMeasure('global_search');
         //
 
