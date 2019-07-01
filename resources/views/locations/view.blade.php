@@ -156,6 +156,12 @@
         @endif
 
 
+        @if ($location->id)
+        <div class="col-md-12" style="padding-bottom: 5px;">
+        <a href="{{ route('locations.printlabel', $location->id)  }}" class="btn btn-primary pull-right">
+            {{ trans('general.print_label') }}</a>
+        </div>
+        @endif
       </div>
 
 

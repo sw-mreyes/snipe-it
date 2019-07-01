@@ -8,6 +8,7 @@ use App\Models\Component;
 use App\Models\Consumable;
 use App\Models\Accessory;
 use App\Models\Category;
+use App\Models\Location;
 
 
 /** This controller handles interaction with the label print server.
@@ -113,5 +114,27 @@ class LabelPrinterController extends Controller
             return redirect()->back()->with('error', 'Could not queue print job: Permission denied!');
         }
         return redirect()->back()->with('error', 'Could not queue print job! (' . $httpcode . ')');
+    }
+
+    public function printLocationLabel($locationID)
+    {
+        if (is_null($location = Location::find($locationID))) {
+            return redirect()->route('locations.index')->with('error', trans('admin/locations/message.not_found'));
+        }
+
+        $parent_name = '';
+        if ($location->parent) {
+            $parent_name = $location->parent->name;
+        }
+
+        $httpcode = $this->printLabel('BX-' . $locationID, $location->name, $parent_name);
+
+        if ($httpcode == 200) {
+            return redirect()->route('locations.show', $locationID)->with('success', 'Print Job queued!');
+        }
+        if ($httpcode == 403) {
+            return redirect()->route('locations.show', $locationID)->with('error', 'Could not queue print job: Permission denied!');
+        }
+        return redirect()->route('locations.show', $locationID)->with('error', 'Could not queue print job! (' . $httpcode . ')');
     }
 }
