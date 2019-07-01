@@ -243,12 +243,15 @@ class SearchController extends Controller
     function globalSearch()
     {
         // Check index permissions 
+        // TODO:    instead of failing, we could also just show the
+        //          stuff the user is authorized to see ?
+        //
         $this->authorize('index', Asset::class);
         $this->authorize('index', Accessory::class);
         $this->authorize('index', Component::class);
         $this->authorize('index', Consumable::class);
         //
-        
+
         $search = Input::get('search');
         $tag_pattern_result = [];
         $search_result = [];
