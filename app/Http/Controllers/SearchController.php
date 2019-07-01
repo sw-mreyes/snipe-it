@@ -62,6 +62,7 @@ class SearchController extends Controller
         $e->type = 'Asset';
         $e->id = $asset->id;
         $e->location = $asset->location;
+        $e->model = $model;
         return $e;
     }
     function parse_accessory($accessory)
@@ -244,7 +245,7 @@ class SearchController extends Controller
         $terms = explode(',', $search);
         foreach ($terms as $term) {
             // Check if the term is a tag
-            if ($n_matches = preg_match('/(?:BX|SW|AC|CS|CM|bx|sw|ac|cs|cm)-[0-9]{1,10}/', $term, $tag_pattern_result)) {
+            if (preg_match('/(?:BX|SW|AC|CS|CM|bx|sw|ac|cs|cm)-[0-9]{1,10}/', $term, $tag_pattern_result)) {
                 foreach ($tag_pattern_result as $tag) {
                     if ($result = $this->get_by_tag($tag)) {
                         array_push($search_result, $result);
