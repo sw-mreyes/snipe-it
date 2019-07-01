@@ -17,8 +17,8 @@
         <thead>
             <tr>
                 <th class="col-md-1">{{ trans('general.type') }}</th>
-                <th class="col-md-1">{{ trans('general.tag') }} / {{ trans('general.id') }}</th>
-                <th class="col-md-3">{{ trans('general.name') }} ({{ trans('general.asset_model') }})</th>
+                <th class="col-md-1">{{ trans('general.tag') }}</th>
+                <th class="col-md-3">{{ trans('general.name') }} / {{ trans('general.asset_model') }}</th>
                 <th class="col-md-2">{{ trans('general.category') }}</th>
                 <th class="col-md-2">{{ trans('general.location') }}</th>
             </tr>
@@ -45,9 +45,19 @@
                 <!-- Name -->
                 <td>
                     @if ($e->type == 'Asset')
-                    {{$e->name}} (<a href="{{ route('models.show', $e->model->id)}}">{{$e->model->name}}</a>)
+                    @if ($e->name)
+                    <a href="{{ route('hardware.view', $e->id)}}">{{$e->name}}</a>
+                     /                     
+                    @endif
+                    <a href="{{ route('models.show', $e->model->id)}}">{{$e->model->name}}</a>
+                    @elseif ($e->type == 'Accessory')
+                    <a href="{{ route('accessories.show', $e->id)}}">{{$e->name}}</a>
+                    @elseif ($e->type == 'Component')
+                    <a href="{{ route('components.show', $e->id)}}">{{$e->name}}</a>
+                    @elseif ($e->type == 'Consumable')
+                    <a href="{{ route('consumables.show', $e->id)}}">{{$e->name}}</a>
                     @else
-                    {{$e->name}}
+                    ERROR
                     @endif
                 </td>
                 <!-- Category -->
