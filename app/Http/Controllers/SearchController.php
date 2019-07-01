@@ -17,6 +17,7 @@ use App\Models\Company;
 use App\Models\User;
 use App\Models\AssetModel;
 use stdClass;
+use Barryvdh\Debugbar\Middleware\Debugbar;
 
 /** This controller handles all actions related to the pagewide search.
  *
@@ -243,6 +244,9 @@ class SearchController extends Controller
         $search_result = [];
 
         $terms = explode(',', $search);
+        //
+        app('debugbar')->startMeasure('global_search','Global search for query "'.$search.'"');
+
         foreach ($terms as $term) {
             // Check if the term is a tag
             if (preg_match('/(?:BX|SW|AC|CS|CM|bx|sw|ac|cs|cm)-[0-9]{1,10}/', $term, $tag_pattern_result)) {
@@ -258,8 +262,33 @@ class SearchController extends Controller
             }
         }
 
+        // Remove duplicates
+        $objects = array();
+        $objects['Asset'] = array();
+        $objects['Accessory'] = array();
+        $objects['Component'] = array();
+        $objects['Consumable'] = array();
+
+        $final_result = [];
+        foreach ($search_result as $e) {
+            if (!in_array($e->id, $objects[$e->type], true)) {
+                array_push($objects[$e->type], $e->id);
+                array_push($final_result, $e);
+            }
+        }
+
+        usort($final_result, function ($a, $b) {
+            return strcmp($a->tag, $b->tag)*-1;
+        });
+
+        app('debugbar')->stopMeasure('global_search');
+        //
+
+        app('debugbar')->info('Search done. '  . count($final_result) . ' results. [' . count($search_result) . ']');
+ 
+
         return view('global_search', [
-            'search_result' => $search_result,
+            'search_result' => $final_result,
             'query' => $search
         ]);
     }
