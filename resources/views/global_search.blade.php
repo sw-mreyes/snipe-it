@@ -13,14 +13,14 @@
 <h4>{{$query}}</h4>
 
 <div class="table-responsive">
-    <table class="display table table-hover">
+    <table class="table table-striped snipe-table">
         <thead>
             <tr>
                 <th class="col-md-1">{{ trans('general.type') }}</th>
                 <th class="col-md-1">{{ trans('general.tag') }} / {{ trans('general.id') }}</th>
-                <th class="col-md-2">{{ trans('general.name') }}</th>
-                <th class="col-md-1">{{ trans('general.category') }}</th>
-                <th class="col-md-1">{{ trans('general.location') }}</th>
+                <th class="col-md-3">{{ trans('general.name') }} ({{ trans('general.asset_model') }})</th>
+                <th class="col-md-2">{{ trans('general.category') }}</th>
+                <th class="col-md-2">{{ trans('general.location') }}</th>
             </tr>
         </thead>
         <tbody>
@@ -44,7 +44,11 @@
                 </td>
                 <!-- Name -->
                 <td>
+                    @if ($e->type == 'Asset')
+                    {{$e->name}} (<a href="{{ route('models.show', $e->model->id)}}">{{$e->model->name}}</a>)
+                    @else
                     {{$e->name}}
+                    @endif
                 </td>
                 <!-- Category -->
                 <td>
