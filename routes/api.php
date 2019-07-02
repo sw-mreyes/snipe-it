@@ -788,6 +788,27 @@ Route::group(['prefix' => 'v1','namespace' => 'Api'], function () {
         [ 'as' => 'api.activity.index', 'uses' => 'ReportsController@index' ]
     );
 
+    /**
+     * Reservations API
+     */
+    Route::resource('reservations', 'ReservationsController',
+        ['names' =>
+            [
+                'index' => 'api.reservations.index',
+            ],
+            'parameters' => ['reservation' => 'reservation_id']
+        ]
+    ); // Accessories resource
+
+    Route::group(['prefix' => 'reservations'], function () {
+        Route::get('index',
+            [
+                'as' => 'api.reservations.index',
+                'uses' => 'ReservationsController@index'
+            ]
+        );
+    }); // Accessories group
+
 
 
 });
