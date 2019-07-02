@@ -705,6 +705,16 @@
             </a>
             </li>
             @endcan
+
+
+            <!--@can('viewRequestable', \App\Models\Asset::class)-->
+            <li>
+            <a href="{{ route('reservations.index') }}">
+            <i class="fa fa-flask"></i>
+            <span>{{ trans('reservations.index') }}</span>
+            </a>
+            </li>
+            <!--@endcan-->
           </ul>
         </section>
         <!-- /.sidebar -->
