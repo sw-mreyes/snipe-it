@@ -58,10 +58,34 @@ class ReservationsController extends Controller
         $res->save();
 
         foreach ($request->input('assets') as $assetID) {
-            $res->assets()->save(Asset::find($assetID));
+            $res->assets()->save(Asset::where('id', '=', $assetID)->first());
         }
-        return redirect('reservations');
+        return redirect('reservations')->with('success', 'reservation placed successfully!');
     }
+
+    public function update(Request $request)
+    {
+        $this->_authorize();
+
+        $user = User::find($request->input('user'));
+        $res = Reservation::where('id', '=', $request->input('reservation_id'))->first();
+        $res->name  = $request->input('name');
+        $res->start = $request->input('start');
+        $res->end   = $request->input('end');
+        $res->notes = $request->input('notes');
+        $res->user()->associate($user);
+
+        $res->save();
+
+
+        foreach ($request->input('assets') as $assetID) {
+            if (!$res->assets()->where('asset_id', '=', $assetID)->first()) {
+                $res->assets()->save(Asset::where('id', '=', $assetID)->first());
+            }
+        }
+        return redirect('reservations')->with('success', 'reservation updated successfully!');
+    }
+
 
     public function show($reservationID)
     {

@@ -5,7 +5,7 @@
     <div class="col-md-7{{  ((isset($required)) && ($required=='true')) ? ' required' : '' }}">
         <select class="js-data-ajax" data-endpoint="users" data-placeholder="{{ trans('general.select_user') }}" name="{{ $fieldname }}" style="width: 100%" id="assigned_user_select">
             @if ($user_id = Input::old($fieldname, (isset($item)) ? $item->{$fieldname} : ''))
-                <option value="{{ $user_id }}" selected="selected">
+                <option value="{{ $item->user->id }}" selected="selected">
                     {{ $item->user->present()->fullName }}
                 </option>
             @else
