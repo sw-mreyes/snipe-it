@@ -31,7 +31,7 @@ class Reservation extends Model
     }
 
     public function assets(){
-        return $this->hasMany('\App\Models\Asset');
+        return $this->belongsToMany('\App\Models\Asset');
     }
 
 }

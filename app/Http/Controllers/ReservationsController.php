@@ -6,31 +6,60 @@ use Auth;
 use DB;
 use Input;
 use stdClass;
-use App\Models\Reservation;
 use View;
+use Illuminate\Http\Request;
 
-/**TODO: REMOVE */
+use App\Models\Reservation;
+use App\Models\Asset;
+use App\Models\User;
+
 
 class ReservationsController extends Controller
 {
 
+    private function _authorize(){
+        $this->authorize('index', Asset::class);
+    }
+
     public function index()
     {
-        $this->authorize('index', Asset::class);
+        $this->_authorize();
         return view('reservations/index');
     }
 
 
     public function create()
     {
-        //$this->authorize('create', Asset::class);
+        $this->_authorize();
         $view = View::make('reservations/edit')
             ->with('item', new Reservation);
         return $view;
     }
 
+    public function store(Request $request)
+    {
+        $this->_authorize();
+
+        $user = User::find($request->input('user'));
+
+        $res = new Reservation();
+        $res->name  = $request->input('name');
+        $res->start = $request->input('start');
+        $res->end   = $request->input('end');
+        $res->notes = $request->input('notes');
+        $res->user()->associate($user);
+        
+        $res->save();
+        
+        foreach ($request->input('assets') as $assetID) {
+            $res->assets()->save(Asset::find($assetID));
+        }        
+        return redirect()->back();
+    }
+
     public function view($reservationID)
     {
+        $this->_authorize();
         $this->authorize('index', Asset::class);
         return view('reservations/view', [
             'id' => $reservationID,
@@ -39,6 +68,7 @@ class ReservationsController extends Controller
 
     public function edit($reservationID)
     {
+        $this->_authorize();
         $this->authorize('index', Asset::class);
         return view('reservations/edit', [
             'id' => $reservationID,
@@ -47,6 +77,7 @@ class ReservationsController extends Controller
 
     public function delete($reservationID)
     {
+        $this->_authorize();
         $this->authorize('index', Asset::class);
         return redirect('reservations/index')->with('success', 'Delete message');
     }
