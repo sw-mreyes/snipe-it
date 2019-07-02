@@ -172,6 +172,13 @@
     }
 
 
+    function reservationActionsFormatter(destination){
+        let actions = '<nobr>'
+        actions += '<p>res-actions</p>'
+        actions +='</nobr>';
+        return actions;
+    }
+
     // Make the edit/delete buttons
     function genericActionsFormatter(destination) {
         return function (value,row) {
