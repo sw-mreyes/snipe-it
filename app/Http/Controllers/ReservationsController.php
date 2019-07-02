@@ -13,7 +13,12 @@ use App\Models\Reservation;
 use App\Models\Asset;
 use App\Models\User;
 
-
+/**
+ * Reservations Web route controller
+ * 
+ * Authentication currently uses Asset permissions.
+ * 
+ */
 class ReservationsController extends Controller
 {
 
@@ -57,12 +62,12 @@ class ReservationsController extends Controller
         return redirect('reservations');
     }
 
-    public function view($reservationID)
+    public function show($reservationID)
     {
         $this->_authorize();
         $this->authorize('index', Asset::class);
         return view('reservations/view', [
-            'id' => $reservationID,
+            'reservation' => Reservation::find($reservationID),
         ]);
     }
 

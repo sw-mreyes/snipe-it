@@ -174,6 +174,13 @@
         return actions;
     }
 
+    function reservationsLinkFormatter(value, row) {
+        if(value){
+            return '<a href="{{ url('/') }}/reservations/' + row.id + '"> ' + value + '</a>';
+        }
+        return 'error';
+    }
+
     // Make the edit/delete buttons
     function genericActionsFormatter(destination) {
         return function (value,row) {
