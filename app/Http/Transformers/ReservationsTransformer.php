@@ -3,7 +3,6 @@
 namespace App\Http\Transformers;
 
 use \App\Models\Reservation;
-use \App\Http\Transformers\AssetTransformer;
 
 class ReservationsTransformer
 {
@@ -23,14 +22,15 @@ class ReservationsTransformer
             'name' => $res->name,
             'user' => [
                 'id' => $res->user->id,
-                'name' => $res->user->name,
+                'username' => $res->user->username,
+                'full_name' => $res->user->name
             ],
             'start' => $res->start,
             'end' => $res->end,
             'notes' => $res->notes,
             'created' => $res->created_at,
             'updated' => $res->updated_at,
-            'assets' => (new AssetTransformer())->transformAssets($res->assets)
+            'assets' => (int)count($res->assets)
         ];
         return $array;
     }
