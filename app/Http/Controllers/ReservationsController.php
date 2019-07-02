@@ -22,7 +22,8 @@ use App\Models\User;
 class ReservationsController extends Controller
 {
 
-    private function _authorize(){
+    private function _authorize()
+    {
         $this->authorize('index', Asset::class);
     }
 
@@ -53,12 +54,12 @@ class ReservationsController extends Controller
         $res->end   = $request->input('end');
         $res->notes = $request->input('notes');
         $res->user()->associate($user);
-        
+
         $res->save();
-        
+
         foreach ($request->input('assets') as $assetID) {
             $res->assets()->save(Asset::find($assetID));
-        }        
+        }
         return redirect('reservations');
     }
 
@@ -67,7 +68,7 @@ class ReservationsController extends Controller
         $this->_authorize();
         $this->authorize('index', Asset::class);
         return view('reservations/view', [
-            'reservation' => Reservation::find($reservationID),
+            'reservation' => Reservation::where('id', '=', $reservationID)->first(),
         ]);
     }
 
@@ -76,7 +77,7 @@ class ReservationsController extends Controller
         $this->_authorize();
         $this->authorize('index', Asset::class);
         return view('reservations/edit', [
-            'id' => $reservationID,
+            'item' => Reservation::where('id', '=', $reservationID)->first(),
         ]);
     }
 
