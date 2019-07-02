@@ -9,6 +9,10 @@
 {{-- Page content --}}
 @section('inputFields')
 
+@if($item)
+<input type="hidden" id="reservation_id" name="reservation_id" value="{{$item->id}}">
+@endif
+
 @include ('partials.forms.edit.res-name', ['translated_name' => trans('general.name'), 'fieldname' => 'name'])
 @include ('partials.forms.edit.res-user-select', ['translated_name' => trans('general.user'), 'fieldname' => 'user'])
 @include ('partials.forms.edit.res-date-select',['translated_name' => trans('general.start_date'), 'fieldname' => 'start'])
