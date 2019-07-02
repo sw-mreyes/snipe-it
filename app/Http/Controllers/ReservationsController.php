@@ -54,7 +54,7 @@ class ReservationsController extends Controller
         foreach ($request->input('assets') as $assetID) {
             $res->assets()->save(Asset::find($assetID));
         }        
-        return redirect()->back();
+        return redirect('reservations');
     }
 
     public function view($reservationID)
