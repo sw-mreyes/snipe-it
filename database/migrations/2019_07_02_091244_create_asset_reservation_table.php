@@ -15,7 +15,11 @@ class CreateAssetReservationTable extends Migration
     {
         Schema::create('asset_reservation', function (Blueprint $table) {
             $table->increments('id');
+
+            $table->unsignedInteger('asset_id');
             $table->foreign('asset_id')->references('id')->on('assets')->onDelete('cascade');
+
+            $table->unsignedInteger('reservation_id');
             $table->foreign('reservation_id')->references('id')->on('reservations')->onDelete('cascade');
             $table->timestamps();
         });
