@@ -32,6 +32,12 @@ class ReservationsController extends Controller
         $this->_authorize();
         return view('reservations/index');
     }
+    public function calendar()
+    {
+        $this->_authorize();
+        return view('reservations/calendar');
+    }
+
 
 
     public function create()
