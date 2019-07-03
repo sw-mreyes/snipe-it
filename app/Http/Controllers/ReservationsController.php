@@ -60,7 +60,7 @@ class ReservationsController extends Controller
         foreach ($request->input('assets') as $assetID) {
             $res->assets()->save(Asset::where('id', '=', $assetID)->first());
         }
-        return redirect('reservations')->with('success', 'reservation placed successfully!');
+        return redirect('reservations')->with('success', trans('reservations.placed'));
     }
 
     public function update(Request $request)
@@ -83,7 +83,7 @@ class ReservationsController extends Controller
                 $res->assets()->save(Asset::where('id', '=', $assetID)->first());
             }
         }
-        return redirect('reservations')->with('success', 'reservation updated successfully!');
+        return redirect('reservations')->with('success', trans('reservations.updated'));
     }
 
 
