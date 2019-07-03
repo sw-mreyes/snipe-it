@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
 use \App\Models\Reservation;
-use Illuminate\Http\Request;
-use \App\Http\Transformers\ReservationsTransformer;
+use \App\Models\Setting;
+use App\Http\Controllers\Controller;
+use App\Http\Transformers\ReservationsTransformer;
 use App\Http\Transformers\AssetsTransformer;
+use App\Notifications\ReservationPlacedNotification;
+use Illuminate\Http\Request;
+
+
 
 class ReservationsController extends Controller
 {
@@ -16,7 +20,6 @@ class ReservationsController extends Controller
         /*$offset = (($reservations) && (request('offset') > $reservations->count())) ? 0 : request('offset', 0);
         $limit = $request->input('limit', 50);
         $order = $request->input('order') === 'asc' ? 'asc' : 'desc';
-        $total = $reservations->count();
         $reservations->skip($offset)->take($limit)->orderBy('id', $order)->get();*/
         return (new ReservationsTransformer)->transformReservations($reservations, count($reservations));
     }
