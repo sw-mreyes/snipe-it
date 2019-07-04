@@ -11,6 +11,7 @@
 @section('content')
 
 <h4>{{$query}}</h4>
+<h5>{{count($search_result)}} hits</h5>
 
 <div class="table-responsive">
     <table class="table table-striped snipe-table">
@@ -46,9 +47,10 @@
                 <td>
                     @if ($e->type == 'Asset')
                     @if ($e->name)
-                    <a href="{{ route('hardware.view', $e->id)}}">{{$e->name}}</a>
-                     /                     
+                    <!--{{ trans('general.name') }}-->
+                    <a href="{{ route('hardware.view', $e->id)}}">{{$e->name}}</a> / <br>
                     @endif
+                    <!--{{ trans('general.asset_model') }}-->
                     <a href="{{ route('models.show', $e->model->id)}}">{{$e->model->name}}</a>
                     @elseif ($e->type == 'Accessory')
                     <a href="{{ route('accessories.show', $e->id)}}">{{$e->name}}</a>
