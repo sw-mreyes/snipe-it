@@ -53,6 +53,16 @@ class SearchController extends Controller
         return $id;
     }
 
+    function parse_assigned_to($asset)
+    {
+        if (!$asset->assignedTo) return null;
+        $e = new stdClass();
+        $e->obj = $asset->assignedTo;
+        $e->type = $asset->assigned_type;
+        $e->id = $asset->assignedTo->id;
+        return $e;
+    }
+
     function parse_asset($asset)
     {
         $model = AssetModel::where('id', '=', $asset->model_id)->first();
@@ -66,6 +76,7 @@ class SearchController extends Controller
         $e->type = 'Asset';
         #
         $e->location = $asset->location;
+        $e->assigned_to = $this->parse_assigned_to($asset);
         $e->model = $model;
         $e->category = $category;
         return $e;
