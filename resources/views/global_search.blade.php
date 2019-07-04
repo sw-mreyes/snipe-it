@@ -73,6 +73,18 @@
                     @if($e->location)
                     <a href="{{ route('locations.show', $e->location->id)}}">{{$e->location->name}}</a>
                     @endif
+
+                    @if($e->type == 'Asset')
+                    @if($e->assigned_to)
+
+                    @if($e->assigned_to->type == 'App\Models\User')
+                    (→ <a href="{{ route('users.show', $e->assigned_to->id) }}">{{$e->assigned_to->obj->fullName}}</a>)
+                    @elseif($e->assigned_to->type == 'App\Models\Asset')
+                    (→ <a href="{{ route('hardware.show', $e->assigned_to->id) }}">{{$e->assigned_to->obj->asset_tag}}</a>)
+                    @endif
+                    @endif
+                    @endif
+
                 </td>
             </tr>
             @endforeach
