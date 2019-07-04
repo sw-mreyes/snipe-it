@@ -55,17 +55,22 @@ class SearchController extends Controller
 
     function parse_asset($asset)
     {
-        $e = new stdClass();
-        $e->name = $asset->name;
         $model = AssetModel::where('id', '=', $asset->model_id)->first();
-        $e->category = Category::where('id', '=', $model->category_id)->first();
-        $e->tag = $asset->asset_tag;
-        $e->type = 'Asset';
+        $category = Category::where('id', '=', $model->category_id)->first();
+
+        $e = new stdClass();
+        $e->debug = '$asset->id = ' . $asset->id . ' / ';
         $e->id = $asset->id;
+        $e->tag = $asset->asset_tag;
+        $e->name = $asset->name;
+        $e->type = 'Asset';
+        #
         $e->location = $asset->location;
         $e->model = $model;
+        $e->category = $category;
         return $e;
     }
+
     function parse_accessory($accessory)
     {
         $e = new stdClass();
@@ -77,6 +82,7 @@ class SearchController extends Controller
         $e->location = $accessory->location;
         return $e;
     }
+
     function parse_component($component)
     {
         $e = new stdClass();
@@ -88,6 +94,7 @@ class SearchController extends Controller
         $e->location = $component->location;
         return $e;
     }
+
     function parse_consumable($consumable)
     {
         $e = new stdClass();
@@ -104,14 +111,14 @@ class SearchController extends Controller
     {
         $results = [];
         //
-        $assets         = Asset::join('models', 'models.id', '=', 'model_id')->where('category_id', '=', $category->id)->get();
+        $assets         = Asset::select('assets.*')->whereNull('assets.deleted_at')->join('models', 'models.id', '=', 'model_id')->where('category_id', '=', $category->id)->get();
         $accesories     = Accessory::where('category_id', '=', $category->id)->get();
         $components     = Component::where('category_id', '=', $category->id)->get();
         $consumables    = Consumable::where('category_id', '=', $category->id)->get();
-        foreach ($assets as $asset)     array_push($results, $this->parse_asset($asset));
-        foreach ($accesories as $acc)   array_push($results, $this->parse_accessory($acc));
-        foreach ($components as $cmp)   array_push($results, $this->parse_component($cmp));
-        foreach ($consumables as $cs)   array_push($results, $this->parse_consumable($cs));
+        foreach ($assets as $asset)   array_push($results, $this->parse_asset($asset));
+        foreach ($accesories as $acc) array_push($results, $this->parse_accessory($acc));
+        foreach ($components as $cmp) array_push($results, $this->parse_component($cmp));
+        foreach ($consumables as $cs) array_push($results, $this->parse_consumable($cs));
         //
         return $results;
     }
@@ -124,10 +131,10 @@ class SearchController extends Controller
         $accesories     = Accessory::where('location_id', '=', $location->id)->get();
         $components     = Component::where('location_id', '=', $location->id)->get();
         $consumables    = Consumable::where('location_id', '=', $location->id)->get();
-        foreach ($assets as $asset)     array_push($results, $this->parse_asset($asset));
-        foreach ($accesories as $acc)   array_push($results, $this->parse_accessory($acc));
-        foreach ($components as $cmp)   array_push($results, $this->parse_component($cmp));
-        foreach ($consumables as $cs)   array_push($results, $this->parse_consumable($cs));
+        foreach ($assets as $asset)   array_push($results, $this->parse_asset($asset));
+        foreach ($accesories as $acc) array_push($results, $this->parse_accessory($acc));
+        foreach ($components as $cmp) array_push($results, $this->parse_component($cmp));
+        foreach ($consumables as $cs) array_push($results, $this->parse_consumable($cs));
         //
         return $results;
     }
@@ -136,7 +143,7 @@ class SearchController extends Controller
     {
         $results = [];
         //
-        $assets = Asset::where('model_id', '=', $model->id)->get();
+        $assets = Asset::whereNull('deleted_at')->where('model_id', '=', $model->id)->get();
         foreach ($assets as $asset) array_push($results, $this->parse_asset($asset));
         //
         return $results;
@@ -151,7 +158,7 @@ class SearchController extends Controller
         $tag = strtoupper($tag);
         switch (substr($tag, 0, 2)) {
             case 'SW':
-                $asset = Asset::where('asset_tag', '=', $this->fix_tag_len($tag))->first();
+                $asset = Asset::whereNull('deleted_at')->where('asset_tag', '=', $this->fix_tag_len($tag))->first();
                 if ($asset) {
                     return $this->parse_asset($asset);
                 }
@@ -195,19 +202,19 @@ class SearchController extends Controller
      */
     function search_string($str)
     {
-        app('debugbar')->startMeasure('gs_single_term', 'term query for `'.$str.'`');         
-        
+        app('debugbar')->startMeasure('gs_single_term', 'term query for `' . $str . '`');
+
         $results = [];
 
         //  Direct results
         //
-        $assets = Asset::where('name', 'LIKE', "%{$str}%")
+        $assets = Asset::whereNull('deleted_at')->where('name', 'LIKE', "%{$str}%")
             ->orWhere('notes', 'LIKE', "%{$str}%")
             ->get();
         $accesories = Accessory::where('name', 'LIKE', "%{$str}%")->get();
         $components = Component::where('name', 'LIKE', "%{$str}%")->get();
         $consumables = Consumable::where('name', 'LIKE', "%{$str}%")->get();
-        foreach ($assets as $asset) array_push($results, $this->parse_asset($asset));
+        foreach ($assets as $asset)   array_push($results, $this->parse_asset($asset));
         foreach ($accesories as $acc) array_push($results, $this->parse_accessory($acc));
         foreach ($components as $cmp) array_push($results, $this->parse_component($cmp));
         foreach ($consumables as $cs) array_push($results, $this->parse_consumable($cs));
@@ -222,12 +229,14 @@ class SearchController extends Controller
                 array_push($results, ...$items);
             }
         }
+
         foreach ($categories as $cat) {
             $items = $this->parse_category($cat);
             if (count($items)) {
                 array_push($results, ...$items);
             }
         }
+
         foreach ($models as $mdl) {
             $items =  $this->parse_model($mdl);
             if (count($items)) {
@@ -258,12 +267,12 @@ class SearchController extends Controller
 
         $terms = explode(',', $search);
         //
-        app('debugbar')->startMeasure('global_search','Global search for query "'.$search.'"');
+        app('debugbar')->startMeasure('global_search', 'Global search for query "' . $search . '"');
 
         foreach ($terms as $term) {
             // Check if the term is a tag            
             if (preg_match('/(?:BX|SW|AC|CS|CM|bx|sw|ac|cs|cm)-[0-9]{1,10}/', $term, $tag_pattern_result)) {
-                app('debugbar')->startMeasure('gs_bytag','bytag-search for query "'.$search.'"');
+                app('debugbar')->startMeasure('gs_bytag', 'bytag-search for query "' . $search . '"');
                 foreach ($tag_pattern_result as $tag) {
                     if ($result = $this->get_by_tag($tag)) {
                         array_push($search_result, $result);
@@ -271,7 +280,7 @@ class SearchController extends Controller
                 }
                 app('debugbar')->stopMeasure('gs_bytag');
             } else {
-                app('debugbar')->startMeasure('gs_byterms','by-terms-search for query "'.$search.'"');
+                app('debugbar')->startMeasure('gs_byterms', 'by-terms-search for query "' . $search . '"');
                 foreach ($this->search_string($term) as $result) {
                     array_push($search_result, $result);
                 }
@@ -280,7 +289,7 @@ class SearchController extends Controller
         }
 
         // Remove duplicates
-        app('debugbar')->startMeasure('gs_dedupe','de-dupe and sort results');                
+        app('debugbar')->startMeasure('gs_dedupe', 'de-dupe and sort results');
         $objects = array();
         $objects['Asset'] = array();
         $objects['Accessory'] = array();
@@ -294,16 +303,12 @@ class SearchController extends Controller
             }
         }
         usort($final_result, function ($a, $b) {
-            return strcmp($a->tag, $b->tag)*-1;
+            return strcmp($a->tag, $b->tag) * -1;
         });
         //
         app('debugbar')->stopMeasure('gs_dedupe');
-        //
         app('debugbar')->stopMeasure('global_search');
-        //
-
         app('debugbar')->info('Search done. '  . count($final_result) . ' results. [' . count($search_result) . ']');
- 
 
         return view('global_search', [
             'search_result' => $final_result,
