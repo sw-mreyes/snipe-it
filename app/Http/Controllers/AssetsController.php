@@ -17,6 +17,7 @@ use App\Models\Import;
 use App\Models\Location;
 use App\Models\Setting;
 use App\Models\User;
+use App\Models\Reservation;
 use Artisan;
 use Auth;
 use Carbon\Carbon;
@@ -282,8 +283,12 @@ class AssetsController extends Controller
                 'url' => route('qr_code/hardware', $asset->id)
             );
 
-            return view('hardware/view', compact('asset', 'qr_code', 'settings'))
-                ->with('use_currency', $use_currency)->with('audit_log', $audit_log);
+            $view = view('hardware/view', compact('asset', 'qr_code', 'settings'))->with('use_currency', $use_currency)->with('audit_log', $audit_log);
+            
+            $reservations = Reservation::select('reservations.*')->join('asset_reservation', 'reservations.id', '=', 'asset_reservation.reservation_id')
+            ->where('asset_reservation.asset_id', '=', $assetId)->orderBy('start','asc')->get();
+            
+            return $view->with('reservations', $reservations);
         }
 
         return redirect()->route('hardware.index')->with('error', trans('admin/hardware/message.does_not_exist'));

@@ -556,7 +556,9 @@
                     @endif
                 </ul>
 
-	          @endif
+              @endif
+              
+              @include ('partials.asset-reservations')
             </div> <!-- div.col-md-4 -->
           </div><!-- /row -->
         </div><!-- /.tab-pane asset details -->
