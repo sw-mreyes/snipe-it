@@ -14,4 +14,5 @@ return array(
     'reservation_not_found' => 'The selected reservation could not be found!',
     'timeframe_required' => 'Please specify a start & end date!',
     'name_required' => 'Please specify a name!',
+    'list' => 'List',
 );

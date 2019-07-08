@@ -6,7 +6,6 @@
 @parent
 @stop
 
-{{-- Page title --}}
 @section('header_right')
 <a href="{{ route('reservations.create') }}" class="btn btn-primary pull-right"></i> {{ trans('general.create') }}</a>
 <a href="{{ route('reservations.calendar') }}" class="btn btn-primary pull-right"></i> {{ trans('reservations.calendar') }}</a>

@@ -2,8 +2,13 @@
 
 {{-- Page title --}}
 @section('title')
-W I P - {{ trans('reservations.calendar') }}
+{{ trans('reservations.calendar') }}
 @parent
+@stop
+
+@section('header_right')
+<a href="{{ route('reservations.create') }}" class="btn btn-primary pull-right"></i> {{ trans('general.create') }}</a>
+<a href="{{ route('reservations.index') }}" class="btn btn-primary pull-right"></i> {{ trans('reservations.list') }}</a>
 @stop
 
 {{-- Page content --}}
