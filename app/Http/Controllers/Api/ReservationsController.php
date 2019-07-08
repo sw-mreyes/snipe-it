@@ -36,6 +36,6 @@ class ReservationsController extends Controller
             $assets = $reservation->assets;
             return (new AssetsTransformer)->transformAssets($assets, count($assets));
         }
-        return $reservationID;
+        return response()->json(Helper::formatStandardApiResponse('error', null, 'Reservation not found!'), 200);
     }
 }
