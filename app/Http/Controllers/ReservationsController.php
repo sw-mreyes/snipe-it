@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use Auth;
 use DB;
 use Input;
-use stdClass;
 use View;
 use Illuminate\Http\Request;
 use App\Models\Reservation;
