@@ -863,6 +863,7 @@ Route::group(['prefix' => 'v1','namespace' => 'Api', 'middleware' => 'api'], fun
     /**
      * Reservations API
      */
+    /*
     Route::resource(
         'reservations',
         'ReservationsController',
@@ -870,12 +871,12 @@ Route::group(['prefix' => 'v1','namespace' => 'Api', 'middleware' => 'api'], fun
             'names' =>
             [
                 'index' => 'api.reservations.index',
-               
+                'calendar' => 'api.reservations.calendar',
+
             ],
             'parameters' => ['reservation' => 'reservation_id']
         ]
-    ); // Accessories resource
-
+    ); // reservations resource*/
     Route::group(['prefix' => 'reservations'], function () {
         Route::get(
             'index',
@@ -885,13 +886,20 @@ Route::group(['prefix' => 'v1','namespace' => 'Api', 'middleware' => 'api'], fun
             ]
         );
         Route::get(
+            'calendar',
+            [
+                'as' => 'api.reservations.calendar',
+                'uses' => 'ReservationsController@calendar'
+            ]
+        );
+        Route::get(
             '{reservationID}/assets',
             [
                 'as' => 'api.reservations.assets',
                 'uses' => 'ReservationsController@assets'
             ]
         );
-    }); // Accessories group
+    }); // reservations group
 
 
 
