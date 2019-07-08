@@ -92,11 +92,19 @@ class ReservationsController extends Controller
     /**
      * Get the create reservation page
      */
-    public function create()
+    public function create(Request $request)
     {
         $this->_authorize();
-        $view = View::make('reservations/edit')
-            ->with('item', new Reservation);
+
+        $view = View::make('reservations/edit')->with('item', new Reservation);
+        if ($request->query('asset')) {
+            if ($asset = Asset::where('id', '=', $request->query('asset'))->first()) {
+                $view = $view->with('asset', $asset);
+            }
+        } else {
+            // explicitly set asset to null so the templating engine does not complain.
+            $view = $view->with('asset', null);
+        }
         return $view;
     }
 

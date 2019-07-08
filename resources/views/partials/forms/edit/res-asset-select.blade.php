@@ -6,9 +6,15 @@
             @if ($item)
             @foreach ($item->assets as $asset)
             <option value="{{ $asset->id }}" selected="selected">
-            {{$asset->present()->fullName}}
+                {{$asset->present()->fullName}}
             </option>
             @endforeach
+            @endif
+
+            @if ($asset)
+            <option value="{{ $asset->id }}" selected="selected">
+                {{$asset->present()->fullName}}
+            </option>
             @endif
         </select>
     </div>
