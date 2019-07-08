@@ -10,8 +10,8 @@
 @stop
 
 @section('header_right')
-<a href="{{ route('reservations.edit', ['reservation' => $reservation->id]) }}" class="btn btn-sm btn-primary pull-right">
-    {{ trans('reservations.update') }} </a>
+<a href="{{ route('reservations.delete', ['reservation' => $reservation->id]) }}" class="btn btn-sm btn-danger pull-right">{{ trans('reservations.delete') }} </a>
+<a href="{{ route('reservations.edit', ['reservation' => $reservation->id]) }}" class="btn btn-sm btn-primary pull-right">{{ trans('reservations.update') }} </a>
 @stop
 
 {{-- Page content --}}
@@ -69,20 +69,7 @@
         <div class="tab-pane fade in active" id="assets">
             <div class="box-body">
                 <div class="table table-responsive">
-                    <table 
-                    data-columns="{{ \App\Presenters\ReservationPresenter::assetTableLayout() }}" 
-                    data-cookie-id-table="assetsListingTable" 
-                    data-pagination="true" 
-                    data-id-table="assetsListingTable" 
-                    data-search="false" 
-                    data-side-pagination="server" 
-                    data-show-columns="true" 
-                    data-show-export="false" 
-                    data-show-refresh="true" 
-                    data-sort-order="asc" 
-                    id="assetsListingTable" 
-                    class="table table-striped snipe-table" 
-                    data-url="{{route('api.reservations.assets', ['reservation_id' => $reservation->id]) }}">
+                    <table data-columns="{{ \App\Presenters\ReservationPresenter::assetTableLayout() }}" data-cookie-id-table="assetsListingTable" data-pagination="true" data-id-table="assetsListingTable" data-search="false" data-side-pagination="server" data-show-columns="true" data-show-export="false" data-show-refresh="true" data-sort-order="asc" id="assetsListingTable" class="table table-striped snipe-table" data-url="{{route('api.reservations.assets', ['reservation_id' => $reservation->id]) }}">
                     </table>
                 </div><!-- /.table-responsive -->
             </div><!-- /.box-body -->

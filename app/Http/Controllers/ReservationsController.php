@@ -268,7 +268,12 @@ class ReservationsController extends Controller
     {
         $this->_authorize();
         $this->authorize('index', Asset::class);
-        //return redirect('reservations/index')->with('success', trans('reservations.deleted'));
-        return redirect('reservations/index')->with('success', 'Deletion not implemented.');
+        $result = Reservation::where('id', '=', $reservationID)->delete();
+        $view = redirect('reservations/index');
+        if ($result) {
+            return $view->with('success', trans('reservations.deleted'));
+        } else {
+            return $view->with('error', trans('reservations.deletion_failed'));
+        }
     }
 }
