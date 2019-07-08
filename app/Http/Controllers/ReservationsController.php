@@ -69,10 +69,11 @@ class ReservationsController extends Controller
     /**
      * Get the reservations for the given asset in the given timeframe.
      */
-    private function get_reservations($start, $end, $asset_id)
+    private function get_reservations($start, $end, $asset_id, $reservationID = null)
     {
         return Reservation::select('reservations.*')
             ->join('asset_reservation', 'reservations.id', '=', 'asset_reservation.reservation_id')
+            ->where('reservations.id', '!=', $reservationID)
             ->where(function ($qrx) use ($start, $end) {
                 $qrx->where(function ($qry) use ($start, $end) {
                     $qry->where('end', '>=', $start)
@@ -92,10 +93,10 @@ class ReservationsController extends Controller
     /**
      * Check if the given reservation timeframe is valid (=>no other reservations) for the given list of asset(ids)
      */
-    private function valid_timeframe($start, $end, $assets)
+    private function valid_timeframe($start, $end, $assets, $reservationID = null)
     {
         foreach ($assets as $asset_id) {
-            $reservations = $this->get_reservations($start, $end, $asset_id);
+            $reservations = $this->get_reservations($start, $end, $asset_id, $reservationID);
             if (count($reservations) > 0) {
                 return false;
             }
@@ -123,7 +124,9 @@ class ReservationsController extends Controller
     public function calendar()
     {
         $this->_authorize();
-        return view('reservations/calendar');
+        return view('reservations/calendar', [
+            'reservations' => Reservation::all(),
+        ]);
     }
 
     /**
@@ -207,7 +210,7 @@ class ReservationsController extends Controller
         foreach ($res->assets as $asset) {
             array_push($asset_ids, $asset->id);
         }
-        if (!$this->valid_timeframe($start, $end, $asset_ids)) {
+        if (!$this->valid_timeframe($start, $end, $asset_ids, $res->id)) {
             return redirect()->back()->with('error', trans('reservations.invalid_timeframe'));
         }
         //
