@@ -31,26 +31,6 @@ class ReservationsController extends Controller
         $this->authorize('index', Asset::class);
     }
 
-    public function index()
-    {
-        $this->_authorize();
-        return view('reservations/index');
-    }
-
-    public function calendar()
-    {
-        $this->_authorize();
-        return view('reservations/calendar');
-    }
-
-    public function create()
-    {
-        $this->_authorize();
-        $view = View::make('reservations/edit')
-            ->with('item', new Reservation);
-        return $view;
-    }
-
     /**
      * Find the user 'responsible' for the given asset.
      * If the asset is not checked out, return null.
@@ -87,6 +67,43 @@ class ReservationsController extends Controller
         }
     }
 
+    /**********************************************************************************
+     * Public endpoints
+     */
+
+    /**
+     * Get the reservations index page
+     */
+    public function index()
+    {
+        $this->_authorize();
+        return view('reservations/index');
+    }
+
+    /**
+     * TODO
+     * Get the reservations calendar
+     */
+    public function calendar()
+    {
+        $this->_authorize();
+        return view('reservations/calendar');
+    }
+
+    /**
+     * Get the create reservation page
+     */
+    public function create()
+    {
+        $this->_authorize();
+        $view = View::make('reservations/edit')
+            ->with('item', new Reservation);
+        return $view;
+    }
+
+    /**
+     * Store the create reservation data
+     */
     public function store(Request $request)
     {
         $this->_authorize();
@@ -121,7 +138,9 @@ class ReservationsController extends Controller
 
         return redirect('reservations')->with('success', trans('reservations.placed'));
     }
-
+    /**
+     * Store the Update reservation data
+     */
     public function update(Request $request)
     {
         $this->_authorize();
@@ -145,29 +164,46 @@ class ReservationsController extends Controller
         return redirect('reservations')->with('success', trans('reservations.updated'));
     }
 
-
+    /**
+     * Get the show reservation page for a given reservation.
+     */
     public function show($reservationID)
     {
         $this->_authorize();
         $this->authorize('index', Asset::class);
-        return view('reservations/view', [
-            'reservation' => Reservation::where('id', '=', $reservationID)->first()
-        ]);
+        if ($reservation = Reservation::where('id', '=', $reservationID)->first()) {
+            return view('reservations/view', [
+                'reservation' => Reservation::where('id', '=', $reservationID)->first()
+            ]);
+        } else {
+            return redirect('reservations/index')->with('error', trans('reservations.reservation_not_found'));
+        }
     }
 
+    /**
+     * Get the edit reservation page for a given reservation
+     */
     public function edit($reservationID)
     {
         $this->_authorize();
         $this->authorize('index', Asset::class);
-        return view('reservations/edit', [
-            'item' => Reservation::where('id', '=', $reservationID)->first(),
-        ]);
+        if ($reservation = Reservation::where('id', '=', $reservationID)->first()) {
+            return view('reservations/edit', [
+                'item' => $reservation,
+            ]);
+        } else {
+            return redirect('reservations/index')->with('error', trans('reservations.reservation_not_found'));
+        }
     }
 
+    /**
+     * Delete a reservation
+     */
     public function delete($reservationID)
     {
         $this->_authorize();
         $this->authorize('index', Asset::class);
-        return redirect('reservations/index')->with('success', 'Delete message');
+        //return redirect('reservations/index')->with('success', trans('reservations.deleted'));
+        return redirect('reservations/index')->with('success', 'Deletion not implemented.');
     }
 }
