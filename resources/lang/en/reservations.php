@@ -15,4 +15,7 @@ return array(
     'timeframe_required' => 'Please specify a start & end date!',
     'name_required' => 'Please specify a name!',
     'list' => 'List',
+    'delete' => 'Delete',
+    'deleted' => 'Reservation deleted!',
+    'deletion_failed' => 'Could not delete Reservation!'
 );
