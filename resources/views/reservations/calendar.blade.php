@@ -18,21 +18,21 @@
 <script src="https://uicdn.toast.com/tui-calendar/latest/tui-calendar.js"></script>
 <link rel="stylesheet" type="text/css" href="https://uicdn.toast.com/tui-calendar/latest/tui-calendar.css" />
 
-<div id="menu">
+<div id="menu" hidden="true">
     <span id="menu-navi">
         <button type="button" class="btn btn-default btn-sm move-today" data-action="move-today">Today</button>
-        <button type="button" class="btn btn-default btn-sm move-day" data-action="move-prev">
-            <i class="calendar-icon ic-arrow-line-left" data-action="move-prev"></i>
+        <button type="button" class="btn btn-default btn-sm move-day" id='calendar-prev'>
+            <i class="fa fa-arrow-left" data-action="move-prev"></i>
         </button>
-        <button type="button" class="btn btn-default btn-sm move-day" data-action="move-next">
-            <i class="calendar-icon ic-arrow-line-right" data-action="move-next"></i>
+        <button type="button" class="btn btn-default btn-sm move-day" id='calendar-next'>
+            <i class="fa fa-arrow-right" data-action="move-next"></i>
         </button>
     </span>
     <span id="renderRange" class="render-range"></span>
 </div>
 <div id="calendar" style="height: 800px;"></div>
-
 @stop
+
 @section('moar_scripts')
 <script type="text/javascript">
     //
@@ -44,6 +44,10 @@
         isReadOnly: true,
         disableDblClick: true,
         disableClick: true,
+        month: {
+            startDayOfWeek: 1,
+            narrowWeekend: true,
+        }
     });
     // Get reservations
     $.ajax({
@@ -62,7 +66,11 @@
             // window.location.reload(true);
         }
     });
+
+    document.getElementById('calendar-next').onclick = calendar.next;
+    document.getElementById('calendar-prev').onclick = calendar.prev;
+    document.getElementById('calendar-today').onclick = calendar.today;
+    
+    
 </script>
-
-
 @stop
