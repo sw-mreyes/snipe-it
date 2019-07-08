@@ -41,8 +41,15 @@ class ReservationsController extends Controller
 
     public function calendar(Request $request)
     {
-        $start = '2019-01-01';
-        $reservations = Reservation::where('start', '>=', $start)->get();
+        $reservations = Reservation::whereNotNull('id');
+        if ($request->input('start')) {
+            $reservations->where('start', '>=', $request->input('start'));
+        }
+        if ($request->input('reservations')) {
+            $reservations->whereIn('id', $request->input('reservations'));
+        }
+        //
+        $reservations = $reservations->get();
         return (new ReservationsTransformer)->transformReservationsCalendar($reservations, count($reservations));
     }
 }

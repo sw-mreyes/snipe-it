@@ -17,9 +17,28 @@ class ReservationsTransformer
 
     public function transformReservationsCalendar($reservations, $total)
     {
+        // This should propably go into the blade / js / css
+        $colors = [
+            'sienna', 'MediumPurple', 'cyan', 'orange', 'teal',
+            'fuchsia', 'olive', 'lightblue', 'DarkSlateBlue', 'DarkSlateGray'
+        ];
+        $color_index = 0;
+
         $array = array();
         foreach ($reservations as $res) {
-            $array[] = self::transformReservationCalendar($res);
+            $array[] = [
+                'id' => (int) $res->id,
+                'title' => $res->name,
+                'category' => 'time',
+                'start' => explode(' ', $res->start . '')[0],
+                'end' => explode(' ', $res->end . '')[0],
+                'body' => $res->notes,
+                'bgColor' => $colors[$color_index]
+            ];
+            $color_index = $color_index + 1;
+            if ($color_index >= count($colors)) {
+                $color_index = 0;
+            }
         }
         return (new DatatablesTransformer)->transformDatatables($array, $total);
     }
@@ -40,45 +59,6 @@ class ReservationsTransformer
             'created' => $res->created_at,
             'updated' => $res->updated_at,
             'assets' => (int) count($res->assets)
-        ];
-        return $array;
-    }
-
-    /**
-     * Generate random html colors for the schedules.
-     * (this is kinda.. dumb)
-     */
-    private function random_html_color()
-    {
-        $letters = 'ABCDEF0123456789';
-        $result = '';
-        while (strlen($result) < 6) {
-            $idx = rand(0, 16);
-            $result = $result . substr($letters, $idx, 1);
-        }
-        return '#' . $result;
-    }
-
-    /*calendar.createSchedules([{
-        id: '1',
-        calendarId: '1',
-        title: "Test",
-        category: 'time',
-        dueDateClass: '',
-        start: '2019-07-03',
-        end: '2019-07-10'
-    }]);*/
-
-    public function transformReservationCalendar(Reservation $res)
-    {
-        $array = [
-            'id' => (int) $res->id,
-            'title' => $res->name,
-            'category' => 'time',
-            'start' => explode(' ', $res->start . '')[0],
-            'end' => explode(' ', $res->end . '')[0],
-            'body' => $res->notes,
-            'bgColor' => $this->random_html_color()
         ];
         return $array;
     }
