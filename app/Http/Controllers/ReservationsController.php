@@ -101,6 +101,10 @@ class ReservationsController extends Controller
                 return false;
             }
         }
+        if (strcmp($start, $end) > 0) {
+            return false;
+        }
+
         return true;
     }
 
