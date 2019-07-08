@@ -17,13 +17,6 @@ class ReservationsTransformer
 
     public function transformReservationsCalendar($reservations, $total)
     {
-        // This should propably go into the blade / js / css
-        $colors = [
-            'sienna', 'MediumPurple', 'cyan', 'orange', 'teal',
-            'fuchsia', 'olive', 'lightblue', 'DarkSlateBlue', 'DarkSlateGray'
-        ];
-        $color_index = 0;
-
         $array = array();
         foreach ($reservations as $res) {
             $array[] = [
@@ -33,12 +26,7 @@ class ReservationsTransformer
                 'start' => explode(' ', $res->start . '')[0],
                 'end' => explode(' ', $res->end . '')[0],
                 'body' => $res->notes,
-                'bgColor' => $colors[$color_index]
             ];
-            $color_index = $color_index + 1;
-            if ($color_index >= count($colors)) {
-                $color_index = 0;
-            }
         }
         return (new DatatablesTransformer)->transformDatatables($array, $total);
     }
