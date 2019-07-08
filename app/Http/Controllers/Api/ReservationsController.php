@@ -38,4 +38,11 @@ class ReservationsController extends Controller
         }
         return response()->json(Helper::formatStandardApiResponse('error', null, 'Reservation not found!'), 200);
     }
+
+    public function calendar(Request $request)
+    {
+        $start = '2019-01-01';
+        $reservations = Reservation::where('start', '>=', $start)->get();
+        return (new ReservationsTransformer)->transformReservationsCalendar($reservations, count($reservations));
+    }
 }
