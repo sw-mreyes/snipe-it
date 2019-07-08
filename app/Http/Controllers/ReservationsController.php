@@ -124,9 +124,7 @@ class ReservationsController extends Controller
     public function calendar()
     {
         $this->_authorize();
-        return view('reservations/calendar', [
-            'reservations' => Reservation::all(),
-        ]);
+        return view('reservations/calendar');
     }
 
     /**
