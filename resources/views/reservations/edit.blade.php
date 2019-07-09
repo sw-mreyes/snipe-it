@@ -15,9 +15,9 @@
 
 @include ('partials.forms.edit.res-name', ['translated_name' => trans('general.name'), 'fieldname' => 'name'])
 @include ('partials.forms.edit.res-user-select', ['translated_name' => trans('general.user'), 'fieldname' => 'user'])
+@include ('partials.forms.edit.notes', ['translated_name' => trans('general.notes'), 'fieldname' => 'notes'])
 @include ('partials.forms.edit.res-date-select',['translated_name' => trans('general.start_date'), 'fieldname' => 'start'])
 @include ('partials.forms.edit.res-date-select',['translated_name' => trans('general.end_date'), 'fieldname' => 'end'])
-@include ('partials.forms.edit.notes', ['translated_name' => trans('general.notes'), 'fieldname' => 'notes'])
 @include ('partials.forms.edit.res-asset-select', ['translated_name' => trans('general.assets'), 'fieldname' => 'assets[]', 'multiple'=>true])
 
 @stop
