@@ -14,9 +14,9 @@
 {{-- Page content --}}
 @section('content')
 
-<script src="https://uicdn.toast.com/tui.code-snippet/latest/tui-code-snippet.js"></script>
-<script src="https://uicdn.toast.com/tui-calendar/latest/tui-calendar.js"></script>
-<link rel="stylesheet" type="text/css" href="https://uicdn.toast.com/tui-calendar/latest/tui-calendar.css" />
+<script src="{{ url(asset('js/tui-code-snippet.js')) }}"></script>
+<script src="{{ url(asset('js/tui-calendar.js')) }}"></script>
+<link rel="stylesheet" href="{{ url(asset('css/tui-calendar.css')) }}">
 
 <div id="menu" hidden="true">
     <span id="menu-navi">
