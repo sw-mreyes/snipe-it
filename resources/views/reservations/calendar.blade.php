@@ -20,7 +20,7 @@
 
 <div id="menu" hidden="true">
     <span id="menu-navi">
-        <button type="button" class="btn btn-default btn-sm move-today" data-action="move-today">Today</button>
+        <button type="button" class="btn btn-default btn-sm move-today" id="calendar-today">Today</button>
         <button type="button" class="btn btn-default btn-sm move-day" id='calendar-prev'>
             <i class="fa fa-arrow-left" data-action="move-prev"></i>
         </button>
