@@ -14,8 +14,8 @@
 {{-- Page content --}}
 @section('content')
 
-<script src="{{ url(asset('js/tui-code-snippet.js')) }}"></script>
-<script src="{{ url(asset('js/tui-calendar.js')) }}"></script>
+<script src="{{ url(asset('js/tui-code-snippet.js')) }}" nonce="{{ csrf_token() }}"></script>
+<script src="{{ url(asset('js/tui-calendar.js')) }}" nonce="{{ csrf_token() }}"></script>
 <link rel="stylesheet" href="{{ url(asset('css/tui-calendar.css')) }}">
 
 <div id="menu" hidden="true">
