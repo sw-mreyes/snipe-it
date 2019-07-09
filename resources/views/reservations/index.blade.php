@@ -22,14 +22,6 @@
             <div class="box-body">
                 <div class="row">
                     <div class="col-md-12">
-                        <!--@if (Input::get('status')!='deleted')
-              <div id="toolbar">
-                <select name="bulk_actions" class="form-control select2" style="width: 300px;">
-                  <option value="delete">Bulk Delete</option>
-                </select>
-                <button class="btn btn-primary" id="bulkEdit" disabled>Go</button>
-              </div>
-            @endif -->
                         <div class="table-responsive">
                             <table 
                             data-columns="{{ \App\Presenters\ReservationPresenter::dataTableLayout() }}" 
