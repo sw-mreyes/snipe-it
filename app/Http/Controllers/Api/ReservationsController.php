@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use \App\Models\Reservation;
+use \App\Models\Asset;
 use \App\Models\Setting;
 use App\Http\Controllers\Controller;
 use App\Http\Transformers\ReservationsTransformer;
@@ -37,6 +38,30 @@ class ReservationsController extends Controller
             return (new AssetsTransformer)->transformAssets($assets, count($assets));
         }
         return response()->json(Helper::formatStandardApiResponse('error', null, 'Reservation not found!'), 200);
+    }
+
+    /**
+     * Get the reservations for a given asset.
+     */
+    public function assetReservations(Request $request)
+    {
+        $asset_id = $request->input('asset');
+
+
+        $entry = [
+            'asset' => Asset::where('id', '=', $asset_id)->first(),
+            'reservations' => array()
+        ];
+        $res =  Reservation::select('reservations.*')
+            ->join('asset_reservation', 'reservations.id', '=', 'asset_reservation.reservation_id')
+            ->where('asset_reservation.asset_id', '=', $asset_id)
+            ->orderBy('start', 'asc')->get();
+        foreach ($res as $reservation) {
+            array_push($entry['reservations'], $reservation);
+        }
+
+        
+        return (new ReservationsTransformer)->transformAssetReservation($entry);
     }
 
     public function calendar(Request $request)

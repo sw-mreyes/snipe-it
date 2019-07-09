@@ -893,6 +893,13 @@ Route::group(['prefix' => 'v1','namespace' => 'Api', 'middleware' => 'api'], fun
             ]
         );
         Route::get(
+            'assetReservations',
+            [
+                'as' => 'api.reservations.assetReservations',
+                'uses' => 'ReservationsController@assetReservations'
+            ]
+        );
+        Route::get(
             '{reservationID}/assets',
             [
                 'as' => 'api.reservations.assets',
