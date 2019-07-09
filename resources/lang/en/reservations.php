@@ -17,5 +17,6 @@ return array(
     'list' => 'List',
     'delete' => 'Delete',
     'deleted' => 'Reservation deleted!',
-    'deletion_failed' => 'Could not delete Reservation!'
+    'deletion_failed' => 'Could not delete Reservation!',
+    'edit_asset_reservations' => 'Reservations for selected Assets',
 );

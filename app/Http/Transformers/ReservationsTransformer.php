@@ -3,6 +3,7 @@
 namespace App\Http\Transformers;
 
 use \App\Models\Reservation;
+use \App\Helpers\Helper;
 
 class ReservationsTransformer
 {
@@ -31,6 +32,14 @@ class ReservationsTransformer
         return (new DatatablesTransformer)->transformDatatables($array, $total);
     }
 
+    public function transformAssetReservation($entry)
+    {
+        return [
+            'asset' => (new AssetsTransformer)->transformAsset($entry['asset']),
+            'reservations' => $this->transformReservations($entry['reservations'], count($entry['reservations'])),
+        ];
+    }
+
     public function transformReservation(Reservation $res)
     {
         $array = [
@@ -39,10 +48,10 @@ class ReservationsTransformer
             'user' => [
                 'id' => $res->user->id,
                 'username' => $res->user->username,
-                'full_name' => $res->user->name
+                'full_name' => $res->user->present()->fullName
             ],
-            'start' => $res->start,
-            'end' => $res->end,
+            'start' => Helper::getFormattedDateObject($res->start, 'datetime', false),
+            'end' => Helper::getFormattedDateObject($res->end, 'datetime', false),
             'notes' => $res->notes,
             'created' => $res->created_at,
             'updated' => $res->updated_at,
