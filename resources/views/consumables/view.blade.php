@@ -127,7 +127,7 @@
         <a href="{{ route('consumables.printlabel', $consumable->id)  }}" class="btn btn-primary pull-right">
         {{ trans('general.print_label') }}</a>
     </div>
-    @endif
+    @endif-->
   </div> <!-- /.col-md-3-->
 </div> <!-- /.row-->
 
