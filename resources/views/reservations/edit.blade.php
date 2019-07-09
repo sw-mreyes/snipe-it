@@ -67,7 +67,6 @@
         for (let index in options) {
             const opt = options[index];
             if (opt.selected) {
-                document.getElementById('asset-res-root').hidden = false;
                 // --- Get the reservations for the selected asset ---
                 $.ajax({
                     type: 'GET',
@@ -78,6 +77,10 @@
                     },
                     dataType: 'json',
                     success: function(data) {
+                        if (data['reservations']['total'] <= 0) return;
+                        else {
+                            document.getElementById('asset-res-root').hidden = false;
+                        }
                         const li = document.createElement('li');
                         li.appendChild(document.createTextNode(data['asset']['name'].length > 0 ? data['asset']['name'] : data['asset']['asset_tag']));
                         li.appendChild(reservation_list_dom(data['reservations']['rows']));

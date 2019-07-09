@@ -61,7 +61,7 @@
         success: function(data) {
             console.table(data['rows']);
             for (let i in data['rows']) {
-                data['rows'][i].bgColor = rainbow(data['rows'].length * 10, i * 3);
+                data['rows'][i].bgColor = rainbow(data['rows'].length/1.25, i);
             }
             calendar.createSchedules(data['rows']);
         },
