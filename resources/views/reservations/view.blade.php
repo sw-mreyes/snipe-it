@@ -76,12 +76,7 @@
         </div><!-- /.tab-pane -->
     </div><!-- /.tab-content -->
 </div><!-- /.nav-tabs-custom -->
-
-
-<!--/.box-->
-
 @stop
-
 @section('moar_scripts')
 @include ('partials.bootstrap-table', ['search' => true])
 @stop
