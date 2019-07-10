@@ -36,18 +36,30 @@
 @section('moar_scripts')
 <script type="text/javascript">
     //
+    const templates = {
+        popupDetailBody: function(schedule) {
+            return schedule.body;
+        },
+        popupDetailUser: function(schedule) {
+            return schedule.attendees;
+        },
+    };
+    //
     var Calendar = tui.Calendar;
     var calendar = new Calendar('#calendar', {
         defaultView: 'month',
         taskView: true,
         usageStatistics: false,
+        /**disable google analytics */
         isReadOnly: true,
         disableDblClick: true,
         disableClick: true,
         month: {
             startDayOfWeek: 1,
             narrowWeekend: true,
-        }
+        },
+        useDetailPopup: true,
+        template: templates
     });
     // Get reservations
     $.ajax({

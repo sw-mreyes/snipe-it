@@ -26,6 +26,7 @@ class ReservationsTransformer
                 'category' => 'time',
                 'start' => explode(' ', $res->start . '')[0],
                 'end' => explode(' ', $res->end . '')[0],
+                'attendees' => [$res->user->present()->fullName],
                 'body' => $res->notes,
             ];
         }
