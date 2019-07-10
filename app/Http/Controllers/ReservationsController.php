@@ -15,6 +15,7 @@ use App\Models\Setting;
 use Notification;
 use App\Notifications\ReservationPlacedNotification;
 use App\Notifications\ReservationAssetExpectedCheckinNotification;
+use App\Helpers\Helper;
 
 /**
  * Reservations Web route controller
@@ -66,47 +67,6 @@ class ReservationsController extends Controller
         }
     }
 
-    /**
-     * Get the reservations for the given asset in the given timeframe.
-     */
-    private function get_reservations($start, $end, $asset_id, $reservationID = null)
-    {
-        return Reservation::select('reservations.*')
-            ->join('asset_reservation', 'reservations.id', '=', 'asset_reservation.reservation_id')
-            ->where('reservations.id', '!=', $reservationID)
-            ->where(function ($qrx) use ($start, $end) {
-                $qrx->where(function ($qry) use ($start, $end) {
-                    $qry->where('end', '>=', $start)
-                        ->where('end', '<=', $end);
-                })->orWhere(function ($qry) use ($start, $end) {
-                    $qry->where('start', '>=', $start)
-                        ->where('start', '<=', $end);
-                })->orWhere(function ($qry) use ($start, $end) {
-                    $qry->where('start', '<=', $start)
-                        ->where('end', '>=', $end);
-                });
-            })
-            ->where('asset_reservation.asset_id', '=', $asset_id)
-            ->orderBy('start', 'asc')->get();
-    }
-
-    /**
-     * Check if the given reservation timeframe is valid (=>no other reservations) for the given list of asset(ids)
-     */
-    private function valid_timeframe($start, $end, $assets, $reservationID = null)
-    {
-        foreach ($assets as $asset_id) {
-            $reservations = $this->get_reservations($start, $end, $asset_id, $reservationID);
-            if (count($reservations) > 0) {
-                return false;
-            }
-        }
-        if (strcmp($start, $end) > 0) {
-            return false;
-        }
-
-        return true;
-    }
 
     /**********************************************************************************
      * Public endpoints
@@ -162,11 +122,9 @@ class ReservationsController extends Controller
         if (!$request->input('start')) return redirect()->back()->with('error', trans('reservations.timeframe_required'));
         if (!$request->input('end')) return redirect()->back()->with('error', trans('reservations.timeframe_required'));
 
-        if (!$this->valid_timeframe($request->input('start'), $request->input('end'), $request->input('assets'))) {
+        if (!Helper::is_valid_timeframe($request->input('start'), $request->input('end'), $request->input('assets'))) {
             return redirect()->back()->with('error', trans('reservations.invalid_timeframe'));
         }
-
-        //return $this->get_reservations($request->input('start'), $request->input('end'), $request->input('assets'));
 
         $res = new Reservation();
         $res->name  = $request->input('name');
