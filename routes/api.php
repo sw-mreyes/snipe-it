@@ -906,6 +906,13 @@ Route::group(['prefix' => 'v1','namespace' => 'Api', 'middleware' => 'api'], fun
                 'uses' => 'ReservationsController@assets'
             ]
         );
+        Route::post(
+            '/',
+            [
+                'as' => 'api.reservations.create',
+                'uses' => 'ReservationsController@create'
+            ]
+        );
     }); // reservations group
 
 

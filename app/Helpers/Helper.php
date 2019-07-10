@@ -677,4 +677,46 @@ class Helper
             ->count();
         return ($reservations) > 0;
     }
+
+    /**
+     * Check if the given reservation timeframe is valid (=>no other reservations) for the given list of asset(ids)
+     */
+    public static function is_valid_timeframe($start, $end, $assets, $reservationID = null)
+    {
+        foreach ($assets as $asset_id) {
+            $reservations = Helper::get_reservations($start, $end, $asset_id, $reservationID);
+            if (count($reservations) > 0) {
+                return false;
+            }
+        }
+        if (strcmp($start, $end) > 0) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Get the reservations for the given asset in the given timeframe.
+     */
+    public static function get_reservations($start, $end, $asset_id, $reservationID = null)
+    {
+        return Reservation::select('reservations.*')
+            ->join('asset_reservation', 'reservations.id', '=', 'asset_reservation.reservation_id')
+            ->where('reservations.id', '!=', $reservationID)
+            ->where(function ($qrx) use ($start, $end) {
+                $qrx->where(function ($qry) use ($start, $end) {
+                    $qry->where('end', '>=', $start)
+                        ->where('end', '<=', $end);
+                })->orWhere(function ($qry) use ($start, $end) {
+                    $qry->where('start', '>=', $start)
+                        ->where('start', '<=', $end);
+                })->orWhere(function ($qry) use ($start, $end) {
+                    $qry->where('start', '<=', $start)
+                        ->where('end', '>=', $end);
+                });
+            })
+            ->where('asset_reservation.asset_id', '=', $asset_id)
+            ->orderBy('start', 'asc')->get();
+    }
 }
