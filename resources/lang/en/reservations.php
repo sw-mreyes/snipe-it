@@ -19,4 +19,5 @@ return array(
     'deleted' => 'Reservation deleted!',
     'deletion_failed' => 'Could not delete Reservation!',
     'edit_asset_reservations' => 'Reservations for selected Assets',
+    'checkout_blocked' => 'This asset is reserved.'
 );
