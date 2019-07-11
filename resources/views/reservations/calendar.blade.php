@@ -14,11 +14,10 @@
 {{-- Page content --}}
 @section('content')
 
-<script src="{{ url(asset('js/tui-code-snippet.js')) }}" nonce="{{ csrf_token() }}"></script>
-<script src="{{ url(asset('js/tui-calendar.js')) }}" nonce="{{ csrf_token() }}"></script>
-<link rel="stylesheet" href="{{ url(asset('css/tui-calendar.css')) }}">
+@include ('partials.tui-init', ['calendar'=>true, 'datepicker'=>false])
 
-<div id="menu" hidden="true">
+
+<div id="menu" hidden="yep" >
     <span id="menu-navi">
         <button type="button" class="btn btn-default btn-sm move-today" id="calendar-today">Today</button>
         <button type="button" class="btn btn-default btn-sm move-day" id='calendar-prev'>
@@ -49,8 +48,8 @@
     var calendar = new Calendar('#calendar', {
         defaultView: 'month',
         taskView: true,
-        usageStatistics: false,
         /**disable google analytics */
+        usageStatistics: false,
         isReadOnly: true,
         disableDblClick: true,
         disableClick: true,
@@ -80,9 +79,9 @@
     });
 
     // The calender methods dont work for some reason.
-    //document.getElementById('calendar-next').onclick = calendar.next;
-    //document.getElementById('calendar-prev').onclick = calendar.prev;
-    //document.getElementById('calendar-today').onclick = calendar.today;
+    document.getElementById('calendar-next').onclick = calendar.next;
+    document.getElementById('calendar-prev').onclick = calendar.prev;
+    document.getElementById('calendar-today').onclick = calendar.today;
 
     /* Replaced by rainbow function.
     const colors = [

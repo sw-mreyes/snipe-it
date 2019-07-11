@@ -122,14 +122,17 @@ class ReservationsController extends Controller
         if (!$request->input('start')) return redirect()->back()->with('error', trans('reservations.timeframe_required'));
         if (!$request->input('end')) return redirect()->back()->with('error', trans('reservations.timeframe_required'));
 
-        if (!Helper::is_valid_timeframe($request->input('start'), $request->input('end'), $request->input('assets'))) {
+        $start = strtotime($request->input('start'));
+        $end = strtotime($request->input('end'));
+
+        if (!Helper::is_valid_timeframe($start, $end, $request->input('assets'))) {
             return redirect()->back()->with('error', trans('reservations.invalid_timeframe'));
         }
 
         $res = new Reservation();
         $res->name  = $request->input('name');
-        $res->start = $request->input('start');
-        $res->end   = $request->input('end');
+        $res->start = $start;
+        $res->end   = $end;
         $res->notes = $request->input('notes');
         $res->user()->associate($user);
 
@@ -164,19 +167,19 @@ class ReservationsController extends Controller
         $res = Reservation::where('id', '=', $request->input('reservation_id'))->first();
 
         // -- Check if new dates conflict with existing reservations
-        $start = $request->input('start') ? $request->input('start') : $res->start;
-        $end = $request->input('end') ? $request->input('end') : $res->end;
+        $start =    $request->input('start') ? strtotime($request->input('start')) : $res->start;
+        $end =      $request->input('end')   ? strtotime($request->input('end')) : $res->end;
         $asset_ids = [];
         foreach ($res->assets as $asset) {
             array_push($asset_ids, $asset->id);
         }
-        if (!$this->valid_timeframe($start, $end, $asset_ids, $res->id)) {
+        if (!Helper::is_valid_timeframe($start, $end, $asset_ids, $res->id)) {
             return redirect()->back()->with('error', trans('reservations.invalid_timeframe'));
         }
         //
         $res->name  = $request->input('name');
-        $res->start = $request->input('start');
-        $res->end   = $request->input('end');
+        $res->start = $start;
+        $res->end   = $end;
         $res->notes = $request->input('notes');
         $res->user()->associate($user);
 
