@@ -37,6 +37,7 @@ class ReservationsController extends Controller
     private function index_query($request)
     {
         $reservations = Reservation::select('reservations.*');
+        
         // from <= start <= to
         if ($request->input('start_from')) {
             $reservations->where('start', '>=', $request->input('start_from'));
@@ -67,6 +68,19 @@ class ReservationsController extends Controller
             $term = $request->input('note_search');
             $reservations->where('notes', 'LIKE', "%{$term}%");
         }
+        // name search
+        if ($request->input('name_search')) {
+            $term = $request->input('name_search');
+            $reservations->where('name', 'LIKE', "%{$term}%");
+        }
+        // Notes OR Name search
+        if ($request->input('search')) {
+            $term = $request->input('search');
+            $reservations->where(function ($qrx) use ($term) {
+                $qrx->where('name', 'LIKE', "%{$term}%");
+                $qrx->orWhere('notes', 'LIKE', "%{$term}%");
+            });
+        }
         // --
         // Offset
         if ($request->input('offset')) {
@@ -78,11 +92,18 @@ class ReservationsController extends Controller
         // Limit -- default 1000
         $limit = $request->input('limit', 1000);
         $reservations->take($limit);
-        // Order
-        if ($request->input('order_by')) {
+        // Order by (sort & order)
+        if ($request->input('sort')) {
             $ord = $request->input('order');
             $order_type = $ord ? $ord : 'asc';
-            $reservations->orderBy($request->input('order_by'), $order_type);
+            $sort_column  = $request->input('sort');
+
+            // Only join w/ users table if we want to sort by username.
+            if(strcmp($sort_column,'user.username') == 0){
+                $reservations->join('users', 'reservations.user_id', '=', 'users.id');
+                $sort_column = 'users.username';
+            }
+            $reservations->orderBy($sort_column, $order_type);
         }
         //
         return $reservations;
