@@ -37,7 +37,7 @@ class ReservationsController extends Controller
     private function index_query($request)
     {
         $reservations = Reservation::select('reservations.*');
-        
+
         // from <= start <= to
         if ($request->input('start_from')) {
             $reservations->where('start', '>=', $request->input('start_from'));
@@ -99,7 +99,7 @@ class ReservationsController extends Controller
             $sort_column  = $request->input('sort');
 
             // Only join w/ users table if we want to sort by username.
-            if(strcmp($sort_column,'user.username') == 0){
+            if (strcmp($sort_column, 'user.username') == 0) {
                 $reservations->join('users', 'reservations.user_id', '=', 'users.id');
                 $sort_column = 'users.username';
             }
@@ -227,5 +227,14 @@ class ReservationsController extends Controller
         }
 
         return (new ReservationsTransformer)->transformReservation($res);
+    }
+
+
+    public function by_id(Request $request, $reservationID)
+    {
+        if (!$reservation = Reservation::where('id', '=', $reservationID)) {
+            return response()->json(Helper::formatStandardApiResponse('error', null, trans('reservations.reservation_not_found')), 200);
+        }
+        return (new ReservationsTransformer)->transformReservation($reservation);
     }
 }
