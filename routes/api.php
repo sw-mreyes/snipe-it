@@ -916,7 +916,7 @@ Route::group(['prefix' => 'v1', 'namespace' => 'Api'], function () {
             '{reservationID}/assets',
             [
                 'as' => 'api.reservations.assets',
-                'uses' => 'ReservationsController@assets'
+                'uses' => 'ReservationsController@get_assets'
             ]
         );
         Route::post(

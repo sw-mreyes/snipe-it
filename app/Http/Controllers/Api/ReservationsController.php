@@ -238,4 +238,13 @@ class ReservationsController extends Controller
         }
         return (new ReservationsTransformer)->transformReservation($reservation);
     }
+
+    public function get_assets(Request $request, $reservationID)
+    {
+        if (!$reservation = Reservation::where('id', '=', $reservationID)->first()) {
+            return response()->json(Helper::formatStandardApiResponse('error', null, trans('reservations.reservation_not_found')), 200);
+        }
+        $assets = $reservation->assets;
+        return (new AssetsTransformer)->transformAssets($assets, count($assets));
+    }
 }
