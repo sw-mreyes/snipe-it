@@ -892,6 +892,13 @@ Route::group(['prefix' => 'v1', 'namespace' => 'Api'], function () {
             ]
         );
         Route::get(
+            '/{reservationID}',
+            [
+                'as' => 'api.reservations.by_id',
+                'uses' => 'ReservationsController@by_id'
+            ]
+        );
+        Route::get(
             'calendar',
             [
                 'as' => 'api.reservations.calendar',
