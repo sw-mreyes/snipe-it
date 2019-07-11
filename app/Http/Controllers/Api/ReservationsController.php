@@ -17,13 +17,76 @@ use App\Helpers\Helper;
 
 class ReservationsController extends Controller
 {
+    /**
+     * Get reservations.
+     * 
+     * Parameters:
+     *  Only get reservations ..
+     * 
+     *  - [start/end]_from : .. that start/end at or after this date.
+     *  - [start/end]_to   : .. that start/end at or before this. 
+     *  - [start/end]      : .. that start/end exactly at the given datetime
+     *  - user             : .. that are for the given user (id)
+     *  - note_search      : .. where the note contains the given search term.
+     * 
+     * Limit the results:
+     * - offset     : skip this many elements of the result
+     * - limit      : limit the result set size
+     * - order_by   : order by this column
+     * - order      : asc[ending] or desc[ending]
+     */
     public function index(Request $request)
     {
-        $reservations = Reservation::all();
-        /*$offset = (($reservations) && (request('offset') > $reservations->count())) ? 0 : request('offset', 0);
-        $limit = $request->input('limit', 50);
-        $order = $request->input('order') === 'asc' ? 'asc' : 'desc';
-        $reservations->skip($offset)->take($limit)->orderBy('id', $order)->get();*/
+        $reservations = Reservation::select('reservations.*');
+        // from <= start <= to
+        if ($request->input('start_from')) {
+            $reservations->where('start', '>=', $request->input('start_from'));
+        }
+        if ($request->input('start_to')) {
+            $reservations->where('start', '<=', $request->input('start_to'));
+        }
+        // from <= end <= to
+        if ($request->input('end_from')) {
+            $reservations->where('end', '>=', $request->input('end_from'));
+        }
+        if ($request->input('end_to')) {
+            $reservations->where('end', '<=', $request->input('end_to'));
+        }
+        //
+        if ($request->input('end')) {
+            $reservations->where('end', '=', $request->input('end'));
+        }
+        if ($request->input('start')) {
+            $reservations->where('start', '=', $request->input('start'));
+        }
+        // user
+        if ($request->input('user')) {
+            $reservations->where('user_id', '=', $request->input('user'));
+        }
+        // note search
+        if ($request->input('note_search')) {
+            $term = $request->input('note_search');
+            $reservations->where('notes', 'LIKE', "%{$term}%");
+        }
+        // --
+        // Offset
+        if ($request->input('offset')) {
+            $off = (int) $request->input('offset');
+            if ($off < $reservations->count()) {
+                $reservations->skip($off);
+            }
+        }
+        // Limit -- default 1000
+        $limit = $request->input('limit', 1000);
+        $reservations->take($limit);
+        // Order
+        if ($request->input('order_by')) {
+            $ord = $request->input('order');
+            $order_type = $ord ? $ord : 'asc';
+            $reservations->orderBy($request->input('order_by'), $order_type);
+        }
+        //
+        $reservations = $reservations->get();
         return (new ReservationsTransformer)->transformReservations($reservations, count($reservations));
     }
 
@@ -69,6 +132,7 @@ class ReservationsController extends Controller
 
     public function calendar(Request $request)
     {
+        // TODO: use the index method here.
         $reservations = Reservation::whereNotNull('id');
         if ($request->input('start')) {
             $reservations->where('start', '>=', $request->input('start'));
