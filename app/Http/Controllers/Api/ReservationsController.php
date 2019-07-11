@@ -14,7 +14,6 @@ use Illuminate\Http\Request;
 use App\Helpers\Helper;
 
 
-
 class ReservationsController extends Controller
 {
     /**
