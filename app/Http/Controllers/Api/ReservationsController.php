@@ -146,13 +146,14 @@ class ReservationsController extends Controller
             $res =  Reservation::select('reservations.*')
                 ->join('asset_reservation', 'reservations.id', '=', 'asset_reservation.reservation_id')
                 ->where('asset_reservation.asset_id', '=', $asset_id)
-                ->orderBy('start', 'asc')->get();
+                ->orderBy('start', 'asc')->distinct('reservations.id')->get();
             foreach ($res as $reservation) {
                 array_push($entry['reservations'], $reservation);
             }
             return (new ReservationsTransformer)->transformAssetReservation($entry);
         } else {
-            return response()->json(Helper::formatStandardApiResponse('error', null, trans('hardware.message.not_found')), 200);
+            //return response()->json(Helper::formatStandardApiResponse('error', null, trans('hardware.message.not_found')), 200);
+            return response()->json(Helper::formatStandardApiResponse('error', null, "WTF"), 200);
         }
     }
 
