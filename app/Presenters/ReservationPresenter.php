@@ -19,7 +19,10 @@ class ReservationPresenter extends Presenter
     public static function dataTableLayout()
     {
         $layout = [
-
+            [
+                "field" => "checkbox",
+                "checkbox" => true
+            ],
             [
                 "field" => "id",
                 "searchable" => false,
@@ -27,14 +30,27 @@ class ReservationPresenter extends Presenter
                 "switchable" => true,
                 "title" => trans('general.id'),
                 "visible" => true
-            ],
-            [
+            ], [
                 "field" => "name",
                 "searchable" => true,
                 "sortable" => true,
                 "title" => trans('general.name'),
                 "visible" => true,
                 "formatter" => "reservationsLinkFormatter"
+            ], [
+                "field" => "start",
+                "searchable" => true,
+                "sortable" => true,
+                "title" => trans('reservations.start'),
+                "visible" => true,
+                //"formatter" => "dateDisplayFormatter"
+            ], [
+                "field" => "end",
+                "searchable" => true,
+                "sortable" => true,
+                "title" => trans('reservations.end'),
+                "visible" => true,
+                //"formatter" => "dateDisplayFormatter"
             ], [
                 "field" => "user.username",
                 "searchable" => false,
@@ -46,13 +62,19 @@ class ReservationPresenter extends Presenter
             ], [
                 "field" => "assets",
                 "searchable" => false,
-                "sortable" => true,
+                "sortable" => false,
                 "switchable" => true,
                 "title" => trans('general.assets'),
                 "visible" => true
-            ],
+            ], [
+                "field" => "actions",
+                "searchable" => false,
+                "sortable" => false,
+                "switchable" => false,
+                "title" => trans('table.actions'),
+                "formatter" => "reservationsActionsFormatter",
+            ]
         ];
-
         return json_encode($layout);
     }
 
