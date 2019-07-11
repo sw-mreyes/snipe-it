@@ -232,7 +232,7 @@ class ReservationsController extends Controller
 
     public function by_id(Request $request, $reservationID)
     {
-        if (!$reservation = Reservation::where('id', '=', $reservationID)) {
+        if (!$reservation = Reservation::where('id', '=', $reservationID)->first()) {
             return response()->json(Helper::formatStandardApiResponse('error', null, trans('reservations.reservation_not_found')), 200);
         }
         return (new ReservationsTransformer)->transformReservation($reservation);
