@@ -35,7 +35,7 @@ class ReservationsController extends Controller
      * - order_by   : order by this column
      * - order      : asc[ending] or desc[ending]
      */
-    public function index(Request $request)
+    private function index_query($request)
     {
         $reservations = Reservation::select('reservations.*');
         // from <= start <= to
@@ -86,7 +86,13 @@ class ReservationsController extends Controller
             $reservations->orderBy($request->input('order_by'), $order_type);
         }
         //
-        $reservations = $reservations->get();
+        return $reservations;
+    }
+
+
+    public function index(Request $request)
+    {
+        $reservations = $this->index_query($request)->get();
         return (new ReservationsTransformer)->transformReservations($reservations, count($reservations));
     }
 
@@ -132,11 +138,7 @@ class ReservationsController extends Controller
 
     public function calendar(Request $request)
     {
-        // TODO: use the index method here.
-        $reservations = Reservation::whereNotNull('id');
-        if ($request->input('start')) {
-            $reservations->where('start', '>=', $request->input('start'));
-        }
+        $reservations = $this->index_query($request);
         if ($request->input('reservations')) {
             $reservations->whereIn('id', $request->input('reservations'));
         }
