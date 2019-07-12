@@ -52,13 +52,13 @@ class ReservationPresenter extends Presenter
                 "visible" => true,
                 //"formatter" => "dateDisplayFormatter"
             ], [
-                "field" => "user.username",
+                "field" => "user",
                 "searchable" => false,
                 "sortable" => true,
                 "switchable" => true,
                 "title" => trans('general.user'),
                 "visible" => true,
-                "formatter" => "usersLinkFormatter"
+                "formatter" => "resUserNameFormatter"
             ], [
                 "field" => "assets",
                 "searchable" => false,

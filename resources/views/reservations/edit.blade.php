@@ -41,6 +41,10 @@
 
 @section('moar_scripts')
 <script>
+    function btag(data, color = 'black') {
+        return '<b style="color:' + color + '">' + data + '</b>'
+    }
+
     function reservation_list_dom(data) {
         const ul = document.createElement('ul');
         for (let i in data) {
@@ -50,13 +54,29 @@
             const end = data[i].end;
             const user = data[i].user.full_name;
             const li_content = document.createElement('div');
+            const res_id = data[i].id;
+            const selected_start = document.getElementById('start-input');
+            const selected_end = document.getElementById('end-input');
             // TODO: 
             //      to fancy this up a bit we could check the currently selected 
             //      start & end dates and highlight conflicting reservations in this list.
             //
-            li_content.innerHTML = '<b>' + start + '</b> → <b>' + end + '</b>' + ' (' + name + ' by ' + user + ')'
+
+            //
+
+            let highlight = 'black';
+            if (Date.parse(selected_start) > Date.parse(start) && Date.parse(selected_end) < Date.pares(end)) {
+                highlight = 'red';
+            }
+            if (res_id == "{{ $item->id }}") {
+                highlight = 'green';
+            }
+
+            li_content.innerHTML = btag(start, highlight) + ' → ' + btag(end, highlight) + ' (' + name + ' by ' + user + ')'
+            //
             li.appendChild(li_content);
             ul.appendChild(li);
+
         }
         return ul;
     }
