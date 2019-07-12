@@ -926,6 +926,13 @@ Route::group(['prefix' => 'v1', 'namespace' => 'Api'], function () {
                 'uses' => 'ReservationsController@create'
             ]
         );
+        Route::patch(
+            '/{reservationID}',
+            [
+                'as' => 'api.reservations.update',
+                'uses' => 'ReservationsController@update'
+            ]
+        );
     }); // reservations group
 
 

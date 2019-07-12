@@ -672,8 +672,8 @@ class Helper
             ->join('asset_reservation', 'reservations.id', '=', 'asset_reservation.reservation_id')
             ->where('asset_reservation.asset_id', '=', $assetID)
             ->where('reservations.user_id', '!=', $user->id)
-            ->where('start','<=',date('Y-m-d'))
-            ->where('end','>',date('Y-m-d'))            
+            ->where('start', '<=', date('Y-m-d'))
+            ->where('end', '>', date('Y-m-d'))
             ->count();
         return ($reservations) > 0;
     }

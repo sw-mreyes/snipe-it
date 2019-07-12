@@ -17,6 +17,16 @@ use App\Helpers\Helper;
 class ReservationsController extends Controller
 {
     /**
+     * Used in all API methods.
+     * currently just checks Asset index permissions.
+     * Maybe introduce new policy in the future?
+     */
+    private function _authorize()
+    {
+        $this->authorize('index', Asset::class);
+    }
+
+    /**
      * Get reservations.
      * 
      * Parameters:
@@ -36,6 +46,8 @@ class ReservationsController extends Controller
      */
     private function index_query($request)
     {
+        $this->_authorize();
+
         $reservations = Reservation::select('reservations.*');
 
         // from <= start <= to
@@ -109,26 +121,21 @@ class ReservationsController extends Controller
         return $reservations;
     }
 
-
+    /**
+     * Get reservations.
+     * 
+     */
     public function index(Request $request)
     {
+        $this->_authorize();
         $reservations = $this->index_query($request)->get();
         return (new ReservationsTransformer)->transformReservations($reservations, count($reservations));
     }
 
+
     public function show(Request $request)
     {
         return $this->index($request);
-    }
-
-    public function assets(Request $request, $reservationID)
-    {
-        $reservation = Reservation::where('id', '=', $reservationID)->first();
-        if ($reservation) {
-            $assets = $reservation->assets;
-            return (new AssetsTransformer)->transformAssets($assets, count($assets));
-        }
-        return response()->json(Helper::formatStandardApiResponse('error', null, trans('reservations.reservation_not_found')), 200);
     }
 
     /**
@@ -136,6 +143,7 @@ class ReservationsController extends Controller
      */
     public function assetReservations(Request $request)
     {
+        $this->_authorize();
         $asset_id = $request->input('asset');
 
         if ($asset_id) {
@@ -157,8 +165,12 @@ class ReservationsController extends Controller
         }
     }
 
+    /**
+     * Get reservations and return a JSON result usable by the TUI Calendar.
+     */
     public function calendar(Request $request)
     {
+        $this->_authorize();
         $reservations = $this->index_query($request);
         if ($request->input('reservations')) {
             $reservations->whereIn('id', $request->input('reservations'));
@@ -168,8 +180,12 @@ class ReservationsController extends Controller
         return (new ReservationsTransformer)->transformReservationsCalendar($reservations, count($reservations));
     }
 
+    /**
+     * Create a Reservation.
+     */
     public function create(Request $request)
     {
+        $this->_authorize();
         if ($res_id = $request->input('reservation')) {
             if (!$asset_id = $request->input('asset')) {
                 return response()->json(Helper::formatStandardApiResponse('error', null, trans('reservations.asset_required')), 200);
@@ -187,8 +203,7 @@ class ReservationsController extends Controller
             return (new ReservationsTransformer)->transformReservation($reservation);
         }
 
-
-
+        //
         $user = User::where('id', '=', $request->input('user'))->first();
         if (!$user) {
             return response()->json(Helper::formatStandardApiResponse('error', null, trans('reservations.user_not_found')), 200);
@@ -227,24 +242,88 @@ class ReservationsController extends Controller
             $res->assets()->save($asset);
         }
 
-        return (new ReservationsTransformer)->transformReservation($res);
+        return response()->json(Helper::formatStandardApiResponse('success', (new ReservationsTransformer)->transformReservation($res), trans('reservations.placed'), 200));
     }
 
+    /**
+     * Update a given reservation
+     */
+    public function update(Request $request, $reservationID)
+    {
+        $this->_authorize();
+        //
+        if (!$res = Reservation::where('id', '=', $reservationID)->first()) {
+            return response()->json(Helper::formatStandardApiResponse('error', null, trans('reservations.reservation_not_found')), 200);
+        }
+        //
+        $usr = $request->input('user') ? User::where('id', '=', $request->input('user'))->first() : $res->user;
+        if (!$usr) {
+            return response()->json(Helper::formatStandardApiResponse('error', null, trans('reservations.user_not_found')), 200);
+        }
+        //
+        $start  = $request->input('start') ? $request->input('start')   : $res->start;
+        $end    = $request->input('end')   ? $request->input('end')     : $res->end;
+        //
+        $asset_ids = array();
+        foreach ($res->assets as $asset) {
+            array_push($asset_ids, $asset->id);
+        }
+        if ($request->input('asset')) {
+            if (!Asset::where('id', '=', $request->input('asset'))->first()) {
+                return response()->json(Helper::formatStandardApiResponse('error', null, trans('reservations.asset_not_found')), 200);
+            }
+            array_push($asset_ids, $request->input('asset'));
+        }
+        //
+        if (!Helper::is_valid_timeframe($start, $end, $asset_ids, $res->id)) {
+            return response()->json(Helper::formatStandardApiResponse('error', [
+                'start' => $start,
+                'end' => $end,
+            ], trans('reservations.invalid_timeframe')), 200);
+        }
+        //
+        $name   = $request->input('name')   ? $request->input('name')  : $res->name;
+        $notes  = $request->input('notes')  ? $request->input('notes') : $res->notes;
 
+        // Store it all
+        $res->name  = $name;
+        $res->start = $start;
+        $res->end   = $end;
+        $res->notes = $notes;
+        $res->user()->associate($usr);
+        $res->save();
+        //
+        if ($request->input('asset')) {
+            $asset = Asset::where('id', '=', $request->input('asset'))->first();
+            $res->assets()->save($asset);
+        }
+        //
+        return response()->json(Helper::formatStandardApiResponse('success', (new ReservationsTransformer)->transformReservation($res), trans('reservations.updated')), 200);
+    }
+
+    /**
+     * Get a reservation by ID
+     */
     public function by_id(Request $request, $reservationID)
     {
+        $this->_authorize();
         if (!$reservation = Reservation::where('id', '=', $reservationID)->first()) {
             return response()->json(Helper::formatStandardApiResponse('error', null, trans('reservations.reservation_not_found')), 200);
         }
-        return (new ReservationsTransformer)->transformReservation($reservation);
+        return response()->json(Helper::formatStandardApiResponse('success', (new ReservationsTransformer)->transformReservation($reservation), 200));
     }
 
+    /**
+     * Get all assets reserved by a given Reservation.
+     */
     public function get_assets(Request $request, $reservationID)
     {
+        $this->_authorize();
         if (!$reservation = Reservation::where('id', '=', $reservationID)->first()) {
             return response()->json(Helper::formatStandardApiResponse('error', null, trans('reservations.reservation_not_found')), 200);
         }
         $assets = $reservation->assets;
+
         return (new AssetsTransformer)->transformAssets($assets, count($assets));
     }
 }
