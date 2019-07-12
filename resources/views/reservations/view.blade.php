@@ -34,7 +34,7 @@
                                     <td>{{ trans('general.user') }}</td>
                                     <td>
                                         <p><img src="{{ $reservation->user->present()->gravatar() }}" class="user-image-inline" alt="{{ $reservation->user->present()->fullName() }}"></p>
-                                        <p>{{ $reservation->user->present()->fullName() }}</p>
+                                        <a href="{{$reservation->user->present()->viewUrl()}}"><p>{{ $reservation->user->present()->fullName() }}</p></a>
                                     </td>
                                 </tr>
                                 <tr>

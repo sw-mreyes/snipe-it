@@ -581,6 +581,10 @@
     function acID2TagFormatter(data){ return id2tag('AC', data); }
     function cmID2TagFormatter(data){ return id2tag('CM', data); }
     function csID2TagFormatter(data){ return id2tag('CS', data); }
+
+    function resUserNameFormatter(data){
+        return "<a href={{ url('/') }}/users/"+data.id+">"+data.full_name+"</a>";
+    }
     
 
     $(function () {
