@@ -26,6 +26,58 @@ class ReservationsController extends Controller
         $this->authorize('index', Asset::class);
     }
 
+
+    private function apply_index_query_filter($reservations, $request)
+    {
+        // from <= start <= to
+        if ($request->input('start_from')) {
+            $reservations->where('reservations.start', '>=', $request->input('start_from'));
+        }
+        if ($request->input('start_to')) {
+            $reservations->where('reservations.start', '<=', $request->input('start_to'));
+        }
+        // from <= end <= to
+        if ($request->input('end_from')) {
+            $reservations->where('reservations.end', '>=', $request->input('end_from'));
+        }
+        if ($request->input('end_to')) {
+            $reservations->where('reservations.end', '<=', $request->input('end_to'));
+        } else {
+            // by default, only return reservations that are still relevant (end date >= current date)
+            $reservations->where('reservations.end', '>=', date('Y-m-d'));
+        }
+        //
+        if ($request->input('end')) {
+            $reservations->where('reservations.end', '=', $request->input('end'));
+        }
+        if ($request->input('start')) {
+            $reservations->where('reservations.start', '=', $request->input('start'));
+        }
+        // user
+        if ($request->input('user')) {
+            $reservations->where('reservations.user_id', '=', $request->input('user'));
+        }
+        // note search
+        if ($request->input('note_search')) {
+            $term = $request->input('note_search');
+            $reservations->where('reservations.notes', 'LIKE', "%{$term}%");
+        }
+        // name search
+        if ($request->input('name_search')) {
+            $term = $request->input('name_search');
+            $reservations->where('reservations.name', 'LIKE', "%{$term}%");
+        }
+        // Notes OR Name search
+        if ($request->input('search')) {
+            $term = $request->input('search');
+            $reservations->where(function ($qrx) use ($term) {
+                $qrx->where('reservations.name', 'LIKE', "%{$term}%");
+                $qrx->orWhere('reservations.notes', 'LIKE', "%{$term}%");
+            });
+        }
+        return $reservations;
+    }
+
     /**
      * Get reservations.
      * 
@@ -50,49 +102,8 @@ class ReservationsController extends Controller
 
         $reservations = Reservation::select('reservations.*');
 
-        // from <= start <= to
-        if ($request->input('start_from')) {
-            $reservations->where('start', '>=', $request->input('start_from'));
-        }
-        if ($request->input('start_to')) {
-            $reservations->where('start', '<=', $request->input('start_to'));
-        }
-        // from <= end <= to
-        if ($request->input('end_from')) {
-            $reservations->where('end', '>=', $request->input('end_from'));
-        }
-        if ($request->input('end_to')) {
-            $reservations->where('end', '<=', $request->input('end_to'));
-        }
-        //
-        if ($request->input('end')) {
-            $reservations->where('end', '=', $request->input('end'));
-        }
-        if ($request->input('start')) {
-            $reservations->where('start', '=', $request->input('start'));
-        }
-        // user
-        if ($request->input('user')) {
-            $reservations->where('user_id', '=', $request->input('user'));
-        }
-        // note search
-        if ($request->input('note_search')) {
-            $term = $request->input('note_search');
-            $reservations->where('notes', 'LIKE', "%{$term}%");
-        }
-        // name search
-        if ($request->input('name_search')) {
-            $term = $request->input('name_search');
-            $reservations->where('name', 'LIKE', "%{$term}%");
-        }
-        // Notes OR Name search
-        if ($request->input('search')) {
-            $term = $request->input('search');
-            $reservations->where(function ($qrx) use ($term) {
-                $qrx->where('name', 'LIKE', "%{$term}%");
-                $qrx->orWhere('notes', 'LIKE', "%{$term}%");
-            });
-        }
+        $this->apply_index_query_filter($reservations, $request);
+
         // --
         // Offset
         if ($request->input('offset')) {
@@ -153,8 +164,9 @@ class ReservationsController extends Controller
             ];
             $res =  Reservation::select('reservations.*')
                 ->join('asset_reservation', 'reservations.id', '=', 'asset_reservation.reservation_id')
-                ->where('asset_reservation.asset_id', '=', $asset_id)
-                ->orderBy('start', 'asc')->distinct('reservations.id')->get();
+                ->where('asset_reservation.asset_id', '=', $asset_id);
+            $this->apply_index_query_filter($res, $request);
+            $res->orderBy('start', 'asc')->distinct('reservations.id')->get();
             foreach ($res as $reservation) {
                 array_push($entry['reservations'], $reservation);
             }
