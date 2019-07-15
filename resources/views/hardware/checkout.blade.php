@@ -26,6 +26,15 @@
         </div>
         <div class="box-body">
             {{csrf_field()}}
+
+            @if ($reservation)
+            <div class="alert alert-warning" role="alert">
+                {{ trans('reservations.reserved_by') }}
+                <a href="{{ url('/') }}/users/{{ $reservation->user->id }}">{{$reservation->user->present()->fullName}}</a>
+                (<a href="{{ url('/') }}/reservations/{{ $reservation->id }}">{{$reservation->name}}</a>)
+            </div>
+            @endif
+
             @if ($asset->model->name)
             <!-- Model name -->
             <div class="form-group {{ $errors->has('name') ? 'error' : '' }}">

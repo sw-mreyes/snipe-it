@@ -564,10 +564,6 @@ class AssetsController extends Controller
         $this->authorize('checkout', Asset::class);
         $asset = Asset::findOrFail($asset_id);
         
-        if(Helper::isAssetCheckoutBlocked($asset_id)){
-            return response()->json(Helper::formatStandardApiResponse('error', ['asset'=> e($asset->asset_tag)], trans('reservations.checkout_blocked')));
-        }
-
         if (!$asset->availableForCheckout()) {
             return response()->json(Helper::formatStandardApiResponse('error', ['asset'=> e($asset->asset_tag)], trans('admin/hardware/message.checkout.not_available')));
         }
