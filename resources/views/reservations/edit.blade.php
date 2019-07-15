@@ -45,34 +45,39 @@
         return '<b style="color:' + color + '">' + data + '</b>'
     }
 
+    function format_date(x) {
+        const d = new Date(x);
+        return d.getFullYear() + '-' +
+            ("00" + (d.getMonth() + 1)).slice(-2) + "-" +
+            ("00" + d.getDate()).slice(-2) + " " +
+            ("00" + d.getHours()).slice(-2) + ":" +
+            ("00" + d.getMinutes()).slice(-2) + ":" +
+            ("00" + d.getSeconds()).slice(-2)
+    }
+
     function reservation_list_dom(data) {
         const ul = document.createElement('ul');
         for (let i in data) {
             const li = document.createElement('li');
             const name = data[i].name;
-            const start = data[i].start;
-            const end = data[i].end;
             const user = data[i].user.full_name;
             const li_content = document.createElement('div');
             const res_id = data[i].id;
-            const selected_start = document.getElementById('start-input');
-            const selected_end = document.getElementById('end-input');
-            // TODO: 
-            //      to fancy this up a bit we could check the currently selected 
-            //      start & end dates and highlight conflicting reservations in this list.
-            //
-
-            //
-
+            const start = Date.parse(data[i].start);
+            const end = Date.parse(data[i].end);
+            const selected_start = Date.parse(document.getElementById('start-input').value);
+            const selected_end = Date.parse(document.getElementById('end-input').value);
+            // Highlight dates if they overlap with the selection / TODO: force update on date selection changes.
             let highlight = 'black';
-            if (Date.parse(selected_start) > Date.parse(start) && Date.parse(selected_end) < Date.pares(end)) {
+            //
+            if ((selected_start >= start && selected_start <= end) || (selected_end >= start && selected_end <= end)) {
                 highlight = 'red';
             }
             if (res_id == "{{ $item->id }}") {
                 highlight = 'green';
             }
-
-            li_content.innerHTML = btag(start, highlight) + ' → ' + btag(end, highlight) + ' (' + name + ' by ' + user + ')'
+            //
+            li_content.innerHTML = btag(format_date(start), highlight) + ' → ' + btag(format_date(end), highlight) + ' (' + name + ' by ' + user + ')'
             //
             li.appendChild(li_content);
             ul.appendChild(li);
@@ -81,8 +86,9 @@
         return ul;
     }
 
+
     const ras = 'res-asset-selection';
-    document.getElementById(ras).onchange = function() {
+    const update_reservation_list = function() {
         // we also could show a calendar here..
         document.getElementById("res-entries").innerHTML = "";
         const root = document.getElementById(ras);
@@ -118,6 +124,9 @@
             }
         }
     }
-    document.getElementById(ras).onchange();
+    //
+    document.getElementById('res-asset-selection').onchange = update_reservation_list;
+    document.getElementById('container').onmouseleave = update_reservation_list;
+    update_reservation_list();
 </script>
 @stop

@@ -101,11 +101,11 @@ class ReservationsController extends Controller
         $view = View::make('reservations/edit')->with('item', new Reservation);
         if ($request->query('asset')) {
             if ($asset = Asset::where('id', '=', $request->query('asset'))->first()) {
-                $view = $view->with('asset', $asset);
+                $view = $view->with('forAsset', $asset);
             }
         } else {
             // explicitly set asset to null so the templating engine does not complain.
-            $view = $view->with('asset', null);
+            $view = $view->with('forAsset', null);
         }
         return $view;
     }
@@ -220,6 +220,7 @@ class ReservationsController extends Controller
         if ($reservation = Reservation::where('id', '=', $reservationID)->first()) {
             return view('reservations/edit', [
                 'item' => $reservation,
+                'forAsset' => null,
             ]);
         } else {
             return redirect('reservations/index')->with('error', trans('reservations.reservation_not_found'));

@@ -4,14 +4,15 @@
     <div class="col-md-7 required">
         <select class="js-data-ajax select2" data-endpoint="hardware" data-placeholder="{{ trans('general.select_asset') }}" name="{{ $fieldname }}" style="width: 100%" id="res-asset-selection" multiple>
             @if ($item)
-            @foreach ($item->assets as $asset)
-            <option value="{{ $asset->id }}" selected="selected">
-                {{$asset->present()->fullName}}
-            </option>
-            @endforeach
-            @elseif ($asset)
-            <option value="{{ $asset->id }}" selected="selected">
-                {{$asset->present()->fullName}}
+                @foreach ($item->assets as $asset)
+                <option value="{{ $asset->id }}" selected="selected">
+                    {{$asset->present()->fullName}}
+                </option>
+                @endforeach
+            @endif
+            @if ($forAsset)
+            <option value="{{ $forAsset->id }}" selected="selected">
+                {{$forAsset->present()->fullName}}
             </option>
             @endif
         </select>
