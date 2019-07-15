@@ -167,6 +167,20 @@
         };
     }
 
+    function reservationActionsFormatter(destination){
+        let actions = '<nobr>'
+        actions += '<p>res-actions</p>'
+        actions +='</nobr>';
+        return actions;
+    }
+
+    function reservationsLinkFormatter(value, row) {
+        if(value){
+            return '<a href="{{ url('/') }}/reservations/' + row.id + '"> ' + value + '</a>';
+        }
+        return 'error';
+    }
+
     // Make the edit/delete buttons
     function genericActionsFormatter(destination) {
         return function (value,row) {
@@ -562,6 +576,10 @@
     function acID2TagFormatter(data){ return id2tag('AC', data); }
     function cmID2TagFormatter(data){ return id2tag('CM', data); }
     function csID2TagFormatter(data){ return id2tag('CS', data); }
+
+    function resUserNameFormatter(data){
+        return "<a href={{ url('/') }}/users/"+data.id+">"+data.full_name+"</a>";
+    }
     
 
     $(function () {

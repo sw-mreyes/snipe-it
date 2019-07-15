@@ -224,5 +224,8 @@
     'login_enabled'             => 'Login Enabled',
     'print_label'           => 'Print Label',
     'tag'				    => 'Tag',    
-    'global_search'         => 'Global Search'
+    'global_search'         => 'Global Search',
+    'start_date'            => 'Start Date',
+    'end_date'            => 'End Date'
+    
     ];

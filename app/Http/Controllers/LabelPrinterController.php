@@ -19,6 +19,17 @@ use App\Models\Location;
 class LabelPrinterController extends Controller
 {
 
+    /**
+     * Send a print request to the printer server.
+     * 
+     * The request is a POST containing a b64 encoded string 
+     * of the tag and 2 lines of information, the name & category of 
+     * the object. The object type is encoded in the tag (e.g. SW, CM..)
+     * 
+     * TODO:
+     *  - Maybe get the tag prefixes via .env file to make it more configurable ?
+     *  - Use CUPS ?
+     */
     private function printLabel($tag, $name, $category)
     {
         $data_b64 =  base64_encode($tag . '|' . $name . '|' . $category);
@@ -41,12 +52,21 @@ class LabelPrinterController extends Controller
 
 
     /**
-     * Print a label.
+     * Print an Accessory label.
      */
     public function printAccessoryLabel($accessoryID = null)
     {
         $accessory = Accessory::find($accessoryID);
         $category = Category::where('id', '=', $accessory->category_id)->first();
+
+        if (!$accessory) {
+            return redirect()->route('accessories.index')->with('error', 'Accessory not found!');
+        }
+        if (!$category) { 
+            return redirect()->route('accessories.index')->with('error', 'Category not found!');            
+        }
+
+
         // Send the request
         $httpcode = $this->printLabel('AC-' . $accessoryID, $accessory->name, $category->name);
         if ($httpcode == 200) {
@@ -59,7 +79,7 @@ class LabelPrinterController extends Controller
     }
 
     /**
-     * Print a label.
+     * Print an Asset label.
      */
     public function printAssetLabel($asset_id = null)
     {
@@ -69,6 +89,13 @@ class LabelPrinterController extends Controller
 
         $model = AssetModel::where('id', '=', $asset->model_id)->first();
         $category = Category::where('id', '=', $model->category_id)->first();
+        
+        if (!$model) {
+            return redirect()->route('hardware.index')->with('error', 'Model not found!');
+        }
+        if (!$category) { 
+            return redirect()->route('hardware.index')->with('error', 'Category not found!');            
+        }
 
         $httpcode = $this->printLabel($asset->asset_tag, $asset->name, $category->name);
 
@@ -81,6 +108,9 @@ class LabelPrinterController extends Controller
         return redirect()->route('hardware.view', $asset_id)->with('error', 'Could not queue print job! (' . $httpcode . ')');
     }
 
+    /**
+     * Print a consumable label
+     */
     public function printConsumableLabel($consumableID)
     {
         if (is_null($consumable = Consumable::find($consumableID))) {
@@ -99,6 +129,9 @@ class LabelPrinterController extends Controller
         //
     }
 
+    /**
+     * Print a component label
+     */
     public function printComponentLabel($componentID)
     {
         if (is_null($component = Component::find($componentID))) {
@@ -116,6 +149,9 @@ class LabelPrinterController extends Controller
         return redirect()->back()->with('error', 'Could not queue print job! (' . $httpcode . ')');
     }
 
+    /**
+     * Print a location label.
+     */
     public function printLocationLabel($locationID)
     {
         if (is_null($location = Location::find($locationID))) {

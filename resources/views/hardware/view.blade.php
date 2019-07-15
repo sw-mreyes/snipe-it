@@ -39,6 +39,9 @@
      @can('view', \App\Models\Asset::class)
       <li role="presentation"><a href="{{ route('asset.printlabel', $asset->id)  }}">{{ trans('general.print_label') }}</a></li>
      @endcan
+     @can('view', \App\Models\Asset::class)
+      <li role="presentation"><a href="{{ route('reservations.create', 'asset='.$asset->id)  }}">{{ trans('reservations.create') }}</a></li>
+     @endcan
   </ul>
 </div>
 @endcan
@@ -548,7 +551,9 @@
                     @endif
                 </ul>
 
-	          @endif
+              @endif
+              
+              @include ('partials.asset-reservations')
             </div> <!-- div.col-md-4 -->
           </div><!-- /row -->
         </div><!-- /.tab-pane asset details -->

@@ -90,10 +90,11 @@
 
   <!-- side address column -->
   <div class="col-md-3">
-
+      @include('partials.obj-details', ['obj' => $accessory])
+    <!-- side address column 
     <h4>{{ trans('admin/accessories/general.about_accessories_title') }}</h4>
-    <p>{{ trans('admin/accessories/general.about_accessories_text') }} </p>
-    <div class="text-center">
+    <p>{{ trans('admin/accessories/general.about_accessories_text') }} </p>-->
+    <div class="text-right">
       @can('checkout', \App\Models\Accessory::class)
         <a href="{{ route('checkout/accessory', $accessory->id) }}" style="margin-right:5px;" class="btn btn-info btn-sm" {{ (($accessory->numRemaining() > 0 ) ? '' : ' disabled') }}>{{ trans('general.checkout') }}</a>
       @endcan

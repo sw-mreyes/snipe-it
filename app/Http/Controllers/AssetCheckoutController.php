@@ -11,6 +11,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Helpers\Helper;
 
 class AssetCheckoutController extends Controller
 {
@@ -35,7 +36,8 @@ class AssetCheckoutController extends Controller
         $this->authorize('checkout', $asset);
 
         if ($asset->availableForCheckout()) {
-            return view('hardware/checkout', compact('asset'));
+            $reservation = Helper::isAssetReserved($assetId);
+            return view('hardware/checkout', compact('asset','reservation'));
         }
         return redirect()->route('hardware.index')->with('error', trans('admin/hardware/message.checkout.not_available'));
 

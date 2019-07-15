@@ -91,6 +91,9 @@
       </div>
     @endif
 
+    @include('partials.obj-details', ['obj' => $component])
+
+     <!--
     @if ($component->serial!='')
     <div class="col-md-12" style="padding-bottom: 5px;"><strong>{{ trans('admin/hardware/form.serial') }}: </strong>
     {{ $component->serial }} </div>
@@ -111,7 +114,7 @@
     @if ($component->order_number)
     <div class="col-md-12" style="padding-bottom: 5px;"><strong>{{ trans('general.order_number') }}:</strong>
     {{ $component->order_number }} </div>
-    @endif
+    @endif-->
   </div>
 </div> <!-- .row-->
 
