@@ -34,12 +34,9 @@ class AssetCheckoutController extends Controller
 
         $this->authorize('checkout', $asset);
 
-        if(Helper::isAssetCheckoutBlocked($assetId)){
-            return redirect()->route('hardware.index')->with('error', trans('reservations.checkout_blocked'));
-        }
-
         if ($asset->availableForCheckout()) {
-            return view('hardware/checkout', compact('asset'));
+            $reservation = Helper::isAssetReserved($assetId);
+            return view('hardware/checkout', compact('asset','reservation'));
         }
         return redirect()->route('hardware.index')->with('error', trans('admin/hardware/message.checkout.not_available'));
 

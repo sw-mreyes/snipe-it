@@ -21,6 +21,7 @@ return array(
     'edit_asset_reservations' => 'Reservations for selected Assets',
     'checkout_blocked' => 'This asset is reserved.',
     'asset_not_found' => 'Could not find the given asset.',
-    'asset_required' => 'Please provide an asset id to add to a reservation.'
+    'asset_required' => 'Please provide an asset id to add to a reservation.',
+    'reserved_by' => 'This asset is reserved by'
 );
 

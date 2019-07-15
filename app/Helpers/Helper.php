@@ -665,17 +665,21 @@ class Helper
         return false;
     }
 
-    public static function isAssetCheckoutBlocked($assetID)
+    /**
+     * Check if there is a reservation active for the given asset and returns 
+     * the reservation if there is.
+     */
+    public static function isAssetReserved($assetID)
     {
-        $user = Auth::user();
-        $reservations = Reservation::select('reservations.id')
+        $current_datetime = date('Y-m-d');
+
+        $reservations = Reservation::select('reservations.*')
             ->join('asset_reservation', 'reservations.id', '=', 'asset_reservation.reservation_id')
             ->where('asset_reservation.asset_id', '=', $assetID)
-            ->where('reservations.user_id', '!=', $user->id)
-            ->where('start', '<=', date('Y-m-d'))
-            ->where('end', '>', date('Y-m-d'))
-            ->count();
-        return ($reservations) > 0;
+            ->where('start', 'like', $current_datetime.'%')
+            ->where('end', '>=', $current_datetime);
+
+        return $reservations->first();       
     }
 
     /**
