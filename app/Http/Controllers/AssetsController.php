@@ -285,8 +285,10 @@ class AssetsController extends Controller
 
             $view = view('hardware/view', compact('asset', 'qr_code', 'settings'))->with('use_currency', $use_currency)->with('audit_log', $audit_log);
             
-            $reservations = Reservation::select('reservations.*')->join('asset_reservation', 'reservations.id', '=', 'asset_reservation.reservation_id')
-            ->where('asset_reservation.asset_id', '=', $assetId)->orderBy('start','asc')->get();
+            $reservations = Reservation::select('reservations.*')
+                        ->join('asset_reservation', 'reservations.id', '=', 'asset_reservation.reservation_id')
+                        ->where('reservations.end', '>=', date('Y-m-d'))
+                        ->where('asset_reservation.asset_id', '=', $assetId)->orderBy('start','asc')->get();
             
             return $view->with('reservations', $reservations);
         }

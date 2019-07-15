@@ -203,7 +203,7 @@ class ReservationsController extends Controller
         $this->authorize('index', Asset::class);
         if ($reservation = Reservation::where('id', '=', $reservationID)->first()) {
             return view('reservations/view', [
-                'reservation' => Reservation::where('id', '=', $reservationID)->first()
+                'reservation' => $reservation
             ]);
         } else {
             return redirect('reservations/index')->with('error', trans('reservations.reservation_not_found'));
