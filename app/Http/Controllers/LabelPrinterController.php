@@ -60,22 +60,22 @@ class LabelPrinterController extends Controller
         $category = Category::where('id', '=', $accessory->category_id)->first();
 
         if (!$accessory) {
-            return redirect()->route('accessories.index')->with('error', 'Accessory not found!');
+            return redirect()->back()->with('error', 'Accessory not found!');
         }
         if (!$category) { 
-            return redirect()->route('accessories.index')->with('error', 'Category not found!');            
+            return redirect()->back()->with('error', 'Category not found!');            
         }
 
 
         // Send the request
         $httpcode = $this->printLabel('AC-' . $accessoryID, $accessory->name, $category->name);
         if ($httpcode == 200) {
-            return redirect()->route('accessories.show', $accessoryID)->with('success', 'Print Job queued!');
+            return redirect()->back()->with('success', 'Print Job queued!');
         }
         if ($httpcode == 403) {
-            return redirect()->route('accessories.show', $accessoryID)->with('error', 'Could not queue print job: Permission denied!');
+            return redirect()->back()->with('error', 'Could not queue print job: Permission denied!');
         }
-        return redirect()->route('accessories.show', $accessoryID)->with('error', 'Could not queue print job! (' . $httpcode . ')');
+        return redirect()->back()->with('error', 'Could not queue print job! (' . $httpcode . ')');
     }
 
     /**
@@ -89,23 +89,23 @@ class LabelPrinterController extends Controller
 
         $model = AssetModel::where('id', '=', $asset->model_id)->first();
         $category = Category::where('id', '=', $model->category_id)->first();
-        
+
         if (!$model) {
-            return redirect()->route('hardware.index')->with('error', 'Model not found!');
+            return redirect()->back()->with('error', 'Model not found!');
         }
         if (!$category) { 
-            return redirect()->route('hardware.index')->with('error', 'Category not found!');            
+            return redirect()->back()->with('error', 'Category not found!');            
         }
 
         $httpcode = $this->printLabel($asset->asset_tag, $asset->name, $category->name);
 
         if ($httpcode == 200) {
-            return redirect()->route('hardware.view', $asset_id)->with('success', 'Print Job queued!');
+            return redirect()->back()->with('success', 'Print Job queued!');
         }
         if ($httpcode == 403) {
-            return redirect()->route('hardware.view', $asset_id)->with('error', 'Could not queue print job: Permission denied!');
+            return redirect()->back()->with('error', 'Could not queue print job: Permission denied!');
         }
-        return redirect()->route('hardware.view', $asset_id)->with('error', 'Could not queue print job! (' . $httpcode . ')');
+        return redirect()->back()->with('error', 'Could not queue print job! (' . $httpcode . ')');
     }
 
     /**
@@ -155,7 +155,7 @@ class LabelPrinterController extends Controller
     public function printLocationLabel($locationID)
     {
         if (is_null($location = Location::find($locationID))) {
-            return redirect()->route('locations.index')->with('error', trans('admin/locations/message.not_found'));
+            return redirect()->back()->with('error', trans('admin/locations/message.not_found'));
         }
 
         $parent_name = '';
@@ -166,11 +166,11 @@ class LabelPrinterController extends Controller
         $httpcode = $this->printLabel('BX-' . $locationID, $location->name, $parent_name);
 
         if ($httpcode == 200) {
-            return redirect()->route('locations.show', $locationID)->with('success', 'Print Job queued!');
+            return redirect()->back()->with('success', 'Print Job queued!');
         }
         if ($httpcode == 403) {
-            return redirect()->route('locations.show', $locationID)->with('error', 'Could not queue print job: Permission denied!');
+            return redirect()->back()->with('error', 'Could not queue print job: Permission denied!');
         }
-        return redirect()->route('locations.show', $locationID)->with('error', 'Could not queue print job! (' . $httpcode . ')');
+        return redirect()->back()->with('error', 'Could not queue print job! (' . $httpcode . ')');
     }
 }

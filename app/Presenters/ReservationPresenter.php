@@ -70,9 +70,10 @@ class ReservationPresenter extends Presenter
                 "field" => "actions",
                 "searchable" => false,
                 "sortable" => false,
-                "switchable" => false,
+                "switchable" => true,
                 "title" => trans('table.actions'),
                 "formatter" => "reservationsActionsFormatter",
+                "visible" => true
             ]
         ];
         return json_encode($layout);

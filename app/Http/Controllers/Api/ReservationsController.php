@@ -166,7 +166,7 @@ class ReservationsController extends Controller
                 ->join('asset_reservation', 'reservations.id', '=', 'asset_reservation.reservation_id')
                 ->where('asset_reservation.asset_id', '=', $asset_id);
             $this->apply_index_query_filter($res, $request);
-            $res->orderBy('start', 'asc')->distinct('reservations.id')->get();
+            $res = $res->orderBy('start', 'asc')->distinct('reservations.id')->get();
             foreach ($res as $reservation) {
                 array_push($entry['reservations'], $reservation);
             }

@@ -121,6 +121,7 @@ class AssetsTransformer
             'restore' => false,
             'update' => (bool) Gate::allows('update', Asset::class),
             'delete' => (bool) Gate::allows('delete', Asset::class),
+            'print' => true,
         ];
 
         if ($asset->deleted_at!='') {
@@ -131,6 +132,7 @@ class AssetsTransformer
                 'restore' => Gate::allows('create', Asset::class) ? true : false,
                 'update' => false,
                 'delete' => false,
+                'print' => false,
             ];
         }
 

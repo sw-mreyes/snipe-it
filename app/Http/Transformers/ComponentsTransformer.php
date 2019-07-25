@@ -56,6 +56,7 @@ class ComponentsTransformer
             'checkin' => (bool) Gate::allows('checkin', Component::class),
             'update' => (bool) Gate::allows('update', Component::class),
             'delete' => (bool) Gate::allows('delete', Component::class),
+            'print' => true,
         ];
         $array += $permissions_array;
 

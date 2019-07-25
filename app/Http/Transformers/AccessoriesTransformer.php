@@ -47,10 +47,11 @@ class AccessoriesTransformer
             'checkin' =>  false,
             'update' => Gate::allows('update', Accessory::class) ? true : false,
             'delete' => Gate::allows('delete', Accessory::class) ? true : false,
+            'print' => true,
         ];
 
         $permissions_array['user_can_checkout'] = false;
-
+   
         if ($accessory->numRemaining() > 0) {
             $permissions_array['user_can_checkout'] = true;
         }
