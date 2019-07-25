@@ -167,10 +167,15 @@
         };
     }
 
-    function reservationActionsFormatter(destination){
+    function reservationsActionsFormatter(value, row){
+        console.log(value, row);
+        const edit_url = "/reservations/" + row.id + "/edit";
+        const delete_url = "/reservations/" + row.id + "/delete";
+
         let actions = '<nobr>'
-        actions += '<p>res-actions</p>'
-        actions +='</nobr>';
+        actions += '<a href="'+edit_url+'" class="btn btn-sm btn-warning" data-tooltip="true" title="Edit"><i class="fa fa-pencil"></i></a>&nbsp;';
+        actions += '<a href="'+delete_url+'" class="btn btn-sm btn-danger" data-tooltip="true" title="Edit"><i class="fa fa-trash"></i></a>&nbsp;';
+        
         return actions;
     }
 
@@ -200,6 +205,10 @@
 
             if ((row.available_actions) && (row.available_actions.clone === true)) {
                 actions += '<a href="{{ url('/') }}/' + dest + '/' + row.id + '/clone" class="btn btn-sm btn-info" data-tooltip="true" title="Clone"><i class="fa fa-copy"></i></a>&nbsp;';
+            }
+
+            if ((row.available_actions) && (row.available_actions.print === true)) {
+                actions += '<a href="{{ url('/') }}/' + dest + '/' + row.id + '/printlabel" class="btn btn-sm btn-primary" data-tooltip="true" title="Print Label"><i class="fa fa-print"></i></a>&nbsp;';
             }
 
             if ((row.available_actions) && (row.available_actions.update === true)) {
