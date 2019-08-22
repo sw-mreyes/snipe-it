@@ -676,10 +676,10 @@ class Helper
         $reservations = Reservation::select('reservations.*')
             ->join('asset_reservation', 'reservations.id', '=', 'asset_reservation.reservation_id')
             ->where('asset_reservation.asset_id', '=', $assetID)
-            ->where('start', 'like', $current_datetime.'%')
+            ->where('start', 'like', $current_datetime . '%')
             ->where('end', '>=', $current_datetime);
 
-        return $reservations->first();       
+        return $reservations->first();
     }
 
     /**
@@ -705,6 +705,13 @@ class Helper
      */
     public static function get_reservations($start, $end, $asset_id, $reservationID = null)
     {
+        if (false === strtotime($start)) {
+            $start = date("Y-m-d H:i:s", $start);
+        }
+        if (false === strtotime($end)) {
+            $end = date("Y-m-d H:i:s", $end);
+        }
+
         return Reservation::select('reservations.*')
             ->join('asset_reservation', 'reservations.id', '=', 'asset_reservation.reservation_id')
             ->where('reservations.id', '!=', $reservationID)
