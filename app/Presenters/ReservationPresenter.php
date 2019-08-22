@@ -65,6 +65,7 @@ class ReservationPresenter extends Presenter
                 "sortable" => false,
                 "switchable" => true,
                 "title" => trans('general.assets'),
+                "formatter" => "reservationsInlineListFormatter",
                 "visible" => true
             ], [
                 "field" => "actions",

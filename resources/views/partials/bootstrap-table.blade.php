@@ -344,6 +344,24 @@
 
     }
 
+    function reservationsInlineListFormatter(row, value){
+        const max_rows = 5;
+        let asset_list_html = "";
+        let cnt = 0;
+        for (let i in value.assets){
+            cnt++;
+            const asset = value.assets[i];
+            asset_list_html += '<a href="{{ url('/') }}/hardware/"'+asset.id+">"+asset.name+"</a><br>"
+            // only show max_rows rows
+            let remaining = value.assets.length - cnt;
+            if (remaining > 1 && cnt >= max_rows - 1 ) {
+                asset_list_html += "..." + (value.assets.length - cnt) + " more"
+                break;
+            }
+        }
+        return asset_list_html;
+    }
+
 
 
     var formatters = [
