@@ -56,7 +56,7 @@ class ReservationsTransformer
             'notes' => $res->notes,
             'created' => $res->created_at,
             'updated' => $res->updated_at,
-            'assets' => (int) count($res->assets)
+            'assets' => $res->assets
         ];
         return $array;
     }
