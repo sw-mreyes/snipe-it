@@ -351,7 +351,9 @@
         for (let i in value.assets){
             cnt++;
             const asset = value.assets[i];
-            asset_list_html += '<a href="{{ url('/') }}/hardware/"'+asset.id+">"+asset.name+"</a><br>"
+            console.log(asset);
+            const text = asset.name || asset.asset_tag;
+            asset_list_html += '<a href="{{ url('/') }}/hardware/'+asset.id+'">'+text+"</a><br>"
             // only show max_rows rows
             let remaining = value.assets.length - cnt;
             if (remaining > 1 && cnt >= max_rows - 1 ) {
