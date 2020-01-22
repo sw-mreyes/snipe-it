@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpUndefinedClassInspection */
 
 use Illuminate\Http\Request;
 
@@ -936,6 +936,16 @@ Route::group(['prefix' => 'v1','namespace' => 'Api', 'middleware' => 'api'], fun
         );
     }); // reservations group
 
+
+    // Global search
+    Route::group(['prefix' => 'search'], function () {
+        Route::get('global',
+            [
+                'as' => 'api.search.global',
+                'uses' => 'SearchController@search'
+            ]
+        );
+    });
 
 
 });
