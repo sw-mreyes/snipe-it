@@ -122,7 +122,7 @@ class SearchTransformer
             "location" => $this->transformLocation($consumable->location),
             "available_actions" => [
                 'checkout' => Gate::allows('checkout', Consumable::class) ? $consumable->numRemaining() > 0 : false,
-                'checkin' => Gate::allows('checkin', Consumable::class) ? true : false,
+                'checkin' => false,
                 'update' => Gate::allows('update', Consumable::class) ? true : false,
                 'delete' => Gate::allows('delete', Consumable::class) ? true : false,
                 'print' => true,
@@ -142,7 +142,7 @@ class SearchTransformer
             "location" => $this->transformLocation($component->location),
             "available_actions" => [
                 'checkout' => Gate::allows('checkout', Component::class) ? $component->numRemaining() > 0 : false,
-                'checkin' => (bool)Gate::allows('checkin', Component::class),
+                'checkin' => false,
                 'update' => (bool)Gate::allows('update', Component::class),
                 'delete' => (bool)Gate::allows('delete', Component::class),
                 'print' => true,
