@@ -8,32 +8,53 @@ use App\Models\AssetModel;
 use App\Models\Category;
 use App\Models\Component;
 use App\Models\Consumable;
-use Illuminate\Database\Eloquent\Collection;
-use App\Http\Transformers\UsersTransformer;
+use App\Models\Location;
+use App\Models\User;
 use Gate;
 use App\Helpers\Helper;
 
 class SearchTransformer
 {
 
-    function transformLocation($asset)
+    function transformLocation($object)
     {
-        if (!$asset) return null;
-
-        if ($asset->location) $loc = $asset->location;
-        elseif ($asset->rtd_location) $loc = $asset->rtd_location;
-        else return null;
-
+        if (isset($object->location_id)) {
+            $loc = Location::where('id', '=', $object->location_id)->first();
+        } elseif (isset($object->rtd_location_id)) {
+            $loc = Location::where('id', '=', $object->rtd_location_id)->first();
+        } else {
+            return null;
+        }
         return [
-            "name" => $loc['name'],
-            "id" => $loc['id']
+            "name" => $loc->name,
+            "id" => $loc->id
         ];
     }
 
     function transformAssetAssignedTo($asset)
     {
         if ($asset->assigned_to) {
-
+            // App\\Models\\<class-name> ~> lower(class-name)
+            $type_str = str_replace('\\', '', $asset->assigned_type);
+            $type_str = str_replace('AppModels', '', $type_str);
+            $type_str = strtolower($type_str);
+            if ($type_str == 'user') {
+                $u = User::where('id', '=', $asset->assigned_to)->first();
+                $name_str = $u->first_name . ' ' . $u->last_name;
+            } elseif ($type_str == 'asset') {
+                $asset = Asset::where('id', '=', $asset->assigned_to)->first();
+                $name_str = $asset->name;
+            } elseif ($type_str == 'location') {
+                $location = Location::where('id', '=', $asset->assigned_to)->first();
+                $name_str = $location->name;
+            } else {
+                return null;
+            }
+            return [
+                'id' => $asset->assigned_to,
+                'type' => $type_str,
+                'name' => $name_str,
+            ];
         } else {
             return null;
         }
@@ -56,14 +77,15 @@ class SearchTransformer
             "model" => $model,
             "category" => $category,
             "available_actions" => [
-                'checkout' => (bool)Gate::allows('checkout', Asset::class),
-                'checkin' => (bool)Gate::allows('checkin', Asset::class),
+                'checkout' => (bool)Gate::allows('checkout', Asset::class) and (bool)$asset->availableForCheckout(),
+                'checkin' => (bool)Gate::allows('checkin', Asset::class) and $asset->assigned_to,
                 'clone' => Gate::allows('create', Asset::class) ? true : false,
                 'restore' => false,
                 'update' => (bool)Gate::allows('update', Asset::class),
                 'delete' => (bool)Gate::allows('delete', Asset::class),
                 'print' => true,
-            ]
+            ],
+            'user_can_checkout' => (bool)$asset->availableForCheckout()
         ];
     }
 
@@ -78,7 +100,7 @@ class SearchTransformer
             "id" => $accessory['id'],
             "location" => $this->transformLocation($accessory->location),
             "available_actions" => [
-                'checkout' => Gate::allows('checkout', Accessory::class) ? true : false,
+                'checkout' => Gate::allows('checkout', Accessory::class) ? $accessory->numRemaining() > 0 : false,
                 'checkin' => false,
                 'update' => Gate::allows('update', Accessory::class) ? true : false,
                 'delete' => Gate::allows('delete', Accessory::class) ? true : false,
@@ -99,7 +121,7 @@ class SearchTransformer
             "available" => $consumable->qty,
             "location" => $this->transformLocation($consumable->location),
             "available_actions" => [
-                'checkout' => Gate::allows('checkout', Consumable::class) ? true : false,
+                'checkout' => Gate::allows('checkout', Consumable::class) ? $consumable->numRemaining() > 0 : false,
                 'checkin' => Gate::allows('checkin', Consumable::class) ? true : false,
                 'update' => Gate::allows('update', Consumable::class) ? true : false,
                 'delete' => Gate::allows('delete', Consumable::class) ? true : false,
@@ -119,7 +141,7 @@ class SearchTransformer
             "id" => $component['id'],
             "location" => $this->transformLocation($component->location),
             "available_actions" => [
-                'checkout' => (bool)Gate::allows('checkout', Component::class),
+                'checkout' => Gate::allows('checkout', Component::class) ? $component->numRemaining() > 0 : false,
                 'checkin' => (bool)Gate::allows('checkin', Component::class),
                 'update' => (bool)Gate::allows('update', Component::class),
                 'delete' => (bool)Gate::allows('delete', Component::class),

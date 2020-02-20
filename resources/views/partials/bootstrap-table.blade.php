@@ -188,19 +188,18 @@
         return 'error';
     }
 
-    function searchResultActionFormatter(value, row) {
-        if (row.type === 'Asset') {
-            return genericActionsFormatter('hardware')(value, row);
-        } else if (row.type === 'Accessory') {
-            return genericActionsFormatter('accessories')(value, row);
-        } else if (row.type === 'Component') {
-            return genericActionsFormatter('components')(value, row);
-        } else if (row.type === 'Consumable') {
-            return genericActionsFormatter('consumables')(value, row);
-        } else {
-            return '-'
-        }
 
+    function searchResultCheckinCheckoutFormatter(value, row) {
+        if (row.available_actions && row.available_actions.checkout) {
+            return '<a href="{{ url('/') }}/' + row.api + '/' + row.id + '/checkout" class="btn btn-sm bg-maroon" data-tooltip="true" title="Check this item out">{{ trans('general.checkout') }}</a>';
+        }
+        if (row.available_actions && row.available_actions.checkin) {
+            return '<a href="{{ url('/') }}/' + row.api + '/' + row.id + '/checkin" class="btn btn-sm bg-purple" data-tooltip="true" title="Check this item in so it is available for re-imaging, re-issue, etc.">{{ trans('general.checkin') }}</a>';
+        }
+    }
+
+    function searchResultActionFormatter(value, row) {
+        return genericActionsFormatter(row.api)(value, row);
     }
 
     // Make the edit/delete buttons
@@ -222,6 +221,8 @@
 
             if ((row.available_actions) && (row.available_actions.clone === true)) {
                 actions += '<a href="{{ url('/') }}/' + dest + '/' + row.id + '/clone" class="btn btn-sm btn-info" data-tooltip="true" title="Clone"><i class="fa fa-copy"></i></a>&nbsp;';
+            } else {
+                actions += '<a href=""  style="visibility:hidden" class="btn btn-sm btn-info"><i class="fa fa-copy"></i></a>&nbsp;';
             }
 
             if ((row.available_actions) && (row.available_actions.print === true)) {
@@ -327,6 +328,8 @@
 
     function genericCheckinCheckoutFormatter(destination) {
         return function (value, row) {
+            console.log("genericCheckinCheckoutFormatter ( .. )");
+            console.log(row);
 
             // The user is allowed to check items out, AND the item is deployable
             if ((row.available_actions.checkout == true) && (row.user_can_checkout == true) && ((!row.asset_id) && (!row.assigned_to))) {

@@ -23,13 +23,14 @@ use \App\Models\AssetModel;
 use App\Http\Controllers\Controller;
 
 
-/** This controller handles all actions related to the pagewide search.
+/** This controller handles all actions related to the global search.
  *
  * @version    v1.0
  * @author [M. Reyes] [<mreyes@schutzwerk.com>]
  */
 class SearchController extends Controller
 {
+
     function wrap($type, $obj)
     {
         return [
@@ -38,36 +39,34 @@ class SearchController extends Controller
         ];
     }
 
+    function wrap_results($assets, $accessories, $components, $consumables)
+    {
+        $results = [];
+        foreach ($assets as $asset) array_push($results, $this->wrap("asset", $asset));
+        foreach ($accessories as $acc) array_push($results, $this->wrap("accessory", $acc));
+        foreach ($components as $cmp) array_push($results, $this->wrap("component", $cmp));
+        foreach ($consumables as $cs) array_push($results, $this->wrap("consumable", $cs));
+        return $results;
+    }
+
     function parse_category($category)
     {
         $results = [];
         //
         $assets = Asset::select('assets.*')->whereNull('assets.deleted_at')->join('models', 'models.id', '=', 'model_id')->where('category_id', '=', $category->id)->get();
-        $accesories = Accessory::where('category_id', '=', $category->id)->get();
+        $accessories = Accessory::where('category_id', '=', $category->id)->get();
         $components = Component::where('category_id', '=', $category->id)->get();
         $consumables = Consumable::where('category_id', '=', $category->id)->get();
-        foreach ($assets as $asset) array_push($results, $this->wrap("asset", $asset));
-        foreach ($accesories as $acc) array_push($results, $this->wrap("accessory", $acc));
-        foreach ($components as $cmp) array_push($results, $this->wrap("component", $cmp));
-        foreach ($consumables as $cs) array_push($results, $this->wrap("consumable", $cs));
-        //
-        return $results;
+        return $this->wrap_results($assets, $accessories, $components, $consumables);
     }
 
     function parse_location($location)
     {
-        $results = [];
-        //
         $assets = Asset::where('location_id', '=', $location->id)->get();
-        $accesories = Accessory::where('location_id', '=', $location->id)->get();
+        $accessories = Accessory::where('location_id', '=', $location->id)->get();
         $components = Component::where('location_id', '=', $location->id)->get();
         $consumables = Consumable::where('location_id', '=', $location->id)->get();
-        foreach ($assets as $asset) array_push($results, $this->wrap("asset", $asset));
-        foreach ($accesories as $acc) array_push($results, $this->wrap("accessory", $acc));
-        foreach ($components as $cmp) array_push($results, $this->wrap("component", $cmp));
-        foreach ($consumables as $cs) array_push($results, $this->wrap("consumable", $cs));
-        //
-        return $results;
+        return $this->wrap_results($assets, $accessories, $components, $consumables);
     }
 
     function parse_model($model)
@@ -129,29 +128,26 @@ class SearchController extends Controller
     /**
      * Search [assets, accessories, consumables, components, locations]
      * names (and asset notes) for the given string.
-     *
+     * @param $search_string string string to search for
+     * @return array
      */
-    function search_string($str)
+    function search_string($search_string)
     {
-        $results = [];
-
         //  Direct results
         //
-        $assets = Asset::whereNull('deleted_at')->where('name', 'LIKE', "%{$str}%")
-            ->orWhere('notes', 'LIKE', "%{$str}%")
+        $assets = Asset::whereNull('deleted_at')->where('name', 'LIKE', "%{$search_string}%")
+            ->orWhere('notes', 'LIKE', "%{$search_string}%")
             ->get();
-        $accesories = Accessory::where('name', 'LIKE', "%{$str}%")->get();
-        $components = Component::where('name', 'LIKE', "%{$str}%")->get();
-        $consumables = Consumable::where('name', 'LIKE', "%{$str}%")->get();
-        foreach ($assets as $asset) array_push($results, $this->wrap("asset", $asset));
-        foreach ($accesories as $acc) array_push($results, $this->wrap("accessory", $acc));
-        foreach ($components as $cmp) array_push($results, $this->wrap("component", $cmp));
-        foreach ($consumables as $cs) array_push($results, $this->wrap("consumable", $cs));
+        $accesories = Accessory::where('name', 'LIKE', "%{$search_string}%")->get();
+        $components = Component::where('name', 'LIKE', "%{$search_string}%")->get();
+        $consumables = Consumable::where('name', 'LIKE', "%{$search_string}%")->get();
+        //
+        $results = $this->wrap_results($assets, $accesories, $components, $consumables);
 
         // Indirect results
-        $locations = Location::where('name', 'LIKE', "%{$str}%")->get();
-        $categories = Category::where('name', 'LIKE', "%{$str}%")->get();
-        $models = AssetModel::where('name', 'LIKE', "%{$str}%")->get();
+        $locations = Location::where('name', 'LIKE', "%{$search_string}%")->get();
+        $categories = Category::where('name', 'LIKE', "%{$search_string}%")->get();
+        $models = AssetModel::where('name', 'LIKE', "%{$search_string}%")->get();
         foreach ($locations as $loc) {
             $items = $this->parse_location($loc);
             if (count($items)) {

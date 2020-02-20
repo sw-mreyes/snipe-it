@@ -59,12 +59,28 @@ class SearchResultPresenter extends Presenter
                 "visible" => true,
                 "formatter" => "polymorphicItemFormatter"
             ], [
+                "field" => "location",
+                "searchable" => true,
+                "sortable" => true,
+                "title" => trans('admin/hardware/table.location'),
+                "visible" => true,
+                "switchable" => true,
+                "formatter" => "deployedLocationFormatter"
+            ], [
                 "field" => "actions",
                 "searchable" => false,
                 "sortable" => false,
                 "switchable" => false,
                 "title" => trans('table.actions'),
                 "formatter" => "searchResultActionFormatter",
+            ], [
+                "field" => "checkincheckout",
+                "searchable" => false,
+                "sortable" => false,
+                "switchable" => true,
+                "title" => trans('general.checkin') . '/' . trans('general.checkout'),
+                "visible" => false,
+                "formatter" => "searchResultCheckinCheckoutFormatter",
             ]
         ];
 
