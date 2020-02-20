@@ -35,12 +35,11 @@
                         <button class="slideout-menu-toggle btn btn-box-tool btn-box-tool-lg" data-toggle="tooltip" title="Help"><i class="fa fa-question"></i></button>
                     </div>
                 @endif
-                @include('partials.forms.edit.submit')
             </div><!-- /.box-header -->
 
             <div class="box-body">
                 <form id="create-form" class="form-horizontal" method="post" action="{{ (isset($formAction)) ? $formAction : \Request::url()  }}" autocomplete="off" role="form" enctype="multipart/form-data">
-
+                @include('partials.forms.edit.submit')
                     @if ($item->id)
                     {{ method_field('PUT') }}
                     @endif
