@@ -730,4 +730,30 @@ class Helper
             ->where('asset_reservation.asset_id', '=', $asset_id)
             ->orderBy('start', 'asc')->get();
     }
+
+    /**
+     * Expands a given tag:
+     *  PREFIX-134 => PREFIX-0000000134
+     */
+    public static function expand_tag($tag)
+    {
+        while (strlen($tag) < 13) {
+            $split = explode('-', $tag);
+            $tag = $split[0] . '-0' . $split[1];
+        }
+        return $tag;
+    }
+
+    public static function tag2id($tag)
+    {
+        $split = explode('-', $tag);
+        $num_part = $split[1];
+
+        while (substr($num_part, 0, 1) == '0') {
+            $num_part = substr($num_part, 1);
+        }
+
+        $id = (int) $num_part;
+        return $id;
+    }
 }
