@@ -35,6 +35,7 @@
                         <button class="slideout-menu-toggle btn btn-box-tool btn-box-tool-lg" data-toggle="tooltip" title="Help"><i class="fa fa-question"></i></button>
                     </div>
                 @endif
+                @include('partials.forms.edit.submit')
             </div><!-- /.box-header -->
 
             <div class="box-body">
