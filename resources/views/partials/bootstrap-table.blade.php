@@ -222,6 +222,7 @@
             if ((row.available_actions) && (row.available_actions.clone === true)) {
                 actions += '<a href="{{ url('/') }}/' + dest + '/' + row.id + '/clone" class="btn btn-sm btn-info" data-tooltip="true" title="Clone"><i class="fa fa-copy"></i></a>&nbsp;';
             } else {
+                // Add an invisible button as spacer to keep them aligned.
                 actions += '<a href=""  style="visibility:hidden" class="btn btn-sm btn-info"><i class="fa fa-copy"></i></a>&nbsp;';
             }
 

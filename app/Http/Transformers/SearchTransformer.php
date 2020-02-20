@@ -98,7 +98,7 @@ class SearchTransformer
             "type" => 'Accessory',
             "api" => 'accessories',
             "id" => $accessory['id'],
-            "location" => $this->transformLocation($accessory->location),
+            "location" => $this->transformLocation($accessory),
             "available_actions" => [
                 'checkout' => Gate::allows('checkout', Accessory::class) ? $accessory->numRemaining() > 0 : false,
                 'checkin' => false,
@@ -119,7 +119,7 @@ class SearchTransformer
             "api" => 'consumables',
             "id" => $consumable['id'],
             "available" => $consumable->qty,
-            "location" => $this->transformLocation($consumable->location),
+            "location" => $this->transformLocation($consumable),
             "available_actions" => [
                 'checkout' => Gate::allows('checkout', Consumable::class) ? $consumable->numRemaining() > 0 : false,
                 'checkin' => false,
@@ -139,7 +139,7 @@ class SearchTransformer
             "type" => 'Component',
             "api" => 'components',
             "id" => $component['id'],
-            "location" => $this->transformLocation($component->location),
+            "location" => $this->transformLocation($component),
             "available_actions" => [
                 'checkout' => Gate::allows('checkout', Component::class) ? $component->numRemaining() > 0 : false,
                 'checkin' => false,

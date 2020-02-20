@@ -13,13 +13,13 @@
     <h4>{{$query}}</h4>
 
     <table
-            data-advanced-search="true"
+            data-advanced-search="false"
             data-click-to-select="true"
             data-columns="{{ \App\Presenters\SearchResultPresenter::dataTableLayout() }}"
             data-cookie-id-table="globalSearchTable"
             data-pagination="true"
             data-id-table="globalSearchTable"
-            data-search="true"
+            data-search="false"
             data-side-pagination="server"
             data-show-columns="true"
             data-show-export="false"
