@@ -36,6 +36,7 @@ class AssetCheckoutController extends Controller
 
         if ($asset->availableForCheckout()) {
             $reservation = Helper::isAssetReserved($assetId);
+            //return $reservation;
             return view('hardware/checkout', compact('asset','reservation'));
         }
         return redirect()->route('hardware.index')->with('error', trans('admin/hardware/message.checkout.not_available'));

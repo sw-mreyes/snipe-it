@@ -31,7 +31,8 @@
             <div class="alert alert-warning" role="alert">
                 {{ trans('reservations.reserved_by') }}
                 <a href="{{ url('/') }}/users/{{ $reservation->user->id }}">{{$reservation->user->present()->fullName}}</a>
-                (<a href="{{ url('/') }}/reservations/{{ $reservation->id }}">{{$reservation->name}}</a>)
+                from {{$reservation->start->toDateString()}} to {{$reservation->end->toDateString()}}
+                (check <a href="{{ url('/') }}/reservations/{{ $reservation->id }}">{{$reservation->name}}</a> for details.)
             </div>
             @endif
 

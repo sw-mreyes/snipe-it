@@ -676,8 +676,9 @@ class Helper
         $reservations = Reservation::select('reservations.*')
             ->join('asset_reservation', 'reservations.id', '=', 'asset_reservation.reservation_id')
             ->where('asset_reservation.asset_id', '=', $assetID)
-            ->where('start', 'like', $current_datetime . '%')
-            ->where('end', '>=', $current_datetime);
+            ->where('start', '>=', $current_datetime . '%')
+            ->where('end', '>=', $current_datetime)
+            ->orderBy('start','asc');
 
         return $reservations->first();
     }
