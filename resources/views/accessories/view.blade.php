@@ -38,9 +38,8 @@
               <a href="{{ route('accessories.edit', $accessory->id) }}">{{ trans('admin/accessories/general.edit') }}</a>
             </li>
             @endcan
-            <li role="presentation">
-              <a href="{{ route('accessories.printlabel', $accessory->id) }}">{{ trans('general.print_label') }}</a>
-            </li>            
+
+            @include('partials.print_actions',['route'=>'accessories.printlabel', 'obj'=>$accessory])
           </ul>
         </div>
     @endcan

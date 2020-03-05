@@ -35,9 +35,8 @@
       @can('audit', \App\Models\Asset::class)
       <li role="presentation"><a href="{{ route('asset.audit.create', $asset->id)  }}">{{ trans('general.audit') }}</a></li>
      @endcan
-
      @can('view', \App\Models\Asset::class)
-      <li role="presentation"><a href="{{ route('asset.printlabel', $asset->id)  }}">{{ trans('general.print_label') }}</a></li>
+        @include('partials.print_actions',['route'=>'asset.printlabel', 'obj'=>$asset])
      @endcan
      @can('view', \App\Models\Asset::class)
       <li role="presentation"><a href="{{ route('reservations.create', 'asset='.$asset->id)  }}">{{ trans('reservations.create') }}</a></li>

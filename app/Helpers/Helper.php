@@ -756,4 +756,26 @@ class Helper
         $id = (int) $num_part;
         return $id;
     }
+
+    public static function parse_printer_config()
+    {
+        $server_list_str = env('PRINT_SERVER', '');
+        $location_mapping_str = env('LOCATION_MAPPING', '');
+        // Parse [ name => ip-address ] mapping
+        $server_list = [];
+        parse_str($server_list_str, $server_list);
+        // Parse [ <id>=<name> ] mapping
+        $location_mapping = [];
+        foreach (explode(';', $location_mapping_str) as $mapping_str) {
+            $mapping = explode('=', $mapping_str);
+            $location_mapping[$mapping[0]] = $mapping[1];
+        }
+        return array($server_list, $location_mapping);
+    }
+
+    public static function get_printer_locations()
+    {
+        $cfg = Helper::parse_printer_config();
+        return array_keys($cfg[0]);
+    }
 }

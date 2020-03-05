@@ -27,7 +27,7 @@
         @endif
 
         @can('view', $component)
-        <li role="presentation"><a href="{{ route('components.printlabel', $component->id) }}">{{ trans('general.print_label') }}</a></li>
+            @include('partials.print_actions',['route'=>'components.printlabel', 'obj'=>$component])
         @endcan
       </ul>
     </div>

@@ -10,6 +10,8 @@ use App\Models\Accessory;
 use App\Models\Category;
 use App\Models\Location;
 
+use Input;
+use App\Helpers\Helper;
 
 /** This controller handles interaction with the label print server.
  *
@@ -21,22 +23,22 @@ class LabelPrinterController extends Controller
 
     /**
      * Send a print request to the printer server.
-     * 
-     * The request is a POST containing a b64 encoded string 
-     * of the tag and 2 lines of information, the name & category of 
+     *
+     * The request is a POST containing a b64 encoded string
+     * of the tag and 2 lines of information, the name & category of
      * the object. The object type is encoded in the tag (e.g. SW, CM..)
-     * 
+     *
      * TODO:
      *  - Maybe get the tag prefixes via .env file to make it more configurable ?
      *  - Use CUPS ?
      */
-    private function printLabel($tag, $name, $category)
+    private function printLabel($tag, $name, $category, $server_addr)
     {
-        $data_b64 =  base64_encode($tag . '|' . $name . '|' . $category);
+        $data_b64 = base64_encode($tag . '|' . $name . '|' . $category);
         // create curl resource
         $ch = curl_init();
         // set url
-        $print_server = env('PRINT_SERVER', "127.0.0.1:1130") . "/print?&data=" . $data_b64;
+        $print_server = $server_addr . "/print?&data=" . $data_b64;
         curl_setopt($ch, CURLOPT_URL, $print_server);
         //return the transfer as a string
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -48,6 +50,43 @@ class LabelPrinterController extends Controller
         // close curl resource to free up system resources
         curl_close($ch);
         return $httpcode;
+    }
+
+    private function get_printer_by_location_or_param($location)
+    {
+        // Parse the .env config
+        $cfg = Helper::parse_printer_config();
+        $server_list = $cfg[0];
+        $location_mapping = $cfg[1];
+
+        $arg = Input::get('printer');
+        if ($arg) {
+            if (!array_key_exists($arg, $server_list)) {
+                return null;
+            }
+            return array($server_list[$arg], $arg);
+        }
+
+        // get the top-level parent id of the given location.
+        // -1 if no location is set.
+        if (!$location) {
+            $location_id = -1;
+        } else {
+            $next = $location;
+            $root = $location;
+            while ($next = Location::find($next->parent_id) and $next->id != $root->id) {
+                $root = $next;
+            }
+            $location_id = $root->id;
+        }
+        // Check if a mapping exists for the location_id.
+        if (!array_key_exists($location_id, $location_mapping)) {
+            return null;
+        } else {
+            $printer_location = $location_mapping[$location_id];
+            if (!array_key_exists($printer_location, $server_list)) return null;
+            return array($server_list[$printer_location], $printer_location);
+        }
     }
 
 
@@ -62,20 +101,23 @@ class LabelPrinterController extends Controller
         if (!$accessory) {
             return redirect()->back()->with('error', 'Accessory not found!');
         }
-        if (!$category) { 
-            return redirect()->back()->with('error', 'Category not found!');            
+        if (!$category) {
+            return redirect()->back()->with('error', 'Category not found!');
         }
-
-
-        // Send the request
-        $httpcode = $this->printLabel('AC-' . $accessoryID, $accessory->name, $category->name);
-        if ($httpcode == 200) {
-            return redirect()->back()->with('success', 'Print Job queued!');
+        // Determine which label printer to use
+        if ($print_server = $this->get_printer_by_location_or_param($accessory->location)) {
+            // Send the request
+            $httpcode = $this->printLabel('AC-' . $accessoryID, $accessory->name, $category->name, $print_server[0]);
+            if ($httpcode == 200) {
+                return redirect()->back()->with('success', 'Print Job queued in ' . $print_server[1] . '!');
+            }
+            if ($httpcode == 403) {
+                return redirect()->back()->with('error', 'Could not queue print job in ' . $print_server[1] . ': Permission denied!');
+            }
+            return redirect()->back()->with('error', 'Could not queue print job in ' . $print_server[1] . ': ' . $httpcode);
+        } else {
+            return redirect()->back()->with('error', 'Could not queue print job! (No printer available)');
         }
-        if ($httpcode == 403) {
-            return redirect()->back()->with('error', 'Could not queue print job: Permission denied!');
-        }
-        return redirect()->back()->with('error', 'Could not queue print job! (' . $httpcode . ')');
     }
 
     /**
@@ -93,19 +135,25 @@ class LabelPrinterController extends Controller
         if (!$model) {
             return redirect()->back()->with('error', 'Model not found!');
         }
-        if (!$category) { 
-            return redirect()->back()->with('error', 'Category not found!');            
+        if (!$category) {
+            return redirect()->back()->with('error', 'Category not found!');
         }
 
-        $httpcode = $this->printLabel($asset->asset_tag, $asset->name, $category->name);
+        // Determine which label printer to use
+        if ($print_server = $this->get_printer_by_location_or_param($asset->location)) {
+            $httpcode = $this->printLabel($asset->asset_tag, $asset->name, $category->name, $print_server[0]);
+            if ($httpcode == 200) {
+                return redirect()->back()->with('success', 'Print Job queued in ' . $print_server[1] . '!');
+            }
+            if ($httpcode == 403) {
+                return redirect()->back()->with('error', 'Could not queue print job in ' . $print_server[1] . ': Permission denied!');
+            }
+            return redirect()->back()->with('error', 'Could not queue print job in ' . $print_server[1] . ': ' . $httpcode);
+        } else {
+            return redirect()->back()->with('error', 'Could not queue print job! (No printer available)');
+        }
 
-        if ($httpcode == 200) {
-            return redirect()->back()->with('success', 'Print Job queued!');
-        }
-        if ($httpcode == 403) {
-            return redirect()->back()->with('error', 'Could not queue print job: Permission denied!');
-        }
-        return redirect()->back()->with('error', 'Could not queue print job! (' . $httpcode . ')');
+
     }
 
     /**
@@ -116,17 +164,20 @@ class LabelPrinterController extends Controller
         if (is_null($consumable = Consumable::find($consumableID))) {
             return redirect()->route('consumables.index')->with('error', trans('admin/consumables/message.not_found'));
         }
+        if ($print_server = $this->get_printer_by_location_or_param($consumable->location)) {
+            $httpcode = $this->printLabel('CS-' . $consumableID, $consumable->name, $consumable->category->name, $print_server[0]);
+            if ($httpcode == 200) {
+                return redirect()->route('consumables.index')->with('success', 'Print Job queued in ' . $print_server[1] . '!');
+            }
+            if ($httpcode == 403) {
+                return redirect()->route('consumables.index')->with('error', 'Could not queue print job in ' . $print_server[1] . ': Permission denied!');
+            }
+            return redirect()->route('consumables.index')->with('error', 'Could not queue print job in ' . $print_server[1] . ': ' . $httpcode);
+        } else {
+            return redirect()->route('consumables.index')->with('error', 'Could not queue print job! (No printer available)');
+        }
 
-        $httpcode = $this->printLabel('CS-' . $consumableID, $consumable->name, $consumable->category->name);
-        //
-        if ($httpcode == 200) {
-            return redirect()->route('consumables.index')->with('success', 'Print Job queued!');
-        }
-        if ($httpcode == 403) {
-            return redirect()->route('consumables.index')->with('error', 'Could not queue print job: Permission denied!');
-        }
-        return redirect()->route('consumables.index')->with('error', 'Could not queue print job! (' . $httpcode . ')');
-        //
+
     }
 
     /**
@@ -138,15 +189,18 @@ class LabelPrinterController extends Controller
             return redirect()->route('components.index')->with('error', trans('admin/components/message.not_found'));
         }
 
-        $httpcode = $this->printLabel('CM-' . $componentID, $component->name, $component->category->name);
-
-        if ($httpcode == 200) {
-            return redirect()->back()->with('success', 'Print Job queued!');
+        if ($print_server = $this->get_printer_by_location_or_param($component->location)) {
+            $httpcode = $this->printLabel('CM-' . $componentID, $component->name, $component->category->name, $print_server[0]);
+            if ($httpcode == 200) {
+                return redirect()->back()->with('success', 'Print Job queued in ' . $print_server[1] . '!');
+            }
+            if ($httpcode == 403) {
+                return redirect()->back()->with('error', 'Could not queue print job in ' . $print_server[1] . ': Permission denied!');
+            }
+            return redirect()->back()->with('error', 'Could not queue print job in ' . $print_server[1] . ': ' . $httpcode);
+        } else {
+            return redirect()->back()->with('error', 'Could not queue print job! (No printer available)');
         }
-        if ($httpcode == 403) {
-            return redirect()->back()->with('error', 'Could not queue print job: Permission denied!');
-        }
-        return redirect()->back()->with('error', 'Could not queue print job! (' . $httpcode . ')');
     }
 
     /**
@@ -163,14 +217,17 @@ class LabelPrinterController extends Controller
             $parent_name = $location->parent->name;
         }
 
-        $httpcode = $this->printLabel('BX-' . $locationID, $location->name, $parent_name);
-
-        if ($httpcode == 200) {
-            return redirect()->back()->with('success', 'Print Job queued!');
+        if ($print_server = $this->get_printer_by_location_or_param($location)) {
+            $httpcode = $this->printLabel('BX-' . $locationID, $location->name, $parent_name, $print_server[0]);
+            if ($httpcode == 200) {
+                return redirect()->back()->with('success', 'Print Job queued in ' . $print_server[1] . '!');
+            }
+            if ($httpcode == 403) {
+                return redirect()->back()->with('error', 'Could not queue print job in ' . $print_server[1] . ': Permission denied!');
+            }
+            return redirect()->back()->with('error', 'Could not queue print job in ' . $print_server[1] . ': ' . $httpcode);
+        } else {
+            return redirect()->back()->with('error', 'Could not queue print job! (No printer available)');
         }
-        if ($httpcode == 403) {
-            return redirect()->back()->with('error', 'Could not queue print job: Permission denied!');
-        }
-        return redirect()->back()->with('error', 'Could not queue print job! (' . $httpcode . ')');
     }
 }
