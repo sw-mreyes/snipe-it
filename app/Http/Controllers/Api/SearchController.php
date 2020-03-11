@@ -106,7 +106,7 @@ class SearchController extends Controller
                 }
                 break;
             case 'CS':
-                $consumable = Consumable::find($this->tag2id($tag));
+                $consumable = Consumable::find($this->accessories($tag));
                 if ($consumable) {
                     return $this->wrap("consumable", $consumable);
                 }
@@ -138,11 +138,11 @@ class SearchController extends Controller
         $assets = Asset::whereNull('deleted_at')->where('name', 'LIKE', "%{$search_string}%")
             ->orWhere('notes', 'LIKE', "%{$search_string}%")
             ->get();
-        $accesories = Accessory::where('name', 'LIKE', "%{$search_string}%")->get();
+        $accessories = Accessory::where('name', 'LIKE', "%{$search_string}%")->get();
         $components = Component::where('name', 'LIKE', "%{$search_string}%")->get();
         $consumables = Consumable::where('name', 'LIKE', "%{$search_string}%")->get();
         //
-        $results = $this->wrap_results($assets, $accesories, $components, $consumables);
+        $results = $this->wrap_results($assets, $accessories, $components, $consumables);
 
         // Indirect results
         $locations = Location::where('name', 'LIKE', "%{$search_string}%")->get();
@@ -171,6 +171,23 @@ class SearchController extends Controller
 
         //app('debugbar')->stopMeasure('gs_single_term');
         return $results;
+    }
+
+    private function remove_duplicates($data)
+    {
+        $result = array();
+        // we only need to check assets since only those will be queried
+        // multiple times.
+        $asset_ids = [];
+        foreach ($data as $entry) {
+            if ($entry['type'] == 'asset'){
+                $id = $entry['object']['id'];
+                if(array_key_exists($id,$asset_ids)) continue;
+                else $asset_ids[$id] = 0;
+            }
+            array_push($result, $entry);
+        }
+        return $result;
     }
 
     public function search()
@@ -213,7 +230,7 @@ class SearchController extends Controller
             }
         }
 
-        return (new SearchTransformer())->transformSearchResult($search_result, $total_count);
+        return (new SearchTransformer())->transformSearchResult($this->remove_duplicates($search_result), $total_count);
     }
 
 
