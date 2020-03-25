@@ -38,12 +38,14 @@ class SearchTransformer
             $type_str = str_replace('\\', '', $asset->assigned_type);
             $type_str = str_replace('AppModels', '', $type_str);
             $type_str = strtolower($type_str);
+            $assigned_id = $asset->assigned_to;
             if ($type_str == 'user') {
                 $u = User::where('id', '=', $asset->assigned_to)->first();
                 $name_str = $u->first_name . ' ' . $u->last_name;
             } elseif ($type_str == 'asset') {
-                $asset = Asset::where('id', '=', $asset->assigned_to)->first();
-                $name_str = $asset->name;
+                $assigned_asset = Asset::where('id', '=', $asset->assigned_to)->first();
+                $name_str = $assigned_asset->name;
+                $assigned_id = $assigned_asset->id;
             } elseif ($type_str == 'location') {
                 $location = Location::where('id', '=', $asset->assigned_to)->first();
                 $name_str = $location->name;
@@ -51,7 +53,7 @@ class SearchTransformer
                 return null;
             }
             return [
-                'id' => $asset->assigned_to,
+                'id' => $assigned_id,
                 'type' => $type_str,
                 'name' => $name_str,
             ];
