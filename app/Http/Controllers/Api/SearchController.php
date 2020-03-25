@@ -94,25 +94,25 @@ class SearchController extends Controller
                 }
                 break;
             case 'AC':
-                $accessory = Accessory::find($this->tag2id($tag));
+                $accessory = Accessory::find(Helper::tag2id($tag));
                 if ($accessory) {
-                    return $this->wrap("asset", $accessory);
+                    return $this->wrap("accessory", $accessory);
                 }
                 break;
             case 'CM':
-                $component = Component::find($this->tag2id($tag));
+                $component = Component::find(Helper::tag2id($tag));
                 if ($component) {
                     return $this->wrap("component", $component);
                 }
                 break;
             case 'CS':
-                $consumable = Consumable::find($this->accessories($tag));
+                $consumable = Consumable::find(Helper::tag2id($tag));
                 if ($consumable) {
                     return $this->wrap("consumable", $consumable);
                 }
                 break;
             /*case 'BX':
-                $location = Location::find($this->tag2id($tag));
+                $location = Location::find(Helper::tag2id($tag));
                 if ($location) {
                     return $this->parse_location($location);
                 }
