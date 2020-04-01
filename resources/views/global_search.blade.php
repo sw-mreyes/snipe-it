@@ -38,4 +38,9 @@
 
 @section('moar_scripts')
     @include('partials.bootstrap-table')
+    <!-- Reset pageNumber -->
+    <script>
+        document.cookie = "search/global.bs.table.pageNumber=1"
+    </script>
 @stop
+
