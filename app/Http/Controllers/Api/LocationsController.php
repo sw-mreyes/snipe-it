@@ -246,7 +246,14 @@ class LocationsController extends Controller
             $locations_with_children[$location->parent_id][] = $location;
         }
 
-        $location_options = Location::indenter($locations_with_children);
+        // [2020-11-11 mre]: copy-pasted from upstream master to fix search bug
+        // https://github.com/snipe/snipe-it/blob/f0546bf689b152046dfc5058ffc0ca01321fcb4b/app/Http/Controllers/Api/LocationsController.php#L250
+        if ($request->filled('search')) {
+            $locations_formatted =  $locations;
+        } else {
+            $location_options = Location::indenter($locations_with_children);
+            $locations_formatted = new Collection($location_options);
+        }
 
         $locations_formatted = new Collection($location_options);
         $paginated_results =  new LengthAwarePaginator($locations_formatted->forPage($page, 500), $locations_formatted->count(), 500, $page, []);
