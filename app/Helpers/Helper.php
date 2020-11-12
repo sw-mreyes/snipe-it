@@ -829,7 +829,9 @@ class Helper
         $location_mapping = [];
         foreach (explode(';', $location_mapping_str) as $mapping_str) {
             $mapping = explode('=', $mapping_str);
-            $location_mapping[$mapping[0]] = $mapping[1];
+            if(count($mapping) == 2){
+                $location_mapping[$mapping[0]] = $mapping[1];
+            }
         }
         return array($server_list, $location_mapping);
     }
