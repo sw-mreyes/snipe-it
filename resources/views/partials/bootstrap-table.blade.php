@@ -287,11 +287,7 @@
                 item_icon = 'fa-map-marker';
             }
 
-<<<<<<< HEAD
-            return '<nobr><a href="{{ url('/') }}/' + item_destination + '/' + value.id + '" data-tooltip="true" title="' + value.type + '"><i class="fa ' + item_icon + ' text-blue"></i> ' + value.name + '</a></nobr>';
-=======
             return '<nobr><a href="{{ url('/') }}/' + item_destination +'/' + value.id + '" data-tooltip="true" title="' + value.type + '"><i class="fa ' + item_icon + ' text-{{ $snipeSettings->skin!='' ? $snipeSettings->skin : 'blue' }} "></i> ' + value.name + '</a></nobr>';
->>>>>>> v4.9.5
 
         } else {
             return '';
@@ -596,14 +592,10 @@
     }
 
 
-<<<<<<< HEAD
-    function imageFormatter(value) {
-=======
    function imageFormatter(value, row) {
 
 
 
->>>>>>> v4.9.5
         if (value) {
 
             if (row.name) {
