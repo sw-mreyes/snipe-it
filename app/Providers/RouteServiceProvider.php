@@ -2,8 +2,8 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\Facades\Route;
 use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
+use Illuminate\Support\Facades\Route;
 
 class RouteServiceProvider extends ServiceProvider
 {
@@ -63,10 +63,12 @@ class RouteServiceProvider extends ServiceProvider
             require base_path('routes/web/fields.php');
             require base_path('routes/web/components.php');
             require base_path('routes/web/users.php');
+            require base_path('routes/web/kits.php');
+            require base_path('routes/web.php');
+            // TODO(mre): confirm this is working as intended
             require base_path('routes/web/search.php');
             require base_path('routes/web/locations.php');
-            require base_path('routes/web/reservations.php');            
-            require base_path('routes/web.php');
+            require base_path('routes/web/reservations.php'); 
         });
     }
 

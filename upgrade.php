@@ -1,6 +1,8 @@
 <?php
 (PHP_SAPI !== 'cli' || isset($_SERVER['HTTP_USER_AGENT'])) && die('Access denied.');
 
+$required_version = '7.2.0';
+
 if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
 	echo "Skipping user check as it is not supported on Windows\n";
 } else {
@@ -30,20 +32,38 @@ echo "!! https://snipe-it.readme.io/docs/upgrading-to-v4\n";
 echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
 
 echo "--------------------------------------------------------\n";
-echo "STEP 1: Backing up database: \n";
+echo "STEP 1: Checking PHP requirements: \n";
+echo "--------------------------------------------------------\n\n";
+
+echo "Current PHP version: " . PHP_VERSION . "\n\n";
+
+if (version_compare(PHP_VERSION, $required_version, '<')) {
+    echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ERROR !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
+    echo "This version of PHP is not compatible with Snipe-IT.\n";
+    echo "Snipe-IT requires PHP version ".$required_version." or greater. Please upgrade \n";
+    echo "your server's version of PHP (mod and cli) and try running this script again.\n\n\n";
+    exit;
+
+} else {
+    echo "PHP version: " . PHP_VERSION . " is at least ".$required_version." - continuing... \n\n";
+}
+
+
+echo "--------------------------------------------------------\n";
+echo "STEP 2: Backing up database: \n";
 echo "--------------------------------------------------------\n\n";
 $backup = shell_exec('php artisan snipeit:backup');
 echo '-- '.$backup."\n\n";
 
 echo "--------------------------------------------------------\n";
-echo "STEP 2: Putting application into maintenance mode: \n";
+echo "STEP 3: Putting application into maintenance mode: \n";
 echo "--------------------------------------------------------\n\n";
 $down = shell_exec('php artisan down');
 echo '-- '.$down."\n\n";
 
 
 echo "--------------------------------------------------------\n";
-echo "STEP 3: Pulling latest from Git (".$branch." branch): \n";
+echo "STEP 4: Pulling latest from Git (".$branch." branch): \n";
 echo "--------------------------------------------------------\n\n";
 $git_version = shell_exec('git --version');
 
@@ -65,12 +85,12 @@ if ((strpos('git version', $git_version)) === false) {
 
 
 echo "--------------------------------------------------------\n";
-echo "Step 4: Cleaning up old cached files:\n";
+echo "Step 5: Cleaning up old cached files:\n";
 echo "--------------------------------------------------------\n\n";
 
 
 if (file_exists('bootstrap/cache/compiled.php')) {
-    echo "-- Deleting bootstrap/cache/compiled.php. It it no longer used.\n";
+    echo "-- Deleting bootstrap/cache/compiled.php. It is no longer used.\n";
     @unlink('bootstrap/cache/compiled.php');
 } else {
     echo "-- No bootstrap/cache/compiled.php, so nothing to delete.\n";
@@ -101,8 +121,8 @@ echo '-- '.$view_clear;
 echo "\n";
 
 echo "--------------------------------------------------------\n";
-echo "Step 5: Updating composer dependencies:\n";
-echo "(This may take an moment.)\n";
+echo "Step 6: Updating composer dependencies:\n";
+echo "(This may take a moment.)\n";
 echo "--------------------------------------------------------\n\n";
 
 
@@ -127,7 +147,7 @@ echo $composer."\n\n";
 
 
 echo "--------------------------------------------------------\n";
-echo "Step 6: Migrating database:\n";
+echo "Step 7: Migrating database:\n";
 echo "--------------------------------------------------------\n\n";
 
 $migrations = shell_exec('php artisan migrate --force');
@@ -135,7 +155,7 @@ echo '-- '.$migrations."\n\n";
 
 
 echo "--------------------------------------------------------\n";
-echo "Step 7: Checking for OAuth keys:\n";
+echo "Step 8: Checking for OAuth keys:\n";
 echo "--------------------------------------------------------\n\n";
 
 
@@ -149,7 +169,7 @@ if ((!file_exists('storage/oauth-public.key')) || (!file_exists('storage/oauth-p
 
 
 echo "--------------------------------------------------------\n";
-echo "Step 8: Caching routes and config:\n";
+echo "Step 9: Caching routes and config:\n";
 echo "--------------------------------------------------------\n\n";
 $config_cache = shell_exec('php artisan config:cache');
 $route_cache = shell_exec('php artisan route:cache');
@@ -160,16 +180,17 @@ echo "\n";
 
 
 echo "--------------------------------------------------------\n";
-echo "Step 9: Taking application out of maintenance mode:\n";
+echo "Step 10: Taking application out of maintenance mode:\n";
 echo "--------------------------------------------------------\n\n";
 
 $up = shell_exec('php artisan up');
 echo '-- '.$up."\n\n";
 
+
+
 echo "--------------------------------------------------------\n";
 echo "FINISHED! Clear your browser cookies and re-login to use :\n";
 echo "your upgraded Snipe-IT.\n";
 echo "--------------------------------------------------------\n\n";
-
 
 
