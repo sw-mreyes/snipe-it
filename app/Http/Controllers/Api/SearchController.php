@@ -193,9 +193,9 @@ class SearchController extends Controller
     public function search()
     {
 
-        $search = Input::get('search');
-        $offset = Input::get('offset');
-        $limit = Input::get('limit');
+        $search = request('search');
+        $offset = request('offset');
+        $limit =  request('limit');
 
 
         $tag_pattern_result = [];

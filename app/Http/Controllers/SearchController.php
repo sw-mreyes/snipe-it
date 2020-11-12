@@ -38,7 +38,7 @@ class SearchController extends Controller
         $this->authorize('index', Component::class);
         $this->authorize('index', Consumable::class);
 
-        $search = Input::get('search');
+        $search = request('search');
 
         return view('global_search', [
             'query' => $search
