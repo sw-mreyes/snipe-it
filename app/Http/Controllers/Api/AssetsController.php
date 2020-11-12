@@ -121,6 +121,10 @@ class AssetsController extends Controller
             $assets->where('assets.location_id', '=', $request->input('location_id'));
         }
 
+        if ($request->filled('rtd_location_id')) {
+            $assets->where('assets.rtd_location_id', '=', $request->input('rtd_location_id'));
+        }
+
         if ($request->filled('supplier_id')) {
             $assets->where('assets.supplier_id', '=', $request->input('supplier_id'));
         }
@@ -143,15 +147,18 @@ class AssetsController extends Controller
         }
 
         $request->filled('order_number') ? $assets = $assets->where('assets.order_number', '=', e($request->get('order_number'))) : '';
-        if ($request->has('custom_field')) {
+	
+	if ($request->has('custom_field')) {
             if ($request->has('custom_field_value')){
                 $assets->where($request->input('custom_field'),'=',$request->input('custom_field_value'));
             }else{
                 $assets->whereNotNull($request->input('custom_field'));
             }
-        }
-        
-        $offset = (($assets) && (request('offset') > $assets->count())) ? 0 : request('offset', 0);
+        }       
+
+        // Set the offset to the API call's offset, unless the offset is higher than the actual count of items in which
+        // case we override with the actual count, so we should return 0 items.
+        $offset = (($assets) && ($request->get('offset') > $assets->count())) ? $assets->count() : $request->get('offset', 0);
 
         // Check to make sure the limit is not higher than the max allowed
         ((config('app.max_results') >= $request->input('limit')) && ($request->filled('limit'))) ? $limit = $request->input('limit') : $limit = config('app.max_results');
@@ -452,6 +459,7 @@ class AssetsController extends Controller
         $asset->supplier_id             = $request->get('supplier_id', 0);
         $asset->requestable             = $request->get('requestable', 0);
         $asset->rtd_location_id         = $request->get('rtd_location_id', null);
+        $asset->location_id             = $request->get('rtd_location_id', null);
 
         // Update custom fields in the database.
         // Validation for these fields is handled through the AssetRequest form request
@@ -532,6 +540,10 @@ class AssetsController extends Controller
                     $location = $target->location_id;
                 } elseif (($request->filled('assigned_asset')) && ($target = Asset::find($request->get('assigned_asset')))) {
                     $location = $target->location_id;
+
+                    Asset::where('assigned_type', '\\App\\Models\\Asset')->where('assigned_to', $id)
+                        ->update(['location_id' => $target->location_id]);
+
                 } elseif (($request->filled('assigned_location')) && ($target = Location::find($request->get('assigned_location')))) {
                     $location = $target->id;
                 }
@@ -615,16 +627,14 @@ class AssetsController extends Controller
             $target = Asset::where('id','!=',$asset_id)->find(request('assigned_asset'));
             $asset->location_id = $target->rtd_location_id;
             // Override with the asset's location_id if it has one
-            if ($target->location_id!='') {
-                $asset->location_id = ($target) ? $target->location_id : '';
-            }
+            $asset->location_id = (($target) && (isset($target->location_id))) ? $target->location_id : '';
             $error_payload['target_id'] = $request->input('assigned_asset');
             $error_payload['target_type'] = 'asset';
 
         } elseif (request('checkout_to_type')=='user') {
             // Fetch the target and set the asset's new location_id
             $target = User::find(request('assigned_user'));
-            $asset->location_id = ($target) ? $target->location_id : '';
+            $asset->location_id = (($target) && (isset($target->location_id))) ? $target->location_id : '';
             $error_payload['target_id'] = $request->input('assigned_user');
             $error_payload['target_type'] = 'user';
         }
@@ -643,11 +653,12 @@ class AssetsController extends Controller
         $asset_name = request('name', null);
 
         // Set the location ID to the RTD location id if there is one
-        if ($asset->rtd_location_id!='') {
-            $asset->location_id = $target->rtd_location_id;
-        }
+        // Wait, why are we doing this? This overrides the stuff we set further up, which makes no sense.
+        // TODO: Follow up here. WTF. Commented out for now. 
 
-
+//        if ((isset($target->rtd_location_id)) && ($asset->rtd_location_id!='')) {
+//            $asset->location_id = $target->rtd_location_id;
+//        }
 
 
 

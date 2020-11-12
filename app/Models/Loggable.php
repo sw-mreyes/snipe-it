@@ -41,13 +41,20 @@ trait Loggable
         $settings = Setting::getSettings();
         $log = new Actionlog;
         $log = $this->determineLogItemType($log);
-        if(Auth::user())
+        if (Auth::user()) {
             $log->user_id = Auth::user()->id;
+        }
 
         if (!isset($target)) {
-            throw new Exception('All checkout logs require a target');
+            throw new \Exception('All checkout logs require a target.');
             return;
         }
+
+        if (!isset($target->id)) {
+            throw new \Exception('That target seems invalid (no target ID available).');
+            return;
+        }
+
         $log->target_type = get_class($target);
         $log->target_id = $target->id;
 
@@ -138,7 +145,11 @@ trait Loggable
 
         $log->location_id = null;
         $log->note = $note;
-        $log->user_id = Auth::user()->id;
+
+        if (Auth::user()) {
+            $log->user_id = Auth::user()->id;
+        }
+        
         $log->logaction('checkin from');
 
         $params = [
@@ -154,14 +165,24 @@ trait Loggable
         $checkinClass = null;
 
         if (method_exists($target, 'notify')) {
-            $target->notify(new static::$checkinClass($params));
+            try {
+                $target->notify(new static::$checkinClass($params));
+            } catch (\Exception $e) {
+                \Log::debug($e);
+            }
+            
         }
 
         // Send to the admin, if settings dictate
         $recipient = new \App\Models\Recipients\AdminRecipient();
 
         if (($settings->admin_cc_email!='') && (static::$checkinClass!='')) {
-            $recipient->notify(new static::$checkinClass($params));
+            try {
+                $recipient->notify(new static::$checkinClass($params));
+            } catch (\Exception $e) {
+                \Log::debug($e);
+            }
+
         }
 
         return $log;

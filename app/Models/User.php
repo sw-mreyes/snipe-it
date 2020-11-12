@@ -237,7 +237,7 @@ class User extends SnipeModel implements AuthenticatableContract, CanResetPasswo
      */
     public function userlog()
     {
-        return $this->hasMany('\App\Models\Actionlog', 'target_id')->orderBy('created_at', 'DESC')->withTrashed();
+        return $this->hasMany('\App\Models\Actionlog', 'target_id')->where('target_type', '=', 'App\Models\User')->orderBy('created_at', 'DESC')->withTrashed();
     }
 
     /**
@@ -379,6 +379,18 @@ class User extends SnipeModel implements AuthenticatableContract, CanResetPasswo
             } elseif ($format=='firstname') {
                 $username = str_slug($first_name);
             }
+              elseif ($format=='firstinitial.lastname') {
+                $username = str_slug(substr($first_name, 0, 1). '.' . str_slug($last_name));
+            }
+              elseif ($format=='lastname_firstinitial') {
+                $username = str_slug($last_name).'_'.str_slug(substr($first_name, 0, 1));
+            }
+              elseif ($format=='firstnamelastname') {
+                $username = str_slug($first_name) . str_slug($last_name);
+            }
+              elseif ($format=='firstnamelastinitial') {
+                $username = str_slug(($first_name.substr($last_name, 0, 1)));
+              }
         }
 
         $user['first_name'] = $first_name;

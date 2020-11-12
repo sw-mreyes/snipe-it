@@ -240,6 +240,12 @@ class UsersController extends Controller
             if ($user->id == $request->input('manager_id')) {
                 return redirect()->back()->withInput()->with('error', 'You cannot be your own manager.');
             }
+
+            // If the user isn't a superuser, don't let them edit their own permissions
+            if ((!Auth::user()->isSuperUser()) && ($user->id == Auth::user()->id)) {
+                return redirect()->back()->withInput()->with('error', 'You cannot edit your own permissions. Please contact an administrator.');
+            }
+
             $this->authorize('update', $user);
             // Figure out of this user was an admin before this edit
             $orig_permissions_array = $user->decodePermissions();
@@ -429,6 +435,10 @@ class UsersController extends Controller
             if ($request->filled('department_id')) {
                 $update_array['department_id'] = $request->input('department_id');
             }
+            if ($request->filled('city')) {
+                $update_array['city'] = $request->input('city');
+            }
+
             if ($request->filled('company_id')) {
                 $update_array['company_id'] = $request->input('company_id');
             }
@@ -606,10 +616,12 @@ class UsersController extends Controller
      */
     public function show($userId = null)
     {
-        if(!$user = User::with('assets', 'assets.model', 'consumables', 'accessories', 'licenses', 'userloc')->withTrashed()->find($userId)) {
-            $error = trans('admin/users/message.user_not_found', compact('id'));
-            // Redirect to the user management page
-            return redirect()->route('users.index')->with('error', $error);
+        if (!$user = User::with('assets', 'assets.model', 'consumables', 'accessories', 'licenses', 'userloc')
+            ->withTrashed()
+            ->find($userId))
+        {
+
+            return redirect()->route('users.index')->with('error', trans('admin/users/message.user_not_found', ['id' => $userId]));
         }
 
         $userlog = $user->userlog->load('item');
@@ -706,10 +718,8 @@ class UsersController extends Controller
                             ->with('userGroups', $userGroups)
                             ->with('clone_user', $user_to_clone);
         } catch (UserNotFoundException $e) {
-            // Prepare the error message
-            $error = trans('admin/users/message.user_not_found', compact('id'));
-            // Redirect to the user management page
-            return redirect()->route('users.index')->with('error', $error);
+
+            return redirect()->route('users.index')->with('error', trans('admin/users/message.user_not_found'));
         }
     }
 
@@ -731,30 +741,38 @@ class UsersController extends Controller
         if (isset($user->id)) {
             $this->authorize('update', $user);
 
-            foreach (Input::file('file') as $file) {
+            if (!$request->has('file')) {
+                \Log::debug('No file selected: ');
+                \Log::debug(print_r($request, true));
+                return redirect()->back()->with('error', 'No file submitted.');
 
-                $extension = $file->getClientOriginalExtension();
-                $filename = 'user-' . $user->id . '-' . str_random(8);
-                $filename .= '-' . str_slug($file->getClientOriginalName()) . '.' . $extension;
-                $upload_success = $file->move($destinationPath, $filename);
+            } else {
+                foreach ($request->file('file') as $file) {
 
-                //Log the uploaded file to the log
-                $logAction = new Actionlog();
-                $logAction->item_id = $user->id;
-                $logAction->item_type = User::class;
-                $logAction->user_id = Auth::user()->id;
-                $logAction->note = e(Input::get('notes'));
-                $logAction->target_id = null;
-                $logAction->created_at = date("Y-m-d H:i:s");
-                $logAction->filename = $filename;
-                $logAction->action_type = 'uploaded';
-                $logAction->save();
+                    $extension = $file->getClientOriginalExtension();
+                    $filename = 'user-' . $user->id . '-' . str_random(8);
+                    $filename .= '-' . str_slug($file->getClientOriginalName()) . '.' . $extension;
+                    $upload_success = $file->move($destinationPath, $filename);
 
+                    //Log the uploaded file to the log
+                    $logAction = new Actionlog();
+                    $logAction->item_id = $user->id;
+                    $logAction->item_type = User::class;
+                    $logAction->target_type = User::class;
+                    $logAction->target_id = $user->id;
+                    $logAction->user_id = Auth::user()->id;
+                    $logAction->note = $request->input('notes');
+                    $logAction->created_at = date("Y-m-d H:i:s");
+                    $logAction->filename = $filename;
+                    $logAction->action_type = 'uploaded';
+                    $logAction->save();
+
+                }
+                return redirect()->back()->with('success', 'File uploaded');
             }
-            return JsonResponse::create($logAction);
 
         }
-        return JsonResponse::create(["error" => "Failed validation: ".print_r($logAction->getErrors(), true)], 500);
+        return redirect()->route('users.index')->with('error', 'Error uploading files');
     }
 
 
@@ -782,10 +800,8 @@ class UsersController extends Controller
             $log->delete();
             return redirect()->back()->with('success', trans('admin/users/message.deletefile.success'));
         }
-        // Prepare the error message
-        $error = trans('admin/users/message.does_not_exist', compact('id'));
-        // Redirect to the licence management page
-        return redirect()->route('users.index')->with('error', $error);
+
+        return redirect()->route('users.index')->with('error', trans('admin/users/message.does_not_exist'));
 
     }
 

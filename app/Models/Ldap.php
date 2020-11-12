@@ -265,13 +265,13 @@ class Ldap extends Model
             $search_results = ldap_search($ldapconn, $base_dn, '('.$filter.')');
 
             if (!$search_results) {
-                return redirect()->route('users.index')->with('error', trans('admin/users/message.error.ldap_could_not_search').ldap_error($ldapconn));
+                return redirect()->route('users.index')->with('error', trans('admin/users/message.error.ldap_could_not_search').ldap_error($ldapconn)); // FIXME this is never called in any routed context - only from the Artisan command. So this redirect will never work.
             }
 
             // Get results from page
             $results = ldap_get_entries($ldapconn, $search_results);
             if (!$results) {
-                return redirect()->route('users.index')->with('error', trans('admin/users/message.error.ldap_could_not_get_entries').ldap_error($ldapconn));
+                return redirect()->route('users.index')->with('error', trans('admin/users/message.error.ldap_could_not_get_entries').ldap_error($ldapconn)); // FIXME this is never called in any routed context - only from the Artisan command. So this redirect will never work.
             }
 
             // Add results to result set
@@ -286,7 +286,7 @@ class Ldap extends Model
         // Clean up after search
         $result_set['count'] = $global_count;
         $results = $result_set;
-        ldap_control_paged_result($ldapconn, 0);
+        @ldap_control_paged_result($ldapconn, 0);
 
         return $results;
 

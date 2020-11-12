@@ -13,6 +13,8 @@ use App\Models\Asset;
 use App\Http\Transformers\AssetsTransformer;
 use App\Http\Transformers\SelectlistTransformer;
 use App\Http\Transformers\AccessoriesTransformer;
+use App\Http\Transformers\LicensesTransformer;
+use Auth;
 
 class UsersController extends Controller
 {
@@ -74,6 +76,14 @@ class UsersController extends Controller
             $users = $users->where('users.location_id', '=', $request->input('location_id'));
         }
 
+        if ($request->filled('email')) {
+            $users = $users->where('users.email', '=', $request->input('email'));
+        }
+
+        if ($request->filled('username')) {
+            $users = $users->where('users.username', '=', $request->input('username'));
+        }
+
         if ($request->filled('group_id')) {
             $users = $users->ByGroup($request->get('group_id'));
         }
@@ -87,7 +97,10 @@ class UsersController extends Controller
         }
 
         $order = $request->input('order') === 'asc' ? 'asc' : 'desc';
-        $offset = (($users) && (request('offset') > $users->count())) ? 0 : request('offset', 0);
+
+        // Set the offset to the API call's offset, unless the offset is higher than the actual count of items in which
+        // case we override with the actual count, so we should return 0 items.
+        $offset = (($users) && ($request->get('offset') > $users->count())) ? $users->count() : $request->get('offset', 0);
 
         // Check to make sure the limit is not higher than the max allowed
         ((config('app.max_results') >= $request->input('limit')) && ($request->filled('limit'))) ? $limit = $request->input('limit') : $limit = config('app.max_results');
@@ -203,6 +216,17 @@ class UsersController extends Controller
         $user = new User;
         $user->fill($request->all());
 
+        if ($request->has('permissions')) {
+
+            $permissions_array = $request->input('permissions');
+
+            // Strip out the superuser permission if the API user isn't a superadmin
+            if (!Auth::user()->isSuperUser()) {
+                unset($permissions_array['superuser']);
+            }
+            $user->permissions =  $permissions_array;
+        }
+
         $tmp_pass = substr(str_shuffle("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"), 0, 20);
         $user->password = bcrypt($request->get('password', $tmp_pass));
 
@@ -228,7 +252,7 @@ class UsersController extends Controller
     public function show($id)
     {
         $this->authorize('view', User::class);
-        $user = User::findOrFail($id);
+        $user = User::withCount('assets as assets_count','licenses as licenses_count','accessories as accessories_count','consumables as consumables_count')->findOrFail($id);
         return (new UsersTransformer)->transformUser($user);
     }
 
@@ -256,6 +280,23 @@ class UsersController extends Controller
         if ($request->filled('password')) {
             $user->password = bcrypt($request->input('password'));
         }
+
+        // We need to use has()  instead of filled()
+        // here because we need to overwrite permissions
+        // if someone needs to null them out
+        if ($request->has('permissions')) {
+
+            $permissions_array = $request->input('permissions');
+
+            // Strip out the superuser permission if the API user isn't a superadmin
+            if (!Auth::user()->isSuperUser()) {
+                unset($permissions_array['superuser']);
+            }
+            $user->permissions =  $permissions_array;
+        }
+
+
+
 
         // Update the location of any assets checked out to this user
         Asset::where('assigned_type', User::class)
@@ -358,6 +399,23 @@ class UsersController extends Controller
     }
 
     /**
+     * Return JSON containing a list of licenses assigned to a user.
+     *
+     * @author [N. Mathar] [<snipe@snipe.net>]
+     * @since [v5.0]
+     * @param $userId
+     * @return string JSON
+     */
+    public function licenses($id)
+    {
+        $this->authorize('view', User::class);
+        $this->authorize('view', License::class);
+        $user = User::where('id', $id)->withTrashed()->first();
+        $licenses = $user->licenses()->get();
+        return (new LicensesTransformer())->transformLicenses($licenses, $licenses->count());
+    }
+
+    /**
      * Reset the user's two-factor status
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
@@ -395,6 +453,6 @@ class UsersController extends Controller
      */
     public function getCurrentUserInfo(Request $request)
     {
-        return response()->json($request->user());
+        return (new UsersTransformer)->transformUser($request->user());
     }
 }

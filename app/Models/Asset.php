@@ -111,6 +111,7 @@ class Asset extends Depreciable
         'status_id',
         'supplier_id',
         'warranty_months',
+        'requestable',
     ];
 
     use Searchable;
@@ -225,10 +226,10 @@ class Asset extends Depreciable
         if ($location != null) {
             $this->location_id = $location;
         } else {
-            if($target->location) {
+            if (isset($target->location)) {
                 $this->location_id = $target->location->id;
             }
-            if($target instanceof Location) {
+            if ($target instanceof Location) {
                 $this->location_id = $target->id;
             }
         }
@@ -604,20 +605,26 @@ class Asset extends Depreciable
 
     public function requireAcceptance()
     {
-        return $this->model->category->require_acceptance;
+        if (($this->model) && ($this->model->category)) {
+            return $this->model->category->require_acceptance;
+        }
+
     }
 
     public function getEula()
     {
         $Parsedown = new \Parsedown();
-
-        if ($this->model->category->eula_text) {
-            return $Parsedown->text(e($this->model->category->eula_text));
-        } elseif ($this->model->category->use_default_eula == '1') {
-            return $Parsedown->text(e(Setting::getSettings()->default_eula_text));
-        } else {
-            return false;
+        
+        if (($this->model) && ($this->model->category)) {
+            if ($this->model->category->eula_text) {
+                return $Parsedown->text(e($this->model->category->eula_text));
+            } elseif ($this->model->category->use_default_eula == '1') {
+                return $Parsedown->text(e(Setting::getSettings()->default_eula_text));
+            } else {
+                return false;
+            }
         }
+        return false;
     }
 
     /**
@@ -821,9 +828,11 @@ class Asset extends Depreciable
 
     public function scopeDueForAudit($query, $settings)
     {
+        $interval = $settings->audit_warning_days ?? 0;
+
         return $query->whereNotNull('assets.next_audit_date')
             ->where('assets.next_audit_date', '>=', Carbon::now())
-            ->whereRaw("DATE_SUB(assets.next_audit_date, INTERVAL $settings->audit_warning_days DAY) <= '".Carbon::now()."'")
+            ->whereRaw("DATE_SUB(assets.next_audit_date, INTERVAL $interval DAY) <= '".Carbon::now()."'")
             ->where('assets.archived', '=', 0)
             ->NotArchived();
     }
@@ -869,7 +878,7 @@ class Asset extends Depreciable
         $interval = $settings->audit_warning_days ?? 0;
 
         return $query->whereNotNull('assets.next_audit_date')
-            ->whereRaw("DATE_SUB(assets.next_audit_date, INTERVAL $interval DAY) <= '".Carbon::now()."'")
+            ->whereRaw("DATE_SUB(".DB::getTablePrefix()."assets.next_audit_date, INTERVAL $interval DAY) <= '".Carbon::now()."'")
             ->where('assets.archived', '=', 0)
             ->NotArchived();
     }
@@ -1389,8 +1398,7 @@ class Asset extends Depreciable
 
 
     /**
-     * Query builder scope to search on location ID
-     *
+     * Query builder scope to search on depreciation name
      * @param  \Illuminate\Database\Query\Builder  $query  Query builder instance
      * @param  text                              $search      Search term
      *

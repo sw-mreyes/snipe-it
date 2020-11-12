@@ -219,10 +219,7 @@ Route::group(['prefix' => 'v1','namespace' => 'Api', 'middleware' => 'api'], fun
 
 
     /*--- Consumables API ---*/
-
-    Route::resource(
-        'consumables',
-        'ConsumablesController',
+    Route::resource('consumables', 'ConsumablesController',
         [
             'names' =>
             [
@@ -236,13 +233,22 @@ Route::group(['prefix' => 'v1','namespace' => 'Api', 'middleware' => 'api'], fun
             'parameters' => ['consumable' => 'consumable_id']
         ]
     ); // Consumables resource
-    Route::get(
-        'consumables/view/{id}/users',
-        [
-            'as' => 'api.consumables.showUsers',
-            'uses' => 'ConsumablesController@getDataView'
-        ]
-    );
+
+    Route::group(['prefix' => 'consumables'], function () {
+        Route::get('view/{id}/users',
+            [
+                'as' => 'api.consumables.showUsers',
+                'uses' => 'ConsumablesController@getDataView'
+            ]
+        );
+
+        Route::post('{consumable}/checkout',
+            [
+                'as' => 'api.consumables.checkout',
+                'uses' => 'ConsumablesController@checkout'
+            ]
+        );
+    });
 
     Route::group(['prefix' => 'consumables'], function () {
         Route::post('{consumableID}/checkout', [
@@ -371,16 +377,21 @@ Route::group(['prefix' => 'v1','namespace' => 'Api', 'middleware' => 'api'], fun
 
     Route::group(['prefix' => 'hardware'], function () {
 
-        Route::get('bytag/{tag}',  [
-            'as' => 'assets.show.bytag',
-            'uses' => 'AssetsController@showByTag'
-        ]);
+        Route::get('bytag/{any}',
+            [
+                'as' => 'api.assets.show.bytag',
+                'uses' => 'AssetsController@showByTag'
+            ]
+        )->where('any', '.*');
 
-        Route::get('byserial/{serial}',  [
-            'as' => 'assets.show.byserial',
-            'uses' => 'AssetsController@showBySerial'
-        ]);
 
+        Route::get('byserial/{any}',
+            [
+                'as' => 'api.assets.show.byserial',
+                'uses' => 'AssetsController@showBySerial'
+            ]
+         )->where('any', '.*');
+        
 
         Route::get('selectlist',  [
             'as' => 'assets.selectlist',
@@ -828,8 +839,14 @@ Route::group(['prefix' => 'v1','namespace' => 'Api', 'middleware' => 'api'], fun
             ]
         );
 
-        Route::post(
-            '{user}/upload',
+        Route::get('{user}/licenses',
+            [
+                'as' => 'api.users.licenselist',
+                'uses' => 'UsersController@licenses'
+            ]
+        );
+
+        Route::post('{user}/upload',
             [
                 'as' => 'api.users.uploads',
                 'uses' => 'UsersController@postUpload'

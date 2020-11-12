@@ -14,6 +14,7 @@
 @stop
 
 @section('header_right')
+
     @can('create', \App\Models\User::class)
       @if ($snipeSettings->ldap_enabled == 1)
       <a href="{{ route('ldap/user') }}" class="btn btn-default pull-right"><span class="fa fa-sitemap"></span> LDAP Sync</a>
@@ -47,7 +48,8 @@
             @if (Input::get('status')!='deleted')
               @can('delete', \App\Models\User::class)
                 <div id="toolbar">
-                  <select name="bulk_actions" class="form-control select2" style="width: 200px;">
+                    <label for="bulk_actions" class="sr-only">Bulk Actions</label>
+                  <select name="bulk_actions" class="form-control select2" style="width: 200px;" aria-label="bulk_actions">
                     <option value="delete">Bulk Checkin &amp; Delete</option>
                     <option value="edit">Bulk Edit</option>
                   </select>
@@ -73,7 +75,7 @@
                     id="usersTable"
                     class="table table-striped snipe-table"
                     data-url="{{ route('api.users.index',
-              array('deleted'=> (Input::get('status')=='deleted') ? 'true' : 'false','company_id'=>e(Input::get('company_id')))) }}"
+              array('deleted'=> (request('status')=='deleted') ? 'true' : 'false','company_id' => e(request('company_id')))) }}"
                     data-export-options='{
                 "fileName": "export-users-{{ date('Y-m-d') }}",
                 "ignoreColumn": ["actions","image","change","checkbox","checkincheckout","icon"]
@@ -90,6 +92,8 @@
 @stop
 
 @section('moar_scripts')
+
+
 @include ('partials.bootstrap-table')
 
 
