@@ -12,6 +12,7 @@ use App\Models\Location;
 
 use Input;
 use App\Helpers\Helper;
+use Debugbar;
 
 /** This controller handles interaction with the label print server.
  *
@@ -59,11 +60,13 @@ class LabelPrinterController extends Controller
         $server_list = $cfg[0];
         $location_mapping = $cfg[1];
 
-        $arg = Input::get('printer');
+        $arg = request('printer');
         if ($arg) {
             if (!array_key_exists($arg, $server_list)) {
+                Debugbar::info($arg.' does not exist in server list.');
                 return null;
             }
+            Debugbar::info('Got location for '.$arg.': '.$server_list[$arg]);
             return array($server_list[$arg], $arg);
         }
 
@@ -71,6 +74,7 @@ class LabelPrinterController extends Controller
         // -1 if no location is set.
         if (!$location) {
             $location_id = -1;
+            Debugbar::info("no location set.");
         } else {
             $next = $location;
             $root = $location;
@@ -79,12 +83,19 @@ class LabelPrinterController extends Controller
             }
             $location_id = $root->id;
         }
+
+        Debugbar::info("Top level was ".$location_id);
         // Check if a mapping exists for the location_id.
         if (!array_key_exists($location_id, $location_mapping)) {
+            Debugbar::info("No location mapping for ".$location_id);
             return null;
         } else {
             $printer_location = $location_mapping[$location_id];
-            if (!array_key_exists($printer_location, $server_list)) return null;
+            Debugbar::info("Got printer location ".$printer_location." for location ".$location_id);
+            if (!array_key_exists($printer_location, $server_list)){
+                Debugbar::info("No Server found for printer location ".$printer_location);
+                return null;
+            }
             return array($server_list[$printer_location], $printer_location);
         }
     }

@@ -16,6 +16,7 @@ use Illuminate\Contracts\Encryption\DecryptException;
 use App\Models\Reservation;
 
 use Auth;
+use Debugbar;
 
 class Helper
 {
@@ -820,8 +821,9 @@ class Helper
 
     public static function parse_printer_config()
     {
-        $server_list_str = env('PRINT_SERVER', '');
+        $server_list_str = $_ENV['PRINT_SERVER'];
         $location_mapping_str = env('LOCATION_MAPPING', '');
+        Debugbar::info("server_list_str=".$server_list_str." | location_mapping_str=".$location_mapping_str);        
         // Parse [ name => ip-address ] mapping
         $server_list = [];
         parse_str($server_list_str, $server_list);
