@@ -183,7 +183,7 @@ class ComponentsController extends Controller
     public function checkout(Request $request, $componentId)
     {
         $admin_user = Auth::user();
-        $asset_id = e(Input::get('asset_id'));
+        $asset_id = e(request('asset_id'));
         $response_payload = ['component'=> e($componentId), 'asset' => e($asset_id)];
 
         // Check if the component exists
@@ -215,10 +215,10 @@ class ComponentsController extends Controller
             'component_id' => $component->id,
             'user_id' => $admin_user->id,
             'created_at' => date('Y-m-d H:i:s'),
-            'assigned_qty' => Input::get('assigned_qty'),
+            'assigned_qty' => request('assigned_qty'),
             'asset_id' => $asset_id
         ]);
-        $component->logCheckout(e(Input::get('note')), $asset);
+        $component->logCheckout(e(request('note')), $asset);
         return response()->json(Helper::formatStandardApiResponse('success',  $response_payload,  trans('admin/components/message.checkout.success')));            
         
     }
