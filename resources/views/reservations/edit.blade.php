@@ -3,7 +3,7 @@
 'updateText' => trans('reservations.update'),
 'helpTitle' => trans('reservations.help'),
 'helpText' => trans('reservations.help_text'),
-'formAction' => ($item) ? route('reservations.update', ['reservation' => $item->id]) : route('reservations.store'),
+'formAction' => ($item) ? route('reservations.update', ['reservation' => $item->id||null]) : route('reservations.store'),
 ])
 
 
