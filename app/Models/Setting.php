@@ -266,7 +266,7 @@ class Setting extends Model
     {
         // At this point the endpoint is the same for everything.
         //  In the future this may want to be adapted for individual notifications.
-        return self::getSettings()->slack_endpoint;
+        return self::getSettings()->slack_endpoint||'';
     }
 
     /**
