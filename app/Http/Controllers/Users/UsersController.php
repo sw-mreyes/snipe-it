@@ -21,6 +21,9 @@ use Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use View;
 use Illuminate\Http\Request;
+// -- [PATCHED] --
+use App\Models\Reservation;
+// -- [PATCHED] --
 
 
 /**
@@ -353,6 +356,15 @@ class UsersController extends Controller
                 return redirect()->route('users.index')
                     ->with('error', 'This user still has ' . $managedLocationsCount . ' locations that they manage.');
             }
+
+            // -- [PATCHED] --
+            // Delete all reservations for this user
+            $reservations = Reservation::where('reservations.user_id','=',$user->id);
+            foreach($reservations as $res){
+                $res->delete();
+            }
+
+            // -- [PATCHED] --
 
             // Delete the user
             $user->delete();
