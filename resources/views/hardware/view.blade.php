@@ -783,6 +783,9 @@
                                         </ul>
 
                                 @endif
+                                <!-- [PATCHED] -->
+                                @include ('partials.asset-reservations')
+                                <!-- [PATCHED] -->
                             </div> <!-- div.col-md-4 -->
                         </div><!-- /row -->
                     </div><!-- /.tab-pane asset details -->

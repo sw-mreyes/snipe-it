@@ -11,7 +11,7 @@
 
 @if(count($reservations) > 0)
 <h4>Reservations</h4>
-
+<ul>
 @foreach($reservations as $reservation)
 <li>
     <p>
@@ -25,5 +25,6 @@
     </p>
 </li>
 @endforeach
+</ul>
 
 @endif
