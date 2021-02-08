@@ -55,6 +55,7 @@
 
                                 {{ Form::checkbox('saml_enabled', '1', Request::old('saml_enabled', $setting->saml_enabled), [((config('app.lock_passwords')===true)) ? 'disabled ': '', 'class' => 'minimal '. $setting->demoMode, $setting->demoMode]) }}
                                 {{ trans('admin/settings/general.saml_enabled') }}
+                                {!! $errors->first('saml_integration', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}<br>
                                 @if (config('app.lock_passwords')===true)
                                 <p class="text-warning"><i class="fa fa-lock"></i> {{ trans('general.feature_disabled') }}</p>
                                 @endif
@@ -82,8 +83,12 @@
                                         {{ Form::textarea('saml_sp_x509cert', $setting->saml_sp_x509cert, ['class' => 'form-control', 'wrap' => 'off', 'readonly']) }}
                                         <br>
                                     @endif
+                                    <!-- SAML SP Metadata URL -->
+                                    {{ Form::label('saml_sp_metadata_url', trans('admin/settings/general.saml_sp_metadata_url')) }}
+                                    {{ Form::text('saml_sp_metadata_url', route('saml.metadata'), ['class' => 'form-control', 'readonly']) }}
+                                    <br>
                                     <p class="help-block">
-                                        <a href="{{ route('saml.metadata') }}" target="_blank" class="btn btn-default" style="margin-right: 5px;">View Metadata</a>
+                                        <a href="{{ route('saml.metadata') }}" target="_blank" class="btn btn-default" style="margin-right: 5px;">Download Metadata</a>
                                     </p>
                                 @endif
                                 {!! $errors->first('saml_enabled', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
@@ -101,7 +106,7 @@
                             <button type="button" class="btn btn-default" id="saml_idp_metadata_upload_btn">{{ trans('button.select_file') }}</button>
                             <input type="file" class="js-uploadFile" id="saml_idp_metadata_upload"
                                 data-maxsize="{{ \App\Helpers\Helper::file_upload_max_size() }}"
-                                accept="text/*" style="display:none; max-width: 90%">
+                                accept="text/xml,application/xml" style="display:none; max-width: 90%">
                             
                             <p class="help-block">{{ trans('admin/settings/general.saml_idp_metadata_help') }}</p>
                         </div>

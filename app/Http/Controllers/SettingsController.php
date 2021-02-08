@@ -577,6 +577,7 @@ class SettingsController extends Controller
         $setting->default_currency    = $request->input('default_currency', '$');
         $setting->date_display_format = $request->input('date_display_format');
         $setting->time_display_format = $request->input('time_display_format');
+        $setting->digit_separator = $request->input('digit_separator');
 
         if ($setting->save()) {
             return redirect()->route('settings.index')
@@ -1015,7 +1016,7 @@ class SettingsController extends Controller
 
         $path         = 'app/backups';
         $backup_files = Storage::files($path);
-        $files        = [];
+        $files_raw        = [];
 
         if (count($backup_files) > 0) {
             for ($f = 0; $f < count($backup_files); ++$f) {
@@ -1023,7 +1024,7 @@ class SettingsController extends Controller
                 // Skip dotfiles like .gitignore and .DS_STORE
                 if ((substr(basename($backup_files[$f]), 0, 1) != '.')) {
 
-                    $files[] = [
+                    $files_raw[] = [
                         'filename' => basename($backup_files[$f]),
                         'filesize' => Setting::fileSizeConvert(Storage::size($backup_files[$f])),
                         'modified' => Storage::lastModified($backup_files[$f]),
@@ -1034,6 +1035,9 @@ class SettingsController extends Controller
 
             }
         }
+
+        // Reverse the array so it lists oldest first
+        $files = array_reverse($files_raw);
 
         return view('settings/backups', compact('path', 'files'));
     }
@@ -1138,6 +1142,7 @@ class SettingsController extends Controller
      */
     public function getPurge()
     {
+        \Log::warning('User ID '.Auth::user()->id.' is attempting a PURGE');
         return view('settings.purge-form');
     }
 
@@ -1154,6 +1159,8 @@ class SettingsController extends Controller
     {
         if (! config('app.lock_passwords')) {
             if ('DELETE' == $request->input('confirm_purge')) {
+
+                \Log::warning('User ID '.Auth::user()->id.' initiated a PURGE!');
                 // Run a backup immediately before processing
                 Artisan::call('backup:run');
                 Artisan::call('snipeit:purge', ['--force' => 'true', '--no-interaction' => true]);

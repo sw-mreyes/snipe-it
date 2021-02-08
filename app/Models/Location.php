@@ -28,7 +28,7 @@ class Location extends SnipeModel
         'address2'      => 'max:80|nullable',
         'zip'           => 'min:3|max:10|nullable',
         'manager_id'    => 'exists:users,id|nullable',
-        'parent_id'     => 'nullable|exists:locations,id|different:id',
+        'parent_id'     => 'non_circular:locations,id'
     );
 
     protected $casts = [
@@ -76,7 +76,7 @@ class Location extends SnipeModel
      * 
      * @var array
      */
-    protected $searchableAttributes = ['name', 'address', 'city', 'state', 'zip', 'created_at'];
+    protected $searchableAttributes = ['name', 'address', 'city', 'state', 'zip', 'created_at', 'ldap_ou'];
 
     /**
      * The relations and their attributes that should be included when searching the model.

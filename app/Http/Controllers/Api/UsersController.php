@@ -60,6 +60,7 @@ class UsersController extends Controller
             'users.updated_at',
             'users.username',
             'users.zip',
+            'users.ldap_import',
 
         ])->with('manager', 'groups', 'userloc', 'company', 'department','assets','licenses','accessories','consumables')
             ->withCount('assets as assets_count','licenses as licenses_count','accessories as accessories_count','consumables as consumables_count');
@@ -68,7 +69,7 @@ class UsersController extends Controller
 
         if (($request->filled('deleted')) && ($request->input('deleted')=='true')) {
             $users = $users->onlyTrashed();
-        } elseif (($request->filled('all')) && ($request->input('deleted')=='true')) {
+        } elseif (($request->filled('all')) && ($request->input('all')=='true')) {
             $users = $users->withTrashed();
         }
 
@@ -131,7 +132,7 @@ class UsersController extends Controller
                         'assets','accessories', 'consumables','licenses','groups','activated','created_at',
                         'two_factor_enrolled','two_factor_optin','last_login', 'assets_count', 'licenses_count',
                         'consumables_count', 'accessories_count', 'phone', 'address', 'city', 'state',
-                        'country', 'zip', 'id'
+                        'country', 'zip', 'id', 'ldap_import'
                     ];
 
                 $sort = in_array($request->get('sort'), $allowed_columns) ? $request->get('sort') : 'first_name';
@@ -184,16 +185,16 @@ class UsersController extends Controller
         foreach ($users as $user) {
             $name_str = '';
             if ($user->last_name!='') {
-                $name_str .= e($user->last_name).', ';
+                $name_str .= $user->last_name.', ';
             }
-            $name_str .= e($user->first_name);
+            $name_str .= $user->first_name;
 
             if ($user->username!='') {
-                $name_str .= ' ('.e($user->username).')';
+                $name_str .= ' ('.$user->username.')';
             }
 
             if ($user->employee_num!='') {
-                $name_str .= ' - #'.e($user->employee_num);
+                $name_str .= ' - #'.$user->employee_num;
             }
 
             $user->use_text = $name_str;

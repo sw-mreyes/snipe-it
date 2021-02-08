@@ -2,7 +2,7 @@
 
 {{-- Page title --}}
 @section('title')
-{{ trans('admin/users/general.view_user', ['name' => html_entity_decode($user->present()->fullName(), ENT_QUOTES | ENT_XML1, 'UTF-8')]) }}
+{{ trans('admin/users/general.view_user', ['name' => $user->present()->fullName()]) }}
 @parent
 @stop
 
@@ -285,12 +285,12 @@
                         <td class="text-nowrap">{{ trans('admin/users/general.two_factor_enrolled') }}</td>
                         <td class="two_factor_resetrow">
                           <div class="row">
-                          <div class="col-md-1" id="two_factor_reset_toggle">
+                          <div class="col-md-2" id="two_factor_reset_toggle">
                             {!! ($user->two_factor_active_and_enrolled()) ? '<i class="fa fa-check text-success" aria-hidden="true"></i> '.trans('general.yes') : '<i class="fa fa-times text-danger" aria-hidden="true"></i> '.trans('general.no')  !!}
                           </div>
 
                           @if ((Auth::user()->isSuperUser()) && ($snipeSettings->two_factor_enabled!='0') && ($snipeSettings->two_factor_enabled!=''))
-                            <div class="col-md-11">
+                            <div class="col-md-10">
                             <a class="btn btn-default btn-sm pull-left" id="two_factor_reset" style="margin-right: 10px;"> {{ trans('admin/settings/general.two_factor_reset') }}</a>
                             <span id="two_factor_reseticon">
                             </span>
@@ -423,8 +423,10 @@
               <thead>
                 <tr>
                   <th class="col-md-5">{{ trans('general.name') }}</th>
-                  <th class="col-md-6">{{ trans('admin/hardware/form.serial') }}</th>
-                  <th class="col-md-6" data-footer-formatter="sumFormatter" data-fieldname="purchase_cost">{{ trans('general.purchase_cost') }}</th>
+                  <th>{{ trans('admin/hardware/form.serial') }}</th>
+                  <th data-footer-formatter="sumFormatter" data-fieldname="purchase_cost">{{ trans('general.purchase_cost') }}</th>
+                  <th>{{ trans('admin/licenses/form.purchase_order') }}</th>
+                  <th>{{ trans('general.order_number') }}</th>
                   <th class="col-md-1 hidden-print">{{ trans('general.action') }}</th>
                 </tr>
               </thead>
@@ -442,7 +444,13 @@
                     @endcan
                   </td>
                   <td class="col-md-2">
-                    {!! $license->purchase_cost !!}
+                    {{ $license->purchase_cost }}
+                  </td>
+                  <td>
+                    {{ $license->purchase_order }}
+                  </td>
+                  <td>
+                    {{ $license->order_number }}
                   </td>
                   <td class="hidden-print col-md-2">
                     @can('update', $license)
@@ -679,7 +687,7 @@ $(function () {
       dataType: 'json',
 
       success: function (data) {
-        $("#two_factor_reset_toggle").html('').html('{{ trans('general.no') }}');
+        $("#two_factor_reset_toggle").html('').html('<i class="fa fa-times text-danger" aria-hidden="true"></i> {{ trans('general.no') }}');
         $("#two_factor_reseticon").html('');
         $("#two_factor_resetstatus").html('<i class="fa fa-check text-success"></i>' + data.message);
 

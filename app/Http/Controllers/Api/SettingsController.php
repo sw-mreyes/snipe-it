@@ -15,6 +15,9 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
+use App\Models\Ldap; // forward-port of v4 LDAP model for Sync
+
 
 class SettingsController extends Controller
 {
@@ -75,10 +78,22 @@ class SettingsController extends Controller
 
         Log::info('Preparing to get sample user set from LDAP directory');
         // Get a sample of 10 users so user can verify the data is correct
+        $settings = Setting::getSettings();
         try {
             Log::info('Testing LDAP sync');
             error_reporting(E_ALL & ~E_DEPRECATED); // workaround for php7.4, which deprecates ldap_control_paged_result
-            $users = $ldap->testUserImportSync();
+            // $users = $ldap->testUserImportSync(); // from AdLdap2 from v5, disabling and falling back to v4's sync code
+            $users = collect(Ldap::findLdapUsers())->slice(0, 11)->filter(function ($value, $key) { //choosing ELEVEN because one is going to be the count, which we're about to filter out in the next line
+                return is_int($key);
+            })->map(function ($item) use ($settings) {
+                return (object) [
+                    'username'        => $item[$settings['ldap_username_field']][0] ?? null,
+                    'employee_number' => $item[$settings['ldap_emp_num']][0] ?? null,
+                    'lastname'        => $item[$settings['ldap_lname_field']][0] ?? null,
+                    'firstname'       => $item[$settings['ldap_fname_field']][0] ?? null,
+                    'email'           => $item[$settings['ldap_email']][0] ?? null,
+                ];
+            });
             $message['user_sync']  = [
                 'users' => $users
             ];
@@ -91,6 +106,51 @@ class SettingsController extends Controller
         }
 
         return response()->json($message, 200);
+    }
+
+    public function ldaptestlogin(Request $request, LdapAd $ldap)
+    {
+
+        if (Setting::getSettings()->ldap_enabled!='1') {
+            \Log::debug('LDAP is not enabled. Cannot test.');
+            return response()->json(['message' => 'LDAP is not enabled, cannot test.'], 400);
+        }
+
+
+        $rules = array(
+            'ldaptest_user' => 'required',
+            'ldaptest_password' => 'required'
+        );
+
+        $validator = Validator::make($request->all(), $rules);
+        if ($validator->fails()) {
+            \Log::debug('LDAP Validation test failed.');
+            $validation_errors = implode(' ',$validator->errors()->all());
+            return response()->json(['message' => $validator->errors()->all()], 400);
+        }
+        
+
+        \Log::debug('Preparing to test LDAP login');
+        try {
+            DB::beginTransaction(); //this was the easiest way to invoke a full test of an LDAP login without adding new users to the DB (which may not be desired)
+
+            // $results = $ldap->ldap->auth()->attempt($request->input('ldaptest_username'), $request->input('ldaptest_password'), true);
+            // can't do this because that's a protected property.
+
+            $results = $ldap->ldapLogin($request->input('ldaptest_user'), $request->input('ldaptest_password')); // this would normally create a user on success (if they didn't already exist), but for the transaction
+            if($results) {
+                return response()->json(['message' => 'It worked! '. $request->input('ldaptest_user').' successfully binded to LDAP.'], 200);
+            } else {
+                return response()->json(['message' => 'Login Failed. '. $request->input('ldaptest_user').' did not successfully bind to LDAP.'], 400);
+            }
+        } catch (\Exception $e) {
+            \Log::debug('Connection failed');
+            return response()->json(['message' => $e->getMessage()], 400);
+        } finally {
+            DB::rollBack(); // ALWAYS rollback, whether success or failure
+        }
+
+
     }
 
     public function slacktest(Request $request)
@@ -137,7 +197,7 @@ class SettingsController extends Controller
             try {
                 Notification::send(Setting::first(), new MailTest());
                 return response()->json(['message' => 'Mail sent to '.config('mail.reply_to.address')], 200);
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 return response()->json(['message' => $e->getMessage()], 500);
             }
         }

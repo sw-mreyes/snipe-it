@@ -149,8 +149,6 @@ class AssetsController extends Controller
                 $assets->whereNotNull($request->input('custom_field'));
             }
         }       
-        $offset = (($assets) && (request('offset') > $assets->count())) ? 0 : request('offset', 0);
-
 
         // Set the offset to the API call's offset, unless the offset is higher than the actual count of items in which
         // case we override with the actual count, so we should return 0 items.
@@ -819,7 +817,7 @@ class AssetsController extends Controller
                 $asset->location_id = $request->input('location_id');
             }
 
-            $asset->last_audit_date = date('Y-m-d h:i:s');
+            $asset->last_audit_date = date('Y-m-d H:i:s');
 
             if ($asset->save()) {
                 $log = $asset->logAudit(request('note'),request('location_id'));

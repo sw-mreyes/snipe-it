@@ -105,13 +105,13 @@ class LoginController extends Controller
         $samlData = $request->session()->get('saml_login');
         if ($saml->isEnabled() && !empty($samlData)) {
             try {
-                LOG::debug("Attempting to log user in by SAML authentication.");
+                Log::debug("Attempting to log user in by SAML authentication.");
                 $user = $saml->samlLogin($samlData);
                 if(!is_null($user)) {
                     Auth::login($user, true);
                 } else {
                     $username = $saml->getUsername();
-                    LOG::debug("SAML user '$username' could not be found in database.");
+                    Log::error("SAML user '$username' could not be found in database.");
                     $request->session()->flash('error', trans('auth/message.signin.error'));
                     $saml->clearData();
                 }
@@ -121,7 +121,7 @@ class LoginController extends Controller
                     $user->save();
                 }
             } catch (\Exception $e) {
-                LOG::debug("There was an error authenticating the SAML user: " . $e->getMessage());
+                Log::error("There was an error authenticating the SAML user: " . $e->getMessage());
                 throw new \Exception($e->getMessage());
             }
         }
@@ -157,9 +157,26 @@ class LoginController extends Controller
         if (Setting::getSettings()->login_remote_user_enabled == "1" && isset($remote_user) && !empty($remote_user)) {
             Log::debug("Authenticating via HTTP header $header_name.");
 
-            $pos = strpos($remote_user, '\\');
+            $strip_prefixes = [
+                // IIS/AD
+                // https://github.com/snipe/snipe-it/pull/5862
+                '\\',
+
+                // Google Cloud IAP
+                // https://cloud.google.com/iap/docs/identity-howto#getting_the_users_identity_with_signed_headers
+                'accounts.google.com:',
+            ];
+
+            $pos = 0;
+            foreach ($strip_prefixes as $needle) {
+                if (($pos = strpos($remote_user, $needle)) !== FALSE) {
+                    $pos += strlen($needle);
+                    break;
+                }
+            }
+
             if ($pos > 0) {
-                $remote_user = substr($remote_user, $pos + 1);
+                $remote_user = substr($remote_user, $pos);
             };
             
             try {
@@ -189,8 +206,8 @@ class LoginController extends Controller
             return redirect()->back()->withInput()->withErrors($validator);
         }
 
-        $this->maxLoginAttempts = config('auth.throttle.max_attempts');
-        $this->lockoutTime = config('auth.throttle.lockout_duration');
+        $this->maxLoginAttempts = config('auth.passwords.users.throttle.max_attempts');
+        $this->lockoutTime = config('auth.passwords.users.throttle.lockout_duration');
 
         if ($lockedOut = $this->hasTooManyLoginAttempts($request)) {
             $this->fireLockoutEvent($request);
@@ -234,6 +251,7 @@ class LoginController extends Controller
 
         if ($user = Auth::user()) {
             $user->last_login = \Carbon::now();
+            $user->activated = 1;
             $user->save();
         }
         // Redirect to the users page
@@ -451,8 +469,8 @@ class LoginController extends Controller
      */
     protected function hasTooManyLoginAttempts(Request $request)
     {
-        $lockoutTime = config('auth.throttle.lockout_duration');
-        $maxLoginAttempts = config('auth.throttle.max_attempts');
+        $lockoutTime = config('auth.passwords.users.throttle.lockout_duration');
+        $maxLoginAttempts = config('auth.passwords.users.throttle.max_attempts');
 
         return $this->limiter()->tooManyAttempts(
             $this->throttleKey($request),

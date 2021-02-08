@@ -226,6 +226,15 @@ class UserPresenter extends Presenter
                 'formatter' => 'groupsFormatter'
             ],
             [
+                "field" => "ldap_import",
+                "searchable" => false,
+                "sortable" => true,
+                "switchable" => true,
+                "title" => trans('admin/settings/general.ldap_enabled'),
+                "visible" => false,
+                'formatter' => 'trueFalseFormatter'
+            ],
+            [
                 "field" => "two_factor_enrolled",
                 "searchable" => false,
                 "sortable" => true,
@@ -301,7 +310,7 @@ class UserPresenter extends Presenter
      */
     public function fullName()
     {
-        return "{$this->first_name} {$this->last_name}";
+        return html_entity_decode($this->first_name.' '.$this->last_name, ENT_QUOTES | ENT_XML1, 'UTF-8');
     }
 
     /**

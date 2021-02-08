@@ -25,6 +25,7 @@ class Handler extends ExceptionHandler
         \Illuminate\Session\TokenMismatchException::class,
         \Illuminate\Validation\ValidationException::class,
         \Intervention\Image\Exception\NotSupportedException::class,
+        \League\OAuth2\Server\Exception\OAuthServerException::class,
     ];
 
     /**
@@ -105,7 +106,7 @@ class Handler extends ExceptionHandler
     protected function unauthenticated($request, AuthenticationException $exception)
     {
         if ($request->expectsJson()) {
-            return response()->json(['error' => 'Unauthorized.'], 401);
+            return response()->json(['error' => 'Unauthorized or unauthenticated.'], 401);
         }
 
         return redirect()->guest('login');
