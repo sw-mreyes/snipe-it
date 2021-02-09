@@ -1105,7 +1105,8 @@ class Helper
      */
     public static function expand_tag($tag)
     {
-        while (strlen($tag) < 13) {
+        $expand_len = \App\Models\Setting::getSettings()->zerofill_count + 3;
+        while (strlen($tag) < $expand_len) {
             $split = explode('-', $tag);
             $tag = $split[0] . '-0' . $split[1];
         }
