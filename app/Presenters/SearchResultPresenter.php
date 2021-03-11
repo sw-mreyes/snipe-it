@@ -44,6 +44,14 @@ class SearchResultPresenter extends Presenter
                 "formatter" => "modelsLinkObjFormatter"
             ],
             [
+                "field" => "category",
+                "searchable" => true,
+                "sortable" => true,
+                "title" => trans('general.category'),
+                "switchable" => true,
+                "formatter" => "categoriesLinkObjFormatter"
+            ],
+            [
                 "field" => "name",
                 "searchable" => true,
                 "sortable" => true,
