@@ -1,8 +1,12 @@
 <?php
 namespace App\Presenters;
 
+use App\Models\Asset;
 use App\Models\CustomField;
 use DateTime;
+
+use App\Models\Category;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Class AssetPresenter
@@ -10,12 +14,54 @@ use DateTime;
  */
 class AssetPresenter extends Presenter
 {
+    private static function getColumnPreset($category_id){
+        // Invalid category
+        if($category_id == null){
+            return null;
+        }
+        // No categories.json
+        if(!Storage::disk('local')->exists("categories.json")){
+            app('debugbar')->info("Preset: None");
+            return null;            
+        }
+        $presets = json_decode(Storage::disk('local')->get("categories.json"), true);
+        $category_name = Category::query()->where("id","=",$category_id)->first()->name;
+        if($category_name != null && array_key_exists($category_name,$presets)){
+            app('debugbar')->info("Preset: ".$category_name);
+            return $presets[$category_name];
+        }else if (array_key_exists($category_id, $presets)){
+            app('debugbar')->info("Preset: ".$category_id);
+            return $presets[$category_id];
+        }else if (array_key_exists("default", $presets)){
+            app('debugbar')->info("Preset: Default");
+            return $presets["default"];
+        }else{
+            app('debugbar')->info("Preset: None");
+            return null;
+        }
+    }
+
+    private static function getColumnVisibility($layout, $index, $preset){
+        $field = $layout[$index]["field"];
+        $title = null;
+        if(array_key_exists("title", $layout[$index])){
+            $title = $layout[$index]["title"];
+        }
+        $visible = false;
+        if(array_key_exists($field ,$preset)){
+            $visible = $preset[$field];            
+        }else if(array_key_exists("t:".$title ,$preset)){
+            $visible = $preset["t:".$title];
+        }
+        return $visible;
+    }    
+
 
     /**
      * Json Column Layout for bootstrap table
      * @return string
      */
-    public static function dataTableLayout()
+    public static function dataTableLayout($category_id = null)
     {
         $layout = [
             [
@@ -273,7 +319,7 @@ class AssetPresenter extends Presenter
                 "formatter"=> 'customFieldsFormatter',
                 "escape" => true,
                 "class" => ($field->field_encrypted=='1') ? 'css-padlock' : '',
-                "visible" => true,
+                "visible" => false,
             ];
 
         }
@@ -296,6 +342,12 @@ class AssetPresenter extends Presenter
             "title" => trans('table.actions'),
             "formatter" => "hardwareActionsFormatter",
         ];
+
+        if(($preset = AssetPresenter::getColumnPreset($category_id))){
+            for($idx = 0;$idx < count($layout); $idx++){
+                $layout[$idx]["visible"] = AssetPresenter::getColumnVisibility($layout,$idx,$preset);
+            }
+        }
 
         return json_encode($layout);
     }

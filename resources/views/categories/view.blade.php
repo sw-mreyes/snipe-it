@@ -33,7 +33,7 @@
 
                 @if ($category->category_type=='asset')
 
-                  data-columns="{{ \App\Presenters\AssetPresenter::dataTableLayout() }}"
+                  data-columns="{{ \App\Presenters\AssetPresenter::dataTableLayout($category->id) }}"
                   data-cookie-id-table="categoryAssetsTable"
                   id="categoryAssetsTable"
                   data-id-table="categoryAssetsTable"
