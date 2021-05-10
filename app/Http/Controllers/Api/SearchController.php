@@ -216,8 +216,10 @@ class SearchController extends Controller
             }
         }
 
+        $search_result = $this->remove_duplicates($search_result);
         $total_count = count($search_result);
 
+        // 2021-05-10 TODO(mr): what on earth is this
         if ($offset) {
             while ($offset > 0) {
                 array_shift($search_result);
@@ -228,9 +230,9 @@ class SearchController extends Controller
             while (count($search_result) > $limit) {
                 array_pop($search_result);
             }
-        }
+        }        
 
-        return (new SearchTransformer())->transformSearchResult($this->remove_duplicates($search_result), $total_count);
+        return (new SearchTransformer())->transformSearchResult($search_result, $total_count);
     }
 
 
