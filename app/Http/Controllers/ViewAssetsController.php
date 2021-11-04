@@ -183,7 +183,12 @@ class ViewAssetsController extends Controller
             $asset->decrement('requests_counter', 1);
             
             $logaction->logaction('request canceled');
-            $settings->notify(new RequestAssetCancelation($data));
+            
+            // NOTE(mreyes, 2021-11-04) fixes curl timeout due to wrongly chosing HTTP over HTTPS when using Settings->notify
+            // < $settings->notify(new RequestAssetCancelation($data));
+            // > 
+            $user->notify(new RequestAssetCancelation($data));
+
             return redirect()->route('requestable-assets')
                 ->with('success')->with('success', trans('admin/hardware/message.requests.cancel-success'));
         }
@@ -191,7 +196,10 @@ class ViewAssetsController extends Controller
         $logaction->logaction('requested');
         $asset->request();
         $asset->increment('requests_counter', 1);
-        $settings->notify(new RequestAssetNotification($data));
+        // NOTE(mreyes, 2021-11-04) fixes curl timeout due to wrongly chosing HTTP over HTTPS when using Settings->notify
+        // < $settings->notify(new RequestAssetNotification($data));
+        // > 
+        $user->notify(new RequestAssetNotification($data));
 
 
         return redirect()->route('requestable-assets')->with('success')->with('success', trans('admin/hardware/message.requests.success'));
