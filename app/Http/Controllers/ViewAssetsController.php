@@ -115,7 +115,10 @@ class ViewAssetsController extends Controller
            $logaction->logaction('request_canceled');
 
             if (($settings->alert_email!='')  && ($settings->alerts_enabled=='1') && (!config('app.lock_passwords'))) {
-                $settings->notify(new RequestAssetCancelation($data));
+                // NOTE(mreyes, 2021-11-04) fixes curl timeout due to wrongly chosing HTTP over HTTPS when using Settings->notify
+                // < $settings->notify(new RequestAssetCancelation($data));
+                // > 
+                $user->notify(new RequestAssetCancelation($data));
             }
 
             return redirect()->route('requestable-assets')->with('success')->with('success', trans('admin/hardware/message.requests.canceled'));
@@ -124,7 +127,10 @@ class ViewAssetsController extends Controller
             $item->request();
             if (($settings->alert_email!='')  && ($settings->alerts_enabled=='1') && (!config('app.lock_passwords'))) {
                 $logaction->logaction('requested');
-                $settings->notify(new RequestAssetNotification($data));
+                // NOTE(mreyes, 2021-11-04) fixes curl timeout due to wrongly chosing HTTP over HTTPS when using Settings->notify
+                // < $settings->notify(new RequestAssetNotification($data));
+                // > 
+                $user->notify(new RequestAssetNotification($data));
             }
 
 

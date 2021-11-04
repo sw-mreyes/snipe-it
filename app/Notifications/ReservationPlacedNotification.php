@@ -2,21 +2,25 @@
 
 namespace App\Notifications;
 
-use Illuminate\Bus\Queueable;
-use Illuminate\Notifications\Notification;
-use Illuminate\Notifications\Messages\SlackMessage;
+use App\Models\Reservation;
 use App\Models\Setting;
+use Illuminate\Bus\Queueable;
+use Illuminate\Notifications\Messages\SlackMessage;
+use Illuminate\Notifications\Notification;
+use Illuminate\Contracts\Queue\ShouldQueue;
 
-class ReservationPlacedNotification extends Notification
+class ReservationPlacedNotification extends Notification  implements ShouldQueue
 {
     use Queueable;
+
+    public $reservation;
 
     /**
      * Create a new notification instance.
      *
      * @return void
      */
-    public function __construct($reservation)
+    public function __construct(Reservation $reservation)
     {
         $this->reservation = $reservation;
     }
@@ -30,19 +34,6 @@ class ReservationPlacedNotification extends Notification
     public function via($notifiable)
     {
         return ['slack'];
-    }
-
-    /**
-     * Get the mail representation of the notification.
-     *
-     * @param  mixed  $notifiable
-     * @return \Illuminate\Notifications\Messages\MailMessage
-     */
-    public function toMail($notifiable)
-    {
-        return [
-            //
-        ];
     }
 
     /**
@@ -90,19 +81,5 @@ class ReservationPlacedNotification extends Notification
                     $fld->content($end);
                 });
             });
-    }
-
-
-    /**
-     * Get the array representation of the notification.
-     *
-     * @param  mixed  $notifiable
-     * @return array
-     */
-    public function toArray($notifiable)
-    {
-        return [
-            //
-        ];
     }
 }

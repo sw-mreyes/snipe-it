@@ -188,7 +188,8 @@ trait Loggable
             'location' => ($location) ? $location->name : '',
             'note' => $note
         ];
-        Setting::getSettings()->notify(new AuditNotification($params));
+        // NOTE(mreyes, 2021-11-04) fixes curl timeout due to wrongly chosing HTTP over HTTPS when using Settings->notify
+        Auth::user()->notify(new AuditNotification($params));
 
         return $log;
     }

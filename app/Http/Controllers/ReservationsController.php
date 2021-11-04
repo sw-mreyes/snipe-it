@@ -15,6 +15,7 @@ use App\Models\Setting;
 use Notification;
 use App\Notifications\ReservationPlacedNotification;
 use App\Notifications\ReservationAssetExpectedCheckinNotification;
+use App\Notifications\MailTest;
 use App\Helpers\Helper;
 
 /**
@@ -142,13 +143,14 @@ class ReservationsController extends Controller
             $res->assets()->save(Asset::where('id', '=', $assetID)->first());
         }
 
-        Notification::send(Setting::getSettings(), new ReservationPlacedNotification($res));
+        // NOTE(mreyes, 2021-11-04) fixes curl timeout due to wrongly chosing HTTP over HTTPS when using Settings->notify
+        $user->notify(new ReservationPlacedNotification($res));
         foreach ($res->assets as $asset) {
             if ($responsible_user = $this->find_responsible_user($asset)) {
                 // Send notification to the user that is currently responsible for the asset.
                 // If the asset is checked out to a user, notify them. Otherwise, find the 
                 // User that owns the asset / Manages the location that the asset is checked out to.
-                Notification::send(Setting::getSettings(), new ReservationAssetExpectedCheckinNotification($res, $asset, $responsible_user));
+                $responsible_user->notify(new ReservationAssetExpectedCheckinNotification($res, $asset, $responsible_user));
             }
         }
 
