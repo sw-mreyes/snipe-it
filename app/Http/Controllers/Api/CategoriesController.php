@@ -8,6 +8,7 @@ use App\Http\Transformers\CategoriesTransformer;
 use App\Http\Transformers\SelectlistTransformer;
 use App\Models\Category;
 use Illuminate\Http\Request;
+use App\Http\Requests\ImageUploadRequest;
 use Illuminate\Support\Facades\Storage;
 
 class CategoriesController extends Controller
@@ -54,14 +55,16 @@ class CategoriesController extends Controller
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
      * @since [v4.0]
-     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Http\Requests\ImageUploadRequest $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(ImageUploadRequest $request)
     {
         $this->authorize('create', Category::class);
         $category = new Category;
         $category->fill($request->all());
+        $category->category_type = strtolower($request->input('category_type'));
+        $category = $request->handleImages($category);
 
         if ($category->save()) {
             return response()->json(Helper::formatStandardApiResponse('success', $category, trans('admin/categories/message.create.success')));
@@ -92,15 +95,17 @@ class CategoriesController extends Controller
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
      * @since [v4.0]
-     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Http\Requests\ImageUploadRequest  $request
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(ImageUploadRequest $request, $id)
     {
         $this->authorize('update', Category::class);
         $category = Category::findOrFail($id);
         $category->fill($request->all());
+        $category->category_type = strtolower($request->input('category_type'));
+        $category = $request->handleImages($category);
 
         if ($category->save()) {
             return response()->json(Helper::formatStandardApiResponse('success', $category, trans('admin/categories/message.update.success')));
@@ -143,7 +148,7 @@ class CategoriesController extends Controller
      */
     public function selectlist(Request $request, $category_type = 'asset')
     {
-
+        $this->authorize('view.selectlists');
         $categories = Category::select([
             'id',
             'name',

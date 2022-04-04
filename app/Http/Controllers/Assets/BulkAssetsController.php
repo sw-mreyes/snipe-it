@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Assets;
 use App\Helpers\Helper;
 use App\Http\Controllers\CheckInOutRequest;
 use App\Http\Controllers\Controller;
+use App\Models\Actionlog;
 use App\Models\Asset;
 use App\Models\Setting;
 use Illuminate\Http\Request;
@@ -32,7 +33,8 @@ class BulkAssetsController extends Controller
             return redirect()->back()->with('error', 'No assets selected');
         }
 
-        $asset_ids = array_keys($request->input('ids'));
+        
+        $asset_ids = array_values(array_unique($request->input('ids')));
 
         if ($request->filled('bulk_actions')) {
             switch($request->input('bulk_actions')) {
@@ -50,7 +52,7 @@ class BulkAssetsController extends Controller
                     return view('hardware/bulk-delete')->with('assets', $assets);
                 case 'edit':
                     return view('hardware/bulk')
-                        ->with('assets', request('ids'))
+                        ->with('assets', $asset_ids)
                         ->with('statuslabel_list', Helper::statusLabelList());
             }
         }
@@ -90,6 +92,7 @@ class BulkAssetsController extends Controller
             || ($request->filled('model_id'))
         ) {
             foreach ($assets as $assetId) {
+
                 $this->update_array = [];
 
                 $this->conditionallyAddItem('purchase_date')
@@ -102,7 +105,7 @@ class BulkAssetsController extends Controller
                     ->conditionallyAddItem('warranty_months');
 
                 if ($request->filled('purchase_cost')) {
-                    $this->update_array['purchase_cost'] =  Helper::ParseFloat($request->input('purchase_cost'));
+                    $this->update_array['purchase_cost'] =  Helper::ParseCurrency($request->input('purchase_cost'));
                 }
 
                 if ($request->filled('company_id')) {
@@ -118,6 +121,24 @@ class BulkAssetsController extends Controller
                         $this->update_array['location_id'] = $request->input('rtd_location_id');
                     }
                 }
+
+                $changed = [];
+                $asset = Asset::where('id' ,$assetId)->get();
+
+                foreach ($this->update_array as $key => $value) {
+                    if ($this->update_array[$key] != $asset->toArray()[0][$key]) {
+                        $changed[$key]['old'] = $asset->toArray()[0][$key];
+                        $changed[$key]['new'] = $this->update_array[$key];
+                    }
+                }
+
+                $logAction = new Actionlog();
+                $logAction->item_type = Asset::class;
+                $logAction->item_id = $assetId;
+                $logAction->created_at =  date("Y-m-d H:i:s");
+                $logAction->user_id = Auth::id();
+                $logAction->log_meta = json_encode($changed);
+                $logAction->logaction('update');
 
                 DB::table('assets')
                     ->where('id', $assetId)

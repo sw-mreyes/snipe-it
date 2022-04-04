@@ -58,12 +58,12 @@ class LoginController extends Controller
      *
      * @return void
      */
-    public function __construct(LdapAd $ldap, Saml $saml)
+    public function __construct(/*LdapAd $ldap, */ Saml $saml)
     {
         parent::__construct();
         $this->middleware('guest', ['except' => ['logout','postTwoFactorAuth','getTwoFactorAuth','getTwoFactorEnroll']]);
         Session::put('backUrl', \URL::previous());
-        $this->ldap = $ldap;
+        // $this->ldap = $ldap;
         $this->saml = $saml;
     }
 
@@ -74,6 +74,13 @@ class LoginController extends Controller
         if (Auth::check()) {
             return redirect()->intended('/');
         }
+
+        // If the environment is set to ALWAYS require SAML, go straight to the SAML route.
+        // We don't need to check other settings, as this should override those.
+        if (config('app.require_saml')) {
+            return redirect()->route('saml.login');
+        }
+
 
         if ($this->saml->isEnabled() && Setting::getSettings()->saml_forcelogin == "1" && !($request->has('nosaml') || $request->session()->has('error'))) {
             return redirect()->route('saml.login');
@@ -108,10 +115,10 @@ class LoginController extends Controller
                 Log::debug("Attempting to log user in by SAML authentication.");
                 $user = $saml->samlLogin($samlData);
                 if(!is_null($user)) {
-                    Auth::login($user, true);
+                    Auth::login($user);
                 } else {
                     $username = $saml->getUsername();
-                    Log::error("SAML user '$username' could not be found in database.");
+                    \Log::warning("SAML user '$username' could not be found in database.");
                     $request->session()->flash('error', trans('auth/message.signin.error'));
                     $saml->clearData();
                 }
@@ -121,7 +128,7 @@ class LoginController extends Controller
                     $user->save();
                 }
             } catch (\Exception $e) {
-                Log::error("There was an error authenticating the SAML user: " . $e->getMessage());
+                \Log::warning("There was an error authenticating the SAML user: " . $e->getMessage());
                 throw new \Exception($e->getMessage());
             }
         }
@@ -142,8 +149,9 @@ class LoginController extends Controller
      */
     private function loginViaLdap(Request $request): User
     {
+        $ldap = \App::make( LdapAd::class);
         try {
-            return $this->ldap->ldapLogin($request->input('username'), $request->input('password'));
+            return $ldap->ldapLogin($request->input('username'), $request->input('password'));
         } catch (\Exception $ex) {
             LOG::debug("LDAP user login: " . $ex->getMessage());
             throw new \Exception($ex->getMessage());
@@ -182,7 +190,7 @@ class LoginController extends Controller
             try {
                 $user = User::where('username', '=', $remote_user)->whereNull('deleted_at')->where('activated', '=', '1')->first();
                 Log::debug("Remote user auth lookup complete");
-                if(!is_null($user)) Auth::login($user, true);
+                if(!is_null($user)) Auth::login($user, $request->input('remember'));
             } catch(Exception $e) {
                 Log::debug("There was an error authenticating the Remote user: " . $e->getMessage());
             }
@@ -196,6 +204,12 @@ class LoginController extends Controller
      */
     public function login(Request $request)
     {
+
+        //If the environment is set to ALWAYS require SAML, return access denied
+        if (config('app.require_saml')) {
+            return view('errors.403');
+        }
+
         if (Setting::getSettings()->login_common_disabled == "1") {
             return view('errors.403');
         }
@@ -217,12 +231,12 @@ class LoginController extends Controller
         $user = null;
 
         // Should we even check for LDAP users?
-        if ($this->ldap->init()) {
+        if (Setting::getSettings()->ldap_enabled) { // avoid hitting the $this->ldap
             LOG::debug("LDAP is enabled.");
             try {
                 LOG::debug("Attempting to log user in by LDAP authentication.");
                 $user = $this->loginViaLdap($request);
-                Auth::login($user, true);
+                Auth::login($user, $request->input('remember'));
 
             // If the user was unable to login via LDAP, log the error and let them fall through to
             // local authentication.
@@ -362,7 +376,7 @@ class LoginController extends Controller
         if (Google2FA::verifyKey($user->two_factor_secret, $secret)) {
             $user->two_factor_enrolled = 1;
             $user->save();
-            $request->session()->put('2fa_authed', 'true');
+            $request->session()->put('2fa_authed', $user->id);
             return redirect()->route('home')->with('success', 'You are logged in!');
         }
 

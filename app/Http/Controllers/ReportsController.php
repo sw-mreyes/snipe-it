@@ -102,11 +102,7 @@ class ReportsController extends Controller
     {
         $this->authorize('reports.view');
         $depreciations = Depreciation::get();
-        // Grab all the assets
-        $assets = Asset::with( 'assignedTo', 'assetstatus', 'defaultLoc', 'location', 'company', 'model.category', 'model.depreciation')
-                       ->orderBy('created_at', 'DESC')->get();
-
-        return view('reports/depreciation', compact('assets'))->with('depreciations',$depreciations);
+        return view('reports/depreciation')->with('depreciations',$depreciations);
     }
 
     /**
@@ -403,7 +399,7 @@ class ReportsController extends Controller
      */
     public function postCustom(Request $request)
     {
-        ini_set('max_execution_time', 12000);
+        ini_set('max_execution_time', env('REPORT_TIME_LIMIT', 12000)); //12000 seconds = 200 minutes
         $this->authorize('reports.view');
 
 
@@ -519,6 +515,10 @@ class ReportsController extends Controller
                 $header[] = trans('general.department');
             }
 
+            if ($request->filled('title')) {
+                $header[] = trans('admin/users/table.title');
+            }
+
             if ($request->filled('status')) {
                 $header[] = trans('general.status');
             }
@@ -563,7 +563,7 @@ class ReportsController extends Controller
 
 
             foreach ($customfields as $customfield) {
-                if (e($request->input($customfield->db_column_name())) == '1') {
+                if ($request->input($customfield->db_column_name()) == '1') {
                     $header[] = $customfield->name;
                 }
             }
@@ -641,7 +641,7 @@ class ReportsController extends Controller
                 $assets->whereBetween('assets.next_audit_date', [$request->input('next_audit_start'), $request->input('next_audit_end')]);
             }
             
-            $assets->orderBy('assets.created_at', 'ASC')->chunk(20, function($assets) use($handle, $customfields, $request) {
+            $assets->orderBy('assets.id', 'ASC')->chunk(20, function($assets) use($handle, $customfields, $request) {
 
                 $executionTime = microtime(true) - $_SERVER["REQUEST_TIME_FLOAT"];
                 \Log::debug('Walking results: '.$executionTime);
@@ -758,10 +758,17 @@ class ReportsController extends Controller
                         }
                     }
 
-
                     if ($request->filled('department')) {
                         if ($asset->checkedOutToUser()) {
                             $row[] = (($asset->assignedto) && ($asset->assignedto->department)) ? $asset->assignedto->department->name : '';
+                        } else {
+                            $row[] = ''; // Empty string if unassigned
+                        }
+                    }
+
+                    if ($request->filled('title')) {
+                        if ($asset->checkedOutToUser()) {
+                            $row[] = ($asset->assignedto) ? $asset->assignedto->jobtitle : '';
                         } else {
                             $row[] = ''; // Empty string if unassigned
                         }

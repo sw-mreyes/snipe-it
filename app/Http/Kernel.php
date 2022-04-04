@@ -23,6 +23,8 @@ class Kernel extends HttpKernel
         \App\Http\Middleware\CheckForDebug::class,
         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
         \App\Http\Middleware\SecurityHeaders::class,
+        \App\Http\Middleware\PreventBackHistory::class,
+        \Fruitcake\Cors\HandleCors::class,
 
     ];
 
@@ -43,8 +45,6 @@ class Kernel extends HttpKernel
         ],
 
         'api' => [
-            \Barryvdh\Cors\HandleCors::class,
-            'throttle:120,1',
             'auth:api',
         ],
     ];

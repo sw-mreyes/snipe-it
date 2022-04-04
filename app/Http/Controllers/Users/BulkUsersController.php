@@ -34,7 +34,8 @@ class BulkUsersController extends Controller
         // Make sure there were users selected
         if (($request->filled('ids')) && (count($request->input('ids')) > 0)) {
             // Get the list of affected users
-            $users = User::whereIn('id', array_keys(request('ids')))
+            $user_raw_array = request('ids');
+            $users = User::whereIn('id', $user_raw_array)
                 ->with('groups', 'assets', 'licenses', 'accessories')->get();
 
             if ($request->input('bulk_actions') == 'edit') {
@@ -174,7 +175,7 @@ class BulkUsersController extends Controller
         }
 
         $users = User::whereIn('id', $user_raw_array)->get();
-        $assets = Asset::whereIn('assigned_to', $user_raw_array)->get();
+        $assets = Asset::whereIn('assigned_to', $user_raw_array)->where('assigned_type', 'App\Models\User')->get();
         $accessories = DB::table('accessories_users')->whereIn('assigned_to', $user_raw_array)->get();
         $licenses = DB::table('license_seats')->whereIn('assigned_to', $user_raw_array)->get();
 

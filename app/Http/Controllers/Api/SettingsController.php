@@ -17,6 +17,7 @@ use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Ldap; // forward-port of v4 LDAP model for Sync
+use App\Http\Requests\SlackSettingsRequest;
 
 
 class SettingsController extends Controller
@@ -36,13 +37,17 @@ class SettingsController extends Controller
     public function ldapAdSettingsTest(LdapAd $ldap): JsonResponse
     {
         if(!$ldap->init()) {
-            Log::info('LDAP is not enabled cannot test.');
+            Log::info('LDAP is not enabled so we cannot test.');
             return response()->json(['message' => 'LDAP is not enabled, cannot test.'], 400);
         }
 
         // The connect, bind and resulting users message
         $message = [];
 
+        
+        // This is all kinda fucked right now. The connection test doesn't actually do what you think,
+        // // and the way we parse the errors
+        // on the JS side is horrible. 
         Log::info('Preparing to test LDAP user login');
         // Test user can connect to the LDAP server
         try {
@@ -51,13 +56,11 @@ class SettingsController extends Controller
                 'message' => 'Successfully connected to LDAP server.'
             ];
         } catch (\Exception $ex) {
-                \Log::debug('LDAP connected but Bind failed. Please check your LDAP settings and try again.');
-            return response()->json([
-                'message' => 'Error logging into LDAP server, error: ' . $ex->getMessage() . ' - Verify your that your username and password are correct']);
+                \Log::debug('Connection to LDAP server '.Setting::getSettings()->ldap_server.' failed. Please check your LDAP settings and try again. Server Responded with error: ' . $ex->getMessage());
+            return response()->json(
+                ['message' => 'Connection to LDAP server '.Setting::getSettings()->ldap_server." failed. Verify that the LDAP hostname is entered correctly and that it can be reached from this web server. \n\nServer Responded with error: " . $ex->getMessage()
 
-        } catch (\Exception $e) {
-            \Log::info('LDAP connection failed but we cannot debug it any further on our end.');
-            return response()->json(['message' => 'The LDAP connection failed but we cannot debug it any further on our end. The error from the server is: '.$e->getMessage()], 500);
+                ], 400);
         }
 
         Log::info('Preparing to test LDAP bind connection');
@@ -66,12 +69,11 @@ class SettingsController extends Controller
             Log::info('Testing Bind');
             $ldap->testLdapAdBindConnection();
             $message['bind'] = [
-                'message' => 'Successfully binded to LDAP server.'
+                'message' => 'Successfully bound to LDAP server.'
             ];
         } catch (\Exception $ex) {
             Log::info('LDAP Bind failed');
-            return response()->json([
-                'message' => 'Error binding to LDAP server, error: ' . $ex->getMessage()
+            return response()->json(['message' => 'Connection to LDAP successful, but we were unable to Bind the LDAP user '.Setting::getSettings()->ldap_uname.". Verify your that your LDAP Bind username and password are correct. \n\nServer Responded with error: " . $ex->getMessage()
             ], 400);
         }
 
@@ -94,9 +96,17 @@ class SettingsController extends Controller
                     'email'           => $item[$settings['ldap_email']][0] ?? null,
                 ];
             });
-            $message['user_sync']  = [
-                'users' => $users
-            ];
+            if ($users->count() > 0) {
+                $message['user_sync']  = [
+                    'users' => $users
+                ];
+            } else {
+                $message['user_sync']  = [
+                    'message' => 'Connection to LDAP was successful, however there were no users returned from your query. You should confirm the Base Bind DN above.'
+                ];
+                return response()->json($message, 400);
+            }
+            
         } catch (\Exception $ex) {
             Log::info('LDAP sync failed');
             $message['user_sync']  = [
@@ -156,31 +166,41 @@ class SettingsController extends Controller
     public function slacktest(Request $request)
     {
 
-        $slack = new Client([
-            'base_url' => e($request->input('slack_endpoint')),
-            'defaults' => [
-                'exceptions' => false
-            ]
+        $validator = Validator::make($request->all(), [
+            'slack_endpoint'                      => 'url|required_with:slack_channel|starts_with:https://hooks.slack.com/|nullable',
+            'slack_channel'                       => 'required_with:slack_endpoint|starts_with:#|nullable',
         ]);
 
-
-        $payload = json_encode(
-            [
-                'channel'    => e($request->input('slack_channel')),
-                'text'       => trans('general.slack_test_msg'),
-                'username'    => e($request->input('slack_botname')),
-                'icon_emoji' => ':heart:'
-            ]);
-
-        try {
-            $slack->post($request->input('slack_endpoint'),['body' => $payload]);
-            return response()->json(['message' => 'Success'], 200);
-        } catch (\Exception $e) {
-            return response()->json(['message' => 'Oops! Please check the channel name and webhook endpoint URL. Slack responded with: '.$e->getMessage()], 400);
+        if ($validator->fails()) {
+            return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
         }
 
-        return response()->json(['message' => 'Something went wrong :( '], 400);
+        // If validation passes, continue to the curl request
+            $slack = new Client([
+                'base_url' => e($request->input('slack_endpoint')),
+                'defaults' => [
+                    'exceptions' => false,
+                ],
+            ]);
 
+            $payload = json_encode(
+                [
+                    'channel'    => e($request->input('slack_channel')),
+                    'text'       => trans('general.slack_test_msg'),
+                    'username'    => e($request->input('slack_botname')),
+                    'icon_emoji' => ':heart:',
+                ]);
+
+            try {
+                $slack->post($request->input('slack_endpoint'), ['body' => $payload]);
+                return response()->json(['message' => 'Success'], 200);
+
+            } catch (\Exception $e) {
+                return response()->json(['message' => 'Please check the channel name and webhook endpoint URL ('.$request->input('slack_endpoint').'). Slack responded with: '.$e->getMessage()], 400);
+            }
+        
+        //} 
+        return response()->json(['message' => 'Something went wrong :( '], 400);
     }
 
 

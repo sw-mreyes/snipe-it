@@ -192,7 +192,6 @@ class AssetPresenter extends Presenter
                 "searchable" => true,
                 "sortable" => true,
                 "title" => trans('general.purchase_cost'),
-                "formatter" => 'numberWithCommas',
                 "footerFormatter" => 'sumFormatter',
             ], [
                 "field" => "order_number",

@@ -48,9 +48,8 @@ class ProfileController extends Controller
         $user->last_name  = $request->input('last_name');
         $user->website    = $request->input('website');
         $user->gravatar   = $request->input('gravatar');
+        $user->skin   = $request->input('skin');
         $user->phone   = $request->input('phone');
-
-
 
         if (!config('app.lock_passwords')) {
             $user->locale = $request->input('locale', 'en');
@@ -114,6 +113,12 @@ class ProfileController extends Controller
      * @return View
      */
     public function api() {
+
+        // Make sure the self.api permission has been granted
+        if (!Gate::allows('self.api')) {
+            abort(403);
+        }
+        
         return view('account/api');
     }
 

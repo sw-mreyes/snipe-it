@@ -8,6 +8,7 @@ use App\Http\Requests\ImageUploadRequest;
 use App\Http\Requests\SettingsSamlRequest;
 use App\Http\Requests\SetupUserRequest;
 use App\Models\Setting;
+use App\Models\Asset;
 use App\Models\User;
 use App\Notifications\FirstAdminNotification;
 use App\Notifications\MailTest;
@@ -21,6 +22,8 @@ use Image;
 use Input;
 use Redirect;
 use Response;
+use App\Helpers\StorageHelper;
+use App\Http\Requests\SlackSettingsRequest;
 
 /**
  * This controller handles all actions related to Settings for
@@ -399,6 +402,7 @@ class SettingsController extends Controller
         $setting->version_footer     = $request->input('version_footer');
         $setting->footer_text        = $request->input('footer_text');
         $setting->skin               = $request->input('skin');
+        $setting->allow_user_skin    = $request->input('allow_user_skin');
         $setting->show_url_in_emails = $request->input('show_url_in_emails', '0');
         $setting->logo_print_assets  = $request->input('logo_print_assets', '0');
 
@@ -618,6 +622,26 @@ class SettingsController extends Controller
             return redirect()->to('admin')->with('error', trans('admin/settings/message.update.error'));
         }
 
+        // Check if the audit interval has changed - if it has, we want to update ALL of the assets audit dates
+        if ($request->input('audit_interval') != $setting->audit_interval) {
+
+            // Be careful - this could be a negative number
+            $audit_diff_months = ((int)$request->input('audit_interval') - (int)($setting->audit_interval));
+            
+            // Grab all of the assets that have an existing next_audit_date
+            $assets = Asset::whereNotNull('next_audit_date')->get();
+
+            // Update all of the assets' next_audit_date values
+            foreach ($assets as $asset) {
+
+                if ($asset->next_audit_date != '') {
+                    $old_next_audit = new \DateTime($asset->next_audit_date);
+                    $asset->next_audit_date = $old_next_audit->modify($audit_diff_months.' month')->format('Y-m-d');
+                    $asset->forceSave();
+                }
+            }
+        } 
+
         $alert_email    = rtrim($request->input('alert_email'), ',');
         $alert_email    = trim($alert_email);
         $admin_cc_email = rtrim($request->input('admin_cc_email'), ',');
@@ -665,25 +689,16 @@ class SettingsController extends Controller
      *
      * @return View
      */
-    public function postSlack(Request $request)
+    public function postSlack(SlackSettingsRequest $request)
     {
         if (is_null($setting = Setting::getSettings())) {
             return redirect()->to('admin')->with('error', trans('admin/settings/message.update.error'));
         }
 
-        $validatedData = $request->validate([
-            'slack_channel'   => 'regex:/(?<!\w)#\w+/|required_with:slack_endpoint|nullable',
-        ]);
-
-
-        if ($validatedData) {
-
-            $setting->slack_endpoint = $request->input('slack_endpoint');
-            $setting->slack_channel = $request->input('slack_channel');
-            $setting->slack_botname = $request->input('slack_botname');
-
-        }
-
+        $setting->slack_endpoint = $request->input('slack_endpoint');
+        $setting->slack_channel = $request->input('slack_channel');
+        $setting->slack_botname = $request->input('slack_botname');
+        
         if ($setting->save()) {
             return redirect()->route('settings.index')
                 ->with('success', trans('admin/settings/message.update.success'));
@@ -941,10 +956,18 @@ class SettingsController extends Controller
             $setting->ldap_tls               = $request->input('ldap_tls', '0');
             $setting->ldap_pw_sync           = $request->input('ldap_pw_sync', '0');
             $setting->custom_forgot_pass_url = $request->input('custom_forgot_pass_url');
+            $setting->ldap_phone_field       = $request->input('ldap_phone');
+            $setting->ldap_jobtitle          = $request->input('ldap_jobtitle');
+            $setting->ldap_country           = $request->input('ldap_country');
+            $setting->ldap_dept              = $request->input('ldap_dept');
+            $setting->ldap_client_tls_cert   = $request->input('ldap_client_tls_cert');
+            $setting->ldap_client_tls_key    = $request->input('ldap_client_tls_key');
+
 
         }
 
         if ($setting->save()) {
+            $setting->update_client_side_cert_files();
             return redirect()->route('settings.ldap.index')
                 ->with('success', trans('admin/settings/message.update.success'));
         }
@@ -991,6 +1014,11 @@ class SettingsController extends Controller
         if (!empty($request->input('saml_sp_privatekey'))) {
             $setting->saml_sp_x509cert          = $request->input('saml_sp_x509cert');
             $setting->saml_sp_privatekey        = $request->input('saml_sp_privatekey');
+        }
+        if (!empty($request->input('saml_sp_x509certNew'))) {
+            $setting->saml_sp_x509certNew       = $request->input('saml_sp_x509certNew');
+        } else {
+            $setting->saml_sp_x509certNew       = "";
         }
         $setting->saml_custom_settings          = $request->input('saml_custom_settings');
 
@@ -1091,7 +1119,7 @@ class SettingsController extends Controller
 
         if (! config('app.lock_passwords')) {
             if (Storage::exists($path . '/' . $filename)) {
-                return Storage::download($path . '/' . $filename);
+                return StorageHelper::downloader($path . '/' . $filename);
             } else {
                 // Redirect to the backup page
                 return redirect()->route('settings.backups.index')->with('error', trans('admin/settings/message.backup.file_not_found'));

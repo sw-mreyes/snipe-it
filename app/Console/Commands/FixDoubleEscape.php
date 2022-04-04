@@ -40,7 +40,7 @@ class FixDoubleEscape extends Command
 
         $tables = [
             '\App\Models\Asset' => ['name'],
-            '\App\Models\License' => ['name'],
+            '\App\Models\License' => ['name', 'license_name'],
             '\App\Models\Consumable' => ['name'],
             '\App\Models\Accessory' => ['name'],
             '\App\Models\Component' => ['name'],
@@ -53,7 +53,7 @@ class FixDoubleEscape extends Command
             '\App\Models\Group' => ['name'],
             '\App\Models\Department' => ['name'],
             '\App\Models\Location' => ['name'],
-            '\App\Models\User' => ['first_name', 'last_name'],
+            '\App\Models\User' => ['first_name', 'last_name', 'jobtitle'],
         ];
 
         $count = array();
@@ -69,10 +69,14 @@ class FixDoubleEscape extends Command
                     $count[$classname]['classname']++;
                     $count[$classname][$field] = 0;
 
-                    foreach($classname::where("$field",'LIKE','%&%')->get() as $row) {
-                        $this->info('Updating '.$field.' for '.$classname);
-                        $row->{$field} = html_entity_decode($row->{$field},ENT_QUOTES);
-                        $row->save();
+                    foreach($classname::where("$field",'LIKE','%;%')->get() as $row) {
+                       
+                        $fixed = html_entity_decode($row->{$field});
+                        if ($row->save()) {
+                            $this->info('Updating '.$field.' for '.$classname.' to '.$row->{$field}.' to '.$fixed);
+                        } else {
+                            $this->error('Could NOT update '.$field.' for '.$classname.' to '.$row->{$field}.' to '.$fixed.': '.$row->getErrors());
+                        }
                         $count[$classname][$field]++;
 
                     }

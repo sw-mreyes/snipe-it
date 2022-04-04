@@ -9,14 +9,17 @@
 {{-- Right header --}}
 @section('header_right')
 
+    
     @can('manage', \App\Models\Asset::class)
+        @if ($asset->deleted_at=='')
         <div class="dropdown pull-right">
             <button class="btn btn-default dropdown-toggle" data-toggle="dropdown">{{ trans('button.actions') }}
                 <span class="caret"></span>
             </button>
             <ul class="dropdown-menu pull-right" role="menu">
+                
                 @if (($asset->assetstatus) && ($asset->assetstatus->deployable=='1'))
-                    @if ($asset->assigned_to != '')
+                    @if (($asset->assigned_to != '') && ($asset->deleted_at==''))
                         @can('checkin', \App\Models\Asset::class)
                             <li role="menuitem">
                                 <a href="{{ route('checkin/hardware', $asset->id) }}">
@@ -24,7 +27,7 @@
                                 </a>
                             </li>
                         @endcan
-                    @else
+                    @elseif (($asset->assigned_to == '') && ($asset->deleted_at==''))
                         @can('checkout', \App\Models\Asset::class)
                             <li role="menuitem">
                                 <a href="{{ route('checkout/hardware', $asset->id)  }}">
@@ -67,6 +70,7 @@
                 @endcan
             </ul>
         </div>
+        @endif
     @endcan
 @stop
 
@@ -87,10 +91,10 @@
         @if ($asset->deleted_at!='')
             <div class="col-md-12">
                 <div class="alert alert-danger">
-                    <i class="fa fa-exclamation-circle faa-pulse animated" aria-hidden="true"></i>
+                    <i class="fa fa-exclamation-triangle faa-pulse animated" aria-hidden="true"></i>
                     <strong>WARNING: </strong>
                     This asset has been deleted.
-                    You must <a href="{{ route('restore/hardware', $asset->id) }}">restore it</a> before you can assign it to someone.
+                    You must restore it before you can assign it to someone.
                 </div>
             </div>
         @endif
@@ -103,76 +107,79 @@
             <!-- Custom Tabs -->
             <div class="nav-tabs-custom">
                 <ul class="nav nav-tabs">
+
                     <li class="active">
                         <a href="#details" data-toggle="tab">
-            <span class="hidden-lg hidden-md">
-              <i class="fa fa-info-circle" aria-hidden="true"></i>
-            </span>
-                            <span class="hidden-xs hidden-sm">
-              {{ trans('general.details') }}
-            </span>
+                          <span class="hidden-lg hidden-md">
+                          <i class="fa fa-info-circle fa-2x"x></i>
+                          </span>
+                          <span class="hidden-xs hidden-sm">{{ trans('admin/users/general.info') }}</span>
                         </a>
                     </li>
+
                     <li>
                         <a href="#software" data-toggle="tab">
-            <span class="hidden-lg hidden-md">
-              <i class="fa fa-floppy-o" aria-hidden="true"></i>
-            </span>
-                            <span class="hidden-xs hidden-sm">
-              {{ trans('general.licenses') }}
-            </span>
+                          <span class="hidden-lg hidden-md">
+                            <i class="fa fa-save fa-2x" aria-hidden="true"></i>
+                          </span>
+                          <span class="hidden-xs hidden-sm">{{ trans('general.licenses') }}
+                          </span>
                         </a>
                     </li>
+
                     <li>
                         <a href="#components" data-toggle="tab">
-            <span class="hidden-lg hidden-md">
-              <i class="fa fa-hdd-o" aria-hidden="true"></i>
-            </span>
-                            <span class="hidden-xs hidden-sm">
-              {{ trans('general.components') }}
-            </span>
+                          <span class="hidden-lg hidden-md">
+                            <i class="fa fa-hdd" aria-hidden="true"></i>
+                          </span>
+                          <span class="hidden-xs hidden-sm">{{ trans('general.components') }}
+                          </span>
                         </a>
                     </li>
+
                     <li>
                         <a href="#assets" data-toggle="tab">
-            <span class="hidden-lg hidden-md">
-              <i class="fa fa-barcode" aria-hidden="true"></i>
-            </span>
-                            <span class="hidden-xs hidden-sm">
-              {{ trans('general.assets') }}
-            </span>
+                          <span class="hidden-lg hidden-md">
+                            <i class="fa fa-barcode fa-2x" aria-hidden="true"></i>
+                          </span>
+                          <span class="hidden-xs hidden-sm">{{ trans('general.assets') }}
+                            
+                          </span>
                         </a>
                     </li>
-                    <li>
-                        <a href="#maintenances" data-toggle="tab">
-            <span class="hidden-lg hidden-md">
-              <i class="fa fa-wrench" aria-hidden="true"></i>
-            </span>
-                            <span class="hidden-xs hidden-sm">
-              {{ trans('general.maintenances') }}
-            </span>
-                        </a>
-                    </li>
+
+                
                     <li>
                         <a href="#history" data-toggle="tab">
-            <span class="hidden-lg hidden-md">
-              <i class="fa fa-history" aria-hidden="true"></i>
-            </span>
-                            <span class="hidden-xs hidden-sm">
-              {{ trans('general.history') }}
-            </span>
+                          <span class="hidden-lg hidden-md">
+                            <i class="fa fa-history fa-2x" aria-hidden="true"></i>
+                          </span>
+                          <span class="hidden-xs hidden-sm">{{ trans('general.history') }}
+                          </span>
                         </a>
                     </li>
+
+                    <li>
+                        <a href="#maintenances" data-toggle="tab">
+                          <span class="hidden-lg hidden-md">
+                            <i class="fa fa-wrench fa-2x" aria-hidden="true"></i>
+                          </span>
+                          <span class="hidden-xs hidden-sm">{{ trans('general.maintenances') }}
+                          </span>
+                        </a>
+                    </li>
+
                     <li>
                         <a href="#files" data-toggle="tab">
-            <span class="hidden-lg hidden-md">
-              <i class="fa fa-files-o" aria-hidden="true"></i>
-            </span>
-                            <span class="hidden-xs hidden-sm">
-              {{ trans('general.files') }}
-            </span>
+                          <span class="hidden-lg hidden-md">
+                            <i class="fa fa-file fa-2x" aria-hidden="true"></i>
+                          </span>
+                          <span class="hidden-xs hidden-sm">{{ trans('general.files') }}
+                          </span>
                         </a>
                     </li>
+
+                   
                     @can('update', \App\Models\Asset::class)
                         <li class="pull-right">
                             <a href="#" data-toggle="modal" data-target="#uploadFileModal">
@@ -181,15 +188,30 @@
                             </a>
                         </li>
                     @endcan
+
                 </ul>
+                
                 <div class="tab-content">
                     <div class="tab-pane fade in active" id="details">
                         <div class="row">
                             <div class="col-md-8">
 
-
                                 <!-- start striped rows -->
                                 <div class="container row-striped">
+
+                                    @if ($asset->deleted_at!='')
+                                        <div class="row">
+                                            <div class="col-md-2">
+                                                <span class="text-danger"><strong>{{ trans('general.deleted') }}</strong></span>
+                                            </div>
+                                            <div class="col-md-6">
+                                                {{ \App\Helpers\Helper::getFormattedDateObject($asset->deleted_at, 'date', false) }}
+
+                                            </div>
+                                        </div>
+                                    @endif
+
+
 
                                     @if ($asset->assetstatus)
 
@@ -203,7 +225,7 @@
                                                     {{ $asset->assetstatus->name }}
                                                     <label class="label label-default">{{ trans('general.deployed') }}</label>
 
-                                                    <i class="fa fa-long-arrow-right" aria-hidden="true"></i>
+                                                    <i class="fa fa-long-arrow-alt-right" aria-hidden="true"></i>
                                                     {!!  $asset->assignedTo->present()->glyph()  !!}
                                                     {!!  $asset->assignedTo->present()->nameUrl() !!}
                                                 @else
@@ -265,7 +287,11 @@
                                                 </strong>
                                             </div>
                                             <div class="col-md-6">
-                                                {{ \App\Helpers\Helper::getFormattedDateObject($audit_log->created_at, 'date', false) }} (by {{ link_to_route('users.show', $audit_log->user->present()->fullname(), [$audit_log->user->id]) }})
+                                                {{ \App\Helpers\Helper::getFormattedDateObject($audit_log->created_at, 'date', false) }} 
+                                                @if ($audit_log->user) 
+                                                    (by {{ link_to_route('users.show', $audit_log->user->present()->fullname(), [$audit_log->user->id]) }})
+                                                @endif 
+                                                
                                             </div>
                                         </div>
                                     @endif
@@ -306,7 +332,7 @@
 
                                                     @if (($asset->model) && ($asset->model->manufacturer->url))
                                                         <li>
-                                                            <i class="fa fa-globe" aria-hidden="true"></i>
+                                                            <i class="fa fa-globe-americas" aria-hidden="true"></i>
                                                             <a href="{{ $asset->model->manufacturer->url }}">
                                                                 {{ $asset->model->manufacturer->url }}
                                                             </a>
@@ -332,7 +358,8 @@
                                                     @endif
 
                                                     @if (($asset->model) && ($asset->model->manufacturer->support_email))
-                                                        <li><i class="fa fa-envelope" aria-hidden="true"></i>
+                                                        <li>
+                                                            <i class="fa fa-envelope" aria-hidden="true"></i>
                                                             <a href="mailto:{{ $asset->model->manufacturer->support_email }}">
                                                                 {{ $asset->model->manufacturer->support_email }}
                                                             </a>
@@ -470,7 +497,28 @@
                                             </div>
                                         </div>
                                     @endif
+                                    @if (($asset->model) && ($asset->depreciation))
+                                        <div class="row">
+                                            <div class="col-md-2">
+                                                <strong>
+                                                    {{ trans('admin/hardware/table.current_value') }}
+                                                </strong>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="col-md-6" style="margin-left:-15px;">
+                                                    @if (($asset->id) && ($asset->location))
+                                                        {{ $asset->location->currency }}
+                                                    @elseif (($asset->id) && ($asset->location))
+                                                        {{ $asset->location->currency }}
+                                                    @else
+                                                        {{ $snipeSettings->default_currency }}
+                                                    @endif
+                                                    {{ \App\Helpers\Helper::formatCurrencyOutput($asset->getDepreciatedValue() )}}
 
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endif
                                     @if ($asset->order_number)
                                         <div class="row">
                                             <div class="col-md-2">
@@ -729,7 +777,26 @@
                                             {{ ($asset->userRequests) ? (int) $asset->userRequests->count() : '0' }}
                                         </div>
                                     </div>
+                                    <div class="row">
+                                        <div class="col-md-2">
+                                            <strong>
+                                               Labels
+                                            </strong>
+                                        </div>
+                                        <div class="col-md-6">
+                                            {{ Form::open([
+                                                      'method' => 'POST',
+                                                      'route' => ['hardware/bulkedit'],
+                                                      'class' => 'form-inline',
+                                                       'id' => 'bulkForm']) }}
+                                                <input type="hidden" name="bulk_actions" value="labels" />
+                                                <input type="hidden" name="ids[{{$asset->id}}]" value="{{ $asset->id }}" />
+                                                <button class="btn btn-sm btn-default" id="bulkEdit" ><i class="fa fa-barcode" aria-hidden="true"></i> {{ trans_choice('button.generate_labels', 1) }}</button>
 
+                                            {{ Form::close() }}
+
+                                        </div>
+                                    </div>
                                 </div> <!-- end row-striped -->
 
                             </div><!-- /col-md-8 -->
@@ -739,10 +806,19 @@
                                 @if (($asset->image) || (($asset->model) && ($asset->model->image!='')))
 
 
-                                    <div class="col-md-12 text-center" style="padding-bottom: 15px;">
+                                    <div class="text-center col-md-12" style="padding-bottom: 15px;">
                                         <a href="{{ ($asset->getImageUrl()) ? $asset->getImageUrl() : null }}" data-toggle="lightbox">
                                             <img src="{{ ($asset->getImageUrl()) ? $asset->getImageUrl() : null }}" class="assetimg img-responsive" alt="{{ $asset->getDisplayNameAttribute() }}">
                                         </a>
+                                    </div>
+                                @endif
+
+                                @if ($asset->deleted_at!='')
+                                    <div class="text-center col-md-12" style="padding-bottom: 15px;">
+                                        <form method="POST" action="{{ route('restore/hardware', ['assetId' => $asset->id]) }}">
+                                        @csrf 
+                                        <button class="btn btn-danger col-md-12">{{ trans('general.restore') }}</button>
+                                        </form>
                                     </div>
                                 @endif
 
@@ -762,7 +838,7 @@
                                         <ul class="list-unstyled" style="line-height: 25px;">
                                             @if ((isset($asset->assignedTo->email)) && ($asset->assignedTo->email!=''))
                                                 <li>
-                                                    <i class="fa fa-envelope-o" aria-hidden="true"></i>
+                                                    <i class="fa fa-envelope" aria-hidden="true"></i>
                                                     <a href="mailto:{{ $asset->assignedTo->email }}">{{ $asset->assignedTo->email }}</a>
                                                 </li>
                                             @endif
@@ -862,9 +938,9 @@
                                                         <a href="{{ route('components.show', $component->id) }}">{{ $component->name }}</a>
                                                     </td>
                                                     <td>{{ $component->pivot->assigned_qty }}</td>
-                                                    <td>{{ $component->purchase_cost }}</td>
-                                                    <?php $totalCost = $totalCost + $component->purchase_cost ;?>
+                                                    <td>{{ Helper::formatCurrencyOutput($component->purchase_cost) }} each</td>
 
+                                                    <?php $totalCost = $totalCost + ($component->purchase_cost *$component->pivot->assigned_qty) ?>
                                                 </tr>
                                             @endif
                                         @endforeach
@@ -980,7 +1056,8 @@
                            "ignoreColumn": ["actions","image","change","checkbox","checkincheckout","icon"]
                          }'
                                         data-url="{{ route('api.maintenances.index', array('asset_id' => $asset->id)) }}"
-                                        data-cookie-id-table="assetMaintenancesTable">
+                                        data-cookie-id-table="assetMaintenancesTable"
+                                        data-cookie="true">
                                 </table>
                             </div> <!-- /.col-md-12 -->
                         </div> <!-- /.row -->
@@ -1008,11 +1085,12 @@
                        }'
 
                       data-url="{{ route('api.activity.index', ['item_id' => $asset->id, 'item_type' => 'asset']) }}"
-                      data-cookie-id-table="assetHistory">
+                      data-cookie-id-table="assetHistory"
+                      data-cookie="true">
                 <thead>
                 <tr>
                   <th data-visible="true" style="width: 40px;" class="hidden-xs">Icon</th>
-                  <th class="col-sm-2" data-visible="true" data-field="created_at" data-formatter="dateDisplayFormatter">{{ trans('general.date') }}</th>
+                  <th class="col-sm-2" data-visible="true" data-field="action_date" data-formatter="dateDisplayFormatter">{{ trans('general.date') }}</th>
                   <th class="col-sm-1" data-visible="true" data-field="admin" data-formatter="usersLinkObjFormatter">{{ trans('general.admin') }}</th>
                   <th class="col-sm-1" data-visible="true" data-field="action_type">{{ trans('general.action') }}</th>
                   <th class="col-sm-2" data-visible="true" data-field="item" data-formatter="polymorphicItemFormatter">{{ trans('general.item') }}</th>
@@ -1094,14 +1172,14 @@
 
                                                 <td>
                                                     @if ($file->created_at)
-                                                        {{ \App\Helpers\Helper::getFormattedDateObject($asset->last_checkout, 'datetime', false) }}
+                                                        {{ \App\Helpers\Helper::getFormattedDateObject($file->created_at, 'datetime', false) }}
                                                     @endif
                                                 </td>
 
 
                                                 <td>
                                                     @can('update', \App\Models\Asset::class)
-                                                        <a class="btn delete-asset btn-sm btn-danger btn-sm" href="{{ route('delete/assetfile', [$asset->id, $file->id]) }}" data-tooltip="true" data-title="Delete" data-content="{{ trans('general.delete_confirm', ['item' => $file->filename]) }}"><i class="fa fa-trash icon-white" aria-hidden="true"></i></a>
+                                                        <a class="btn delete-asset btn-sm btn-danger" href="{{ route('delete/assetfile', [$asset->id, $file->id]) }}" data-tooltip="true" data-title="Delete" data-content="{{ trans('general.delete_confirm', ['item' => $file->filename]) }}"><i class="fa fa-trash icon-white" aria-hidden="true"></i></a>
                                                     @endcan
                                                 </td>
                                             </tr>

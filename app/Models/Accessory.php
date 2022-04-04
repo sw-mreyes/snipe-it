@@ -35,7 +35,7 @@ class Accessory extends SnipeModel
      * 
      * @var array
      */
-    protected $searchableAttributes = ['name', 'model_number', 'order_number', 'purchase_date'];
+    protected $searchableAttributes = ['name', 'model_number', 'order_number', 'purchase_date', 'notes'];
 
     /**
      * The relations and their attributes that should be included when searching the model.
@@ -91,7 +91,9 @@ class Accessory extends SnipeModel
         'supplier_id',
         'image',
         'qty',
-        'requestable'
+        'min_amt',
+        'requestable',
+        'notes',
     ];
 
 
@@ -376,5 +378,18 @@ class Accessory extends SnipeModel
     public function scopeOrderManufacturer($query, $order)
     {
         return $query->leftJoin('manufacturers', 'accessories.manufacturer_id', '=', 'manufacturers.id')->orderBy('manufacturers.name', $order);
+    }
+
+    /**
+    * Query builder scope to order on supplier
+    *
+    * @param  \Illuminate\Database\Query\Builder  $query  Query builder instance
+    * @param  text                              $order       Order
+    *
+    * @return \Illuminate\Database\Query\Builder          Modified query builder
+    */
+    public function scopeOrderSupplier($query, $order)
+    {
+        return $query->leftJoin('suppliers', 'accessories.supplier_id', '=', 'suppliers.id')->orderBy('suppliers.name', $order);
     }
 }

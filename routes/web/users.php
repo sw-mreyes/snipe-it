@@ -8,13 +8,23 @@ Route::group([ 'prefix' => 'users', 'middleware' => ['auth']], function () {
     Route::get('export', [ 'as' => 'users.export', 'uses' => 'Users\UsersController@getExportUserCsv' ]);
     Route::get('{userId}/clone', [ 'as' => 'clone/user', 'uses' => 'Users\UsersController@getClone' ]);
     Route::post('{userId}/clone', [ 'uses' => 'Users\UsersController@postCreate' ]);
-    Route::get('{userId}/restore', [ 'as' => 'restore/user', 'uses' => 'Users\UsersController@getRestore' ]);
+    Route::post('{userId}/restore', [ 'as' => 'restore/user', 'uses' => 'Users\UsersController@getRestore' ]);
     Route::get('{userId}/unsuspend', [ 'as' => 'unsuspend/user', 'uses' => 'Users\UsersController@getUnsuspend' ]);
     Route::post('{userId}/upload', [ 'as' => 'upload/user', 'uses' => 'Users\UserFilesController@store' ]);
     Route::delete(
         '{userId}/deletefile/{fileId}',
         [ 'as' => 'userfile.destroy', 'uses' => 'Users\UserFilesController@destroy' ]
     );
+
+
+    Route::post(
+        '{userId}/password',
+        [
+            'as'   => 'users.password',
+            'uses' => 'Users\UsersController@sendPasswordReset',
+        ]
+    );
+    
 
     Route::get(
         '{userId}/print',

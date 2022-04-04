@@ -6,10 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\AssetFileRequest;
 use App\Models\Actionlog;
 use App\Models\License;
-use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use App\Helpers\StorageHelper;
+use enshrined\svgSanitize\Sanitizer;
 
 class LicenseFilesController extends Controller
 {
@@ -36,28 +37,39 @@ class LicenseFilesController extends Controller
 
                 if (!Storage::exists('private_uploads/licenses')) Storage::makeDirectory('private_uploads/licenses', 775);
 
-                $upload_success = false;
                 foreach ($request->file('file') as $file) {
 
+                    $extension = $file->getClientOriginalExtension();
+                    $file_name = 'license-'.$license->id.'-'.str_random(8).'-'.str_slug(basename($file->getClientOriginalName(), '.'.$extension)).'.'.$extension;
 
-                    $file_name = 'license-'.$license->id.'-'.str_random(8).'-'.str_slug(basename($file->getClientOriginalName(), '.'.$file->getClientOriginalExtension())).'.'.$file->getClientOriginalExtension();
 
+                        // Check for SVG and sanitize it
+                        if ($extension == 'svg') {
+                            \Log::debug('This is an SVG');
+                            \Log::debug($file_name);
 
-                    $upload_success = $file->storeAs('private_uploads/licenses', $file_name);
-                    // $upload_success = $file->storeAs('private_uploads/licenses/'.$file_name, $file);
+                                $sanitizer = new Sanitizer();
+                                $dirtySVG = file_get_contents($file->getRealPath());
+                                $cleanSVG = $sanitizer->sanitize($dirtySVG);
+
+                                try {
+                                    Storage::put('private_uploads/licenses/'.$file_name, $cleanSVG);
+                                } catch (\Exception $e) {
+                                    \Log::debug('Upload no workie :( ');
+                                    \Log::debug($e);
+                                }
+
+                        } else {
+                            Storage::put('private_uploads/licenses/'.$file_name, file_get_contents($file));
+                        }
 
                     //Log the upload to the log
                     $license->logUpload($file_name, e($request->input('notes')));
                 }
 
-                // This being called from a modal seems to confuse redirect()->back()
-                // It thinks we should go to the dashboard.  As this is only used
-                // from the modal at present, hardcode the redirect.  Longterm
-                // maybe we evaluate something else.
-                if ($upload_success) {
+
                     return redirect()->route('licenses.show', $license->id)->with('success', trans('admin/licenses/message.upload.success'));
-                }
-                return redirect()->route('licenses.show', $license->id)->with('error', trans('admin/licenses/message.upload.error'));
+                
             }
             return redirect()->route('licenses.show', $license->id)->with('error', trans('admin/licenses/message.upload.nofiles'));
         }
@@ -143,18 +155,18 @@ class LicenseFilesController extends Controller
 
                 // We have to override the URL stuff here, since local defaults in Laravel's Flysystem
                 // won't work, as they're not accessible via the web
-                if (config('filesystems.default') == 'local') {
-                    return Storage::download($file);
+                if (config('filesystems.default') == 'local') { // TODO - is there any way to fix this at the StorageHelper layer?
+                    return StorageHelper::downloader($file);
                 } else {
                     if ($download != 'true') {
                         \Log::debug('display the file');
-                        if ($contents = file_get_contents(Storage::url($file))) {
+                        if ($contents = file_get_contents(Storage::url($file))) { // TODO - this will fail on private S3 files or large public ones
                             return Response::make(Storage::url($file)->header('Content-Type', mime_content_type($file)));
                         }
                         return JsonResponse::create(["error" => "Failed validation: "], 500);
                     }
 
-                    return Storage::download($file);
+                    return StorageHelper::downloader($file);
                 }
 
             }

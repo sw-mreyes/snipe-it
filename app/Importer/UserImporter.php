@@ -52,6 +52,7 @@ class UserImporter extends ItemImporter
         $this->item['city'] = $this->findCsvMatch($row, 'city');
         $this->item['state'] = $this->findCsvMatch($row, 'state');
         $this->item['country'] = $this->findCsvMatch($row, 'country');
+        $this->item['zip'] = $this->findCsvMatch($row, 'zip');
         $this->item['activated'] =  ($this->fetchHumanBoolean($this->findCsvMatch($row, 'activated')) == 1) ? '1' : 0;
         $this->item['employee_num'] = $this->findCsvMatch($row, 'employee_num');
         $this->item['department_id'] = $this->createOrFetchDepartment($this->findCsvMatch($row, 'department'));
@@ -121,12 +122,15 @@ class UserImporter extends ItemImporter
      */
     public function createOrFetchDepartment($department_name)
     {
+        if (is_null($department_name) || $department_name == ''){
+            return null;
+        }
+
+
         $department = Department::where(['name' => $department_name])->first();
         if ($department) {
             $this->log('A matching department ' . $department_name . ' already exists');
             return $department->id;
-        } else {
-            return null;
         }
 
         $department = new department();

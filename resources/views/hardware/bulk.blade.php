@@ -111,7 +111,7 @@
               {{ trans('admin/hardware/form.order') }}
             </label>
             <div class="col-md-7">
-              <input class="form-control" type="text" maxlength="20" name="order_number" id="order_number" value="{{ old('order_number') }}" />
+              <input class="form-control" type="text" maxlength="200" name="order_number" id="order_number" value="{{ old('order_number') }}" />
               {!! $errors->first('order_number', '<span class="alert-msg" aria-hidden="true"><i class="fa fa-times" aria-hidden="true"></i> :message</span>') !!}
             </div>
           </div>
@@ -149,11 +149,11 @@
           </div>
 
           @foreach ($assets as $key => $value)
-            <input type="hidden" name="ids[{{ $key }}]" value="1">
+            <input type="hidden" name="ids[{{ $value }}]" value="1">
           @endforeach
         </div> <!--/.box-body-->
 
-        <div class="box-footer text-right">
+        <div class="text-right box-footer">
           <button type="submit" class="btn btn-success"><i class="fa fa-check icon-white" aria-hidden="true"></i> {{ trans('general.save') }}</button>
         </div>
       </div> <!--/.box.box-default-->

@@ -28,13 +28,13 @@
     </script>
 
     {{-- stylesheets --}}
-
     <link rel="stylesheet" href="{{ url(mix('css/dist/all.css')) }}">
+    @if (($snipeSettings) && ($snipeSettings->allow_user_skin==1) && Auth::check() && Auth::user()->present()->skin != '')
+        <link rel="stylesheet" href="{{ url(mix('css/dist/skins/skin-'.Auth::user()->present()->skin.'.min.css')) }}">
+    @else
     <link rel="stylesheet" href="{{ url(mix('css/dist/skins/skin-'.($snipeSettings->skin!='' ? $snipeSettings->skin : 'blue').'.css')) }}">
-
-
-
-      {{-- page level css --}}
+    @endif
+    {{-- page level css --}}
     @stack('css')
 
 
@@ -65,12 +65,6 @@
     </style>
     @endif
 
-      @if (($snipeSettings) && ($snipeSettings->custom_css))
-          <style>
-              {!! $snipeSettings->show_custom_css() !!}
-          </style>
-      @endif
-
 
     <script nonce="{{ csrf_token() }}">
           window.snipeit = {
@@ -88,7 +82,13 @@
 
 
   </head>
-  <body class="sidebar-mini skin-{{ $snipeSettings->skin!='' ? $snipeSettings->skin : 'blue' }} {{ (session('menu_state')!='open') ? 'sidebar-mini sidebar-collapse' : ''  }}">
+
+  @if (($snipeSettings) && ($snipeSettings->allow_user_skin==1) && Auth::check() && Auth::user()->present()->skin != '')
+      <body class="sidebar-mini skin-{{ $snipeSettings->skin!='' ? Auth::user()->present()->skin : 'blue' }} {{ (session('menu_state')!='open') ? 'sidebar-mini sidebar-collapse' : ''  }}">
+  @else
+      <body class="sidebar-mini skin-{{ $snipeSettings->skin!='' ? $snipeSettings->skin : 'blue' }} {{ (session('menu_state')!='open') ? 'sidebar-mini sidebar-collapse' : ''  }}">
+  @endif
+
   <a class="skip-main" href="#main">Skip to main content</a>
     <div class="wrapper">
 
@@ -108,14 +108,14 @@
                  @if ($snipeSettings->brand == '3')
                       <a class="logo navbar-brand no-hover" href="{{ url('/') }}">
                           @if ($snipeSettings->logo!='')
-                          <img class="navbar-brand-img" src="{{ Storage::disk('public')->url('/').e($snipeSettings->logo) }}" alt="{{ $snipeSettings->site_name }} logo">
+                          <img class="navbar-brand-img" src="{{ Storage::disk('public')->url($snipeSettings->logo) }}" alt="{{ $snipeSettings->site_name }} logo">
                           @endif
                           {{ $snipeSettings->site_name }}
                       </a>
                   @elseif ($snipeSettings->brand == '2')
                       <a class="logo navbar-brand no-hover" href="{{ url('/') }}">
                           @if ($snipeSettings->logo!='')
-                            <img class="navbar-brand-img" src="{{ Storage::disk('public')->url('/').e($snipeSettings->logo) }}" alt="{{ $snipeSettings->site_name }} logo">
+                            <img class="navbar-brand-img" src="{{ Storage::disk('public')->url($snipeSettings->logo) }}" alt="{{ $snipeSettings->site_name }} logo">
                           @endif
                           <span class="sr-only">{{ $snipeSettings->site_name }}</span>
                       </a>
@@ -354,10 +354,17 @@
                      @endcan
                      <li class="divider"></li>
                      <li>
-                         <a href="{{ url('/logout') }}">
-                             <i class="fa fa-sign-out fa-fw" aria-hidden="true"></i>
-                             {{ trans('general.logout') }}
-                         </a>
+
+                        <a href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                            <i class="fa fa-sign-out fa-fw"></i> {{ trans('general.logout') }}
+                                    {{ csrf_field() }}
+                        </a>
+                        
+                        <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+                            {{ csrf_field() }}
+                        </form>
+
+                    
                      </li>
                  </ul>
                </li>
@@ -391,7 +398,7 @@
             @can('admin')
             <li {!! (\Request::route()->getName()=='home' ? ' class="active"' : '') !!}>
               <a href="{{ route('home') }}">
-                <i class="fa fa-dashboard" aria-hidden="true"></i> <span>Dashboard</span>
+                <i class="fa fa-dashboard" aria-hidden="true"></i> <span>{{ trans('general.dashboard') }}</span>
               </a>
             </li>
             @endcan
@@ -840,12 +847,12 @@
 
     <!-- end main container -->
 
-    <div class="modal  modal-danger fade" id="dataConfirmModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal modal-danger fade" id="dataConfirmModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                    <h4 class="modal-title" id="myModalLabel">&nbsp;</h4>
+                    <h2 class="modal-title" id="myModalLabel">&nbsp;</h2>
                 </div>
                 <div class="modal-body"></div>
                 <div class="modal-footer">
@@ -853,7 +860,7 @@
                     {{ csrf_field() }}
                     {{ method_field('DELETE') }}
 
-                    <button type="button" class="btn btn-default  pull-left" data-dismiss="modal">{{ trans('general.cancel') }}</button>
+                    <button type="button" class="btn btn-default pull-left" data-dismiss="modal">{{ trans('general.cancel') }}</button>
                     <button type="submit" class="btn btn-outline" id="dataConfirmOK">{{ trans('general.yes') }}</button>
                 </form>
                 </div>

@@ -22,6 +22,16 @@ Route::group(['middleware' => 'auth'], function () {
     Route::resource('locations', 'LocationsController', [
         'parameters' => ['location' => 'location_id']
     ]);
+    
+    Route::get(
+        'locations/{locationId}/printassigned',
+        [ 'as' => 'locations.print_assigned', 'uses' => 'LocationsController@print_assigned' ]
+    );
+    
+    Route::get(
+        'locations/{locationId}/printallassigned',
+        [ 'as' => 'locations.print_all_assigned', 'uses' => 'LocationsController@print_all_assigned' ]
+    );
 
     /*
     * Manufacturers
@@ -29,7 +39,7 @@ Route::group(['middleware' => 'auth'], function () {
 
     Route::group([ 'prefix' => 'manufacturers', 'middleware' => ['auth'] ], function () {
 
-        Route::get('{manufacturers_id}/restore', [ 'as' => 'restore/manufacturer', 'uses' => 'ManufacturersController@restore']);
+        Route::post('{manufacturers_id}/restore', [ 'as' => 'restore/manufacturer', 'uses' => 'ManufacturersController@restore']);
     });
 
     Route::resource('manufacturers', 'ManufacturersController', [
@@ -251,7 +261,7 @@ Route::group([ 'prefix' => 'account', 'middleware' => ['auth']], function () {
         'requestable-assets',
         [ 'as' => 'requestable-assets', 'uses' => 'ViewAssetsController@getRequestableIndex' ]
     );
-    Route::get(
+    Route::post(
         'request-asset/{assetId}',
         [ 'as' => 'account/request-asset', 'uses' => 'ViewAssetsController@getRequestAsset' ]
     );
@@ -453,12 +463,6 @@ Route::group(['middleware' => 'web'], function () {
             'uses' => 'Auth\LoginController@login' ]
     );
 
-    Route::get(
-        'logout',
-        [
-            'as' => 'logout',
-            'uses' => 'Auth\LoginController@logout' ]
-    );
 
 });
 

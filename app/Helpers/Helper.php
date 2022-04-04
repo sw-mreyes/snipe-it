@@ -51,7 +51,10 @@ class Helper
     public static function formatCurrencyOutput($cost)
     {
         if (is_numeric($cost)) {
-            return number_format($cost, 2, '.', '');
+            if (Setting::getSettings()->digit_separator=='1.234,56') {
+                return number_format($cost, 2, ',', '.');
+            }
+            return number_format($cost, 2, '.', ',');
         }
         // It's already been parsed.
         return $cost;
@@ -69,7 +72,7 @@ class Helper
     {
         $colors = [
             "#008941",
-            "#FF4A46",
+            "#FF851B",
             "#006FA6",
             "#A30059",
             "#1CE6FF",
@@ -405,6 +408,19 @@ class Helper
      */
     public static function ParseFloat($floatString)
     {
+        /*******
+         * 
+         * WARNING: This does conversions based on *locale* - a Unix-ey-like thing.
+         * 
+         * Everything else in the system tends to convert based on the Snipe-IT settings
+         * 
+         * So it's very likely this is *not* what you want - instead look for the new
+         * 
+         * ParseCurrency($currencyString)
+         * 
+         * Which should be directly below here
+         * 
+         */
         $LocaleInfo = localeconv();
         $floatString = str_replace(",", "", $floatString);
         $floatString = str_replace($LocaleInfo["decimal_point"], ".", $floatString);
@@ -417,6 +433,26 @@ class Helper
 
         $floatString = str_replace($currencySymbol, '', $floatString);
         return floatval($floatString);
+    }
+    
+    /**
+     * Format currency using comma or period for thousands, and period or comma for decimal, based on settings.
+     * 
+     * @author [B. Wetherington] [<bwetherington@grokability.com>]
+     * @since [v5.2]
+     * @return Float
+     */
+    public static function ParseCurrency($currencyString) {
+        $without_currency = str_replace(Setting::getSettings()->default_currency, '', $currencyString); //generally shouldn't come up, since we don't do this in fields, but just in case it does...
+        if(Setting::getSettings()->digit_separator=='1.234,56') {
+            //EU format
+            $without_thousands = str_replace('.', '', $without_currency);
+            $corrected_decimal = str_replace(',', '.', $without_thousands);
+        } else {
+            $without_thousands = str_replace(',', '', $without_currency);
+            $corrected_decimal = $without_thousands;  // decimal is already OK
+        }
+        return floatval($corrected_decimal);
     }
 
     /**
@@ -768,10 +804,9 @@ class Helper
 
 
     /**
-     * Gracefully handle decrypting the legacy data (encrypted via mcrypt) and use the new
-     * decryption method instead.
+     * Gracefully handle decrypting encrypted fields (custom fields, etc).
      *
-     * This is not currently used, but will be.
+     * @todo allow this to handle more than just strings (arrays, etc)
      *
      * @author A. Gianotto
      * @since 3.6
@@ -883,7 +918,8 @@ class Helper
             // If upload_max_size is less, then reduce. Except if upload_max_size is
             // zero, which indicates no limit.
             $upload_max = Helper::parse_size(ini_get('upload_max_filesize'));
-            if ($upload_max > 0 && $upload_max < $max_size) {
+
+            if ($upload_max > 0 && $upload_max < $post_max_size) {
                 $max_size = ini_get('upload_max_filesize');
             }
         }
@@ -1065,38 +1101,38 @@ class Helper
      * @return string path to uploaded image or false if something went wrong
      */
     public static function processUploadedImage(String $image_data, String $save_path) {
-        if ($image_data != null && $save_path != null) {
-            // After modification, the image is prefixed by mime info like the following:
-            // data:image/jpeg;base64,; This causes the image library to be unhappy, so we need to remove it.
-            $header = explode(';', $image_data, 2)[0];
-            // Grab the image type from the header while we're at it.
-            $extension = substr($header, strpos($header, '/')+1);
-            // Start reading the image after the first comma, postceding the base64.
-            $image = substr($image_data, strpos($image_data, ',')+1);
-
-            $file_name = str_random(25).".".$extension;
-
-            $directory= public_path($save_path);
-            // Check if the uploads directory exists.  If not, try to create it.
-            if (!file_exists($directory)) {
-                mkdir($directory, 0755, true);
-            }
-
-            $path = public_path($save_path.$file_name);
-
-            try {
-                Image::make($image)->resize(500, 500, function ($constraint) {
-                    $constraint->aspectRatio();
-                    $constraint->upsize();
-                })->save($path);
-            } catch (\Exception $e) {
-                return false;
-            }
-
-            return $file_name;
+        if ($image_data == null || $save_path == null) {
+            return false;
         }
 
-        return false;
+        // After modification, the image is prefixed by mime info like the following:
+        // data:image/jpeg;base64,; This causes the image library to be unhappy, so we need to remove it.
+        $header = explode(';', $image_data, 2)[0];
+        // Grab the image type from the header while we're at it.
+        $extension = substr($header, strpos($header, '/')+1);
+        // Start reading the image after the first comma, postceding the base64.
+        $image = substr($image_data, strpos($image_data, ',')+1);
+
+        $file_name = str_random(25).".".$extension;
+
+        $directory= public_path($save_path);
+        // Check if the uploads directory exists.  If not, try to create it.
+        if (!file_exists($directory)) {
+            mkdir($directory, 0755, true);
+        }
+
+        $path = public_path($save_path.$file_name);
+
+        try {
+            Image::make($image)->resize(500, 500, function ($constraint) {
+                $constraint->aspectRatio();
+                $constraint->upsize();
+            })->save($path);
+        } catch (\Exception $e) {
+            return false;
+        }
+
+        return $file_name;
     }
 
     /**

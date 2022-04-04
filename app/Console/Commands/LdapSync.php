@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Department;
 use Illuminate\Console\Command;
 use App\Models\Setting;
 use App\Models\Ldap;
@@ -48,9 +49,13 @@ class LdapSync extends Command
         $ldap_result_last_name = Setting::getSettings()->ldap_lname_field;
         $ldap_result_first_name = Setting::getSettings()->ldap_fname_field;
 
-        $ldap_result_active_flag = Setting::getSettings()->ldap_active_flag_field;
+        $ldap_result_active_flag = Setting::getSettings()->ldap_active_flag;
         $ldap_result_emp_num = Setting::getSettings()->ldap_emp_num;
         $ldap_result_email = Setting::getSettings()->ldap_email;
+        $ldap_result_phone = Setting::getSettings()->ldap_phone_field;
+        $ldap_result_jobtitle = Setting::getSettings()->ldap_jobtitle;
+        $ldap_result_country      = Setting::getSettings()->ldap_country;
+        $ldap_result_dept = Setting::getSettings()->ldap_dept;
 
         try {
             $ldapconn = Ldap::connectToLdap();
@@ -165,7 +170,6 @@ class LdapSync extends Command
         $pass = bcrypt($tmp_pass);
 
         for ($i = 0; $i < $results["count"]; $i++) {
-            if (empty($ldap_result_active_flag) || $results[$i][$ldap_result_active_flag][0] == "TRUE") {
 
                 $item = array();
                 $item["username"] = isset($results[$i][$ldap_result_username][0]) ? $results[$i][$ldap_result_username][0] : "";
@@ -175,8 +179,19 @@ class LdapSync extends Command
                 $item["email"] = isset($results[$i][$ldap_result_email][0]) ? $results[$i][$ldap_result_email][0] : "" ;
                 $item["ldap_location_override"] = isset($results[$i]["ldap_location_override"]) ? $results[$i]["ldap_location_override"]:"";
                 $item["location_id"] = isset($results[$i]["location_id"]) ? $results[$i]["location_id"]:"";
+                $item["telephone"] = isset($results[$i][$ldap_result_phone][0]) ? $results[$i][$ldap_result_phone][0] : "";
+                $item["jobtitle"] = isset($results[$i][$ldap_result_jobtitle][0]) ? $results[$i][$ldap_result_jobtitle][0] : "";
+                $item["country"] = isset($results[$i][$ldap_result_country][0]) ? $results[$i][$ldap_result_country][0] : "";
+                $item["department"] = isset($results[$i][$ldap_result_dept][0]) ? $results[$i][$ldap_result_dept][0] : "";
+
+
+                $department = Department::firstOrCreate([
+                    'name' => $item["department"],
+                ]);
+
 
                 $user = User::where('username', $item["username"])->first();
+
                 if ($user) {
                     // Updating an existing user.
                     $item["createorupdate"] = 'updated';
@@ -184,7 +199,7 @@ class LdapSync extends Command
                     // Creating a new user.
                     $user = new User;
                     $user->password = $pass;
-                    $user->activated = 0;
+                    $user->activated = 1; // newly created users can log in by default, unless AD's UAC is in use, or an active flag is set (below)
                     $item["createorupdate"] = 'created';
                 }
 
@@ -193,9 +208,24 @@ class LdapSync extends Command
                 $user->username = $item["username"];
                 $user->email = $item["email"];
                 $user->employee_num = e($item["employee_number"]);
+                $user->phone = $item["telephone"];
+                $user->jobtitle = $item["jobtitle"];
+                $user->country = $item["country"];
+                $user->department_id = $department->id;
 
-                // Sync activated state for Active Directory.
-                if ( array_key_exists('useraccountcontrol', $results[$i]) ) {
+                if ( !empty($ldap_result_active_flag)) { // IF we have an 'active' flag set....
+                    // ....then *most* things that are truthy will activate the user. Anything falsey will deactivate them.
+                    // (Specifically, we don't handle a value of '0.0' correctly)
+                    $raw_value = @$results[$i][$ldap_result_active_flag][0];
+                    $filter_var = filter_var($raw_value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+                    $boolean_cast = (bool)$raw_value;
+
+                    $user->activated = $filter_var ?? $boolean_cast; // if filter_var() was true or false, use that. If it's null, use the $boolean_cast
+
+                } elseif ( array_key_exists('useraccountcontrol', $results[$i]) ) {
+                    // ....otherwise, (ie if no 'active' LDAP flag is defined), IF the UAC setting exists,
+                    // ....then use the UAC setting on the account to determine can-log-in vs. cannot-log-in
+
                     /* The following is _probably_ the correct logic, but we can't use it because
                        some users may have been dependent upon the previous behavior, and this
                        could cause additional access to be available to users they don't want
@@ -221,16 +251,14 @@ class LdapSync extends Command
                     '262688', // 0x40220  NORMAL_ACCOUNT, PASSWD_NOTREQD, SMARTCARD_REQUIRED
                     '328192', // 0x50200  NORMAL_ACCOUNT, SMARTCARD_REQUIRED, DONT_EXPIRE_PASSWORD
                     '328224', // 0x50220  NORMAL_ACCOUNT, PASSWD_NOT_REQD, SMARTCARD_REQUIRED, DONT_EXPIRE_PASSWORD
+                    '4194816',// 0x400200 NORMAL_ACCOUNT, DONT_REQ_PREAUTH 
                     '4260352',// 0x410200 NORMAL_ACCOUNT, DONT_EXPIRE_PASSWORD, DONT_REQ_PREAUTH
                     '1049088',// 0x100200 NORMAL_ACCOUNT, NOT_DELEGATED
                   ];
                   $user->activated = ( in_array($results[$i]['useraccountcontrol'][0], $enabled_accounts) ) ? 1 : 0;
-                }
 
-                // If we're not using AD, and there isn't an activated flag set, activate all users
-                elseif (empty($ldap_result_active_flag)) {
-                  $user->activated = 1;
-                }
+                } /* implied 'else' here - leave the $user->activated flag alone. Newly-created accounts will be active.
+                   already-existing accounts will be however the administrator has set them */
 
                 if ($item['ldap_location_override'] == true) {
                     $user->location_id = $item['location_id'];
@@ -260,7 +288,6 @@ class LdapSync extends Command
                 }
 
                 array_push($summary, $item);
-            }
 
         }
 

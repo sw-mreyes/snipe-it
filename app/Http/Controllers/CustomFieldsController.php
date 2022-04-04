@@ -41,6 +41,24 @@ class CustomFieldsController extends Controller
 
 
     /**
+     * Just redirect the user back if they try to view the details of a field.
+     * We already show those details on the listing page.
+     *
+     * @see CustomFieldsController::storeField()
+     * @author [A. Gianotto] [<snipe@snipe.net>]
+     * @since [v5.1.5]
+     * @return Redirect
+     * @throws \Illuminate\Auth\Access\AuthorizationException
+     */
+
+    public function show()
+    {
+        return redirect()->route("fields.index");
+
+    }
+
+
+    /**
      * Returns a view with a form to create a new custom field.
      *
      * @see CustomFieldsController::storeField()
@@ -74,7 +92,7 @@ class CustomFieldsController extends Controller
         $this->authorize('create', CustomField::class);
 
         $field = new CustomField([
-            "name" => $request->get("name"),
+            "name" => trim($request->get("name")),
             "element" => $request->get("element"),
             "help_text" => $request->get("help_text"),
             "field_values" => $request->get("field_values"),
@@ -115,12 +133,23 @@ class CustomFieldsController extends Controller
 
         $this->authorize('update', $field);
 
-        if ($field->fieldset()->detach($fieldset_id)) {
-            return redirect()->route('fieldsets.show', ['fieldset' => $fieldset_id])
-                ->with("success", trans('admin/custom_fields/message.field.delete.success'));
+        // Check that the field exists - this is mostly related to the demo, where we 
+        // rewrite the data every x minutes, so it's possible someone might be disassociating 
+        // a field from a fieldset just as we're wiping the database
+        if (($field) && ($fieldset_id)) {
+
+            if ($field->fieldset()->detach($fieldset_id)) {
+                return redirect()->route('fieldsets.show', ['fieldset' => $fieldset_id])
+                    ->with("success", trans('admin/custom_fields/message.field.delete.success'));
+            } else {
+                return redirect()->back()->withErrors(['message' => "Field is in use and cannot be deleted."]);
+            }  
+
         }
 
-        return redirect()->back()->withErrors(['message' => "Field is in-use"]);
+        return redirect()->back()->withErrors(['message' => "Error deleting field from fieldset"]);
+
+       
     }
 
     /**
@@ -133,16 +162,19 @@ class CustomFieldsController extends Controller
      */
     public function destroy($field_id)
     {
-        $field = CustomField::find($field_id);
+        if ($field = CustomField::find($field_id)) {
 
-        $this->authorize('delete', $field);
+            $this->authorize('delete', $field);
 
-        if ($field->fieldset->count()>0) {
-            return redirect()->back()->withErrors(['message' => "Field is in-use"]);
+            if (($field->fieldset) && ($field->fieldset->count() > 0)) {
+                return redirect()->back()->withErrors(['message' => "Field is in-use"]);
+            }
+            $field->delete();
+            return redirect()->route("fields.index")
+                ->with("success", trans('admin/custom_fields/message.field.delete.success'));
         }
-        $field->delete();
-        return redirect()->route("fields.index")
-            ->with("success", trans('admin/custom_fields/message.field.delete.success'));
+
+        return redirect()->back()->withErrors(['message' => "Field does not exist"]);
     }
 
 
@@ -157,20 +189,25 @@ class CustomFieldsController extends Controller
      */
     public function edit($id)
     {
-        $field = CustomField::find($id);
+        if ($field = CustomField::find($id)) {
 
-        $this->authorize('update', $field);
+            $this->authorize('update', $field);
 
-        $customFormat = '';
-        if((stripos($field->format, 'regex') === 0) && ($field->format !== CustomField::PREDEFINED_FORMATS['MAC'])) {
-            $customFormat = $field->format;
-        }
+            $customFormat = '';
+            if((stripos($field->format, 'regex') === 0) && ($field->format !== CustomField::PREDEFINED_FORMATS['MAC'])) {
+                $customFormat = $field->format;
+            }
 
-        return view("custom_fields.fields.edit",[
-            'field'             => $field,
-            'customFormat'      => $customFormat,
-            'predefinedFormats' => Helper::predefined_formats()
-        ]);
+            return view("custom_fields.fields.edit",[
+                'field'             => $field,
+                'customFormat'      => $customFormat,
+                'predefinedFormats' => Helper::predefined_formats()
+            ]);
+        } 
+
+        return redirect()->route("fields.index")
+            ->with("error", trans('admin/custom_fields/message.field.invalid'));
+        
     }
 
 
@@ -191,7 +228,7 @@ class CustomFieldsController extends Controller
  
         $this->authorize('update', $field);
 
-        $field->name          = e($request->get("name"));
+        $field->name          = trim(e($request->get("name")));
         $field->element       = e($request->get("element"));
         $field->field_values  = e($request->get("field_values"));
         $field->user_id       = Auth::id();

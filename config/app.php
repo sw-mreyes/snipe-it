@@ -255,7 +255,20 @@ return [
     'enable_csp' => env('ENABLE_CSP', false),
 
 
+    /*
+     |--------------------------------------------------------------------------
+     | Require SAML Login
+     |--------------------------------------------------------------------------
+     |
+     | Disable the ability to login via form login, and disables the 'nosaml'
+     | workaround. It requires all logins to process via SAML login.
+     | (This is for high security setups. If your SAML configuration is not
+     | working, this option should be set to false. This option is not needed
+     | to successfully configure SAML authentication.)
+     |
+     */
 
+    'require_saml' => env('REQUIRE_SAML', false),
 
     /*
     |--------------------------------------------------------------------------
@@ -333,7 +346,6 @@ return [
         Laravel\Passport\PassportServiceProvider::class,
         Laravel\Tinker\TinkerServiceProvider::class,
         Unicodeveloper\DumbPassword\DumbPasswordServiceProvider::class,
-        //Schuppo\PasswordStrength\PasswordStrengthServiceProvider::class,
         Tightenco\Ziggy\ZiggyServiceProvider::class, // Laravel routes in vue
         Eduardokum\LaravelMailAutoEmbed\ServiceProvider::class,
 
@@ -403,15 +415,25 @@ return [
         'URL' => Illuminate\Support\Facades\URL::class,
         'Validator' => Illuminate\Support\Facades\Validator::class,
         'View' => Illuminate\Support\Facades\View::class,
-        //'Input' => Illuminate\Support\Facades\Input::class,
         'Form'      => Collective\Html\FormFacade::class,
         'Html'      => Collective\Html\HtmlFacade::class,
         'Google2FA' => PragmaRX\Google2FALaravel\Facade::class,
-        // 'Debugbar' => Barryvdh\Debugbar\Facade::class, //autodiscover should handle this
         'Image'     => Intervention\Image\ImageServiceProvider::class,
         'Carbon' => Carbon\Carbon::class,
+        'Helper' => App\Helpers\Helper::class, // makes it much easier to use 'Helper::blah' in blades (which is where we usually use this)
 
 
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | API Throttling
+    |--------------------------------------------------------------------------
+    |
+    | This value determines the number of API requests permitted per minute
+    |
+    */
+
+    'api_throttle_per_minute' => env('API_THROTTLE_PER_MINUTE', 120),
 
 ];

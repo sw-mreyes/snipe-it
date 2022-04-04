@@ -26,6 +26,7 @@ use Watson\Validating\ValidatingTrait;
 class Asset extends Depreciable
 {
     protected $presenter = 'App\Presenters\AssetPresenter';
+    use CompanyableTrait;
     use Loggable, Requestable, Presentable, SoftDeletes, ValidatingTrait, UniqueUndeletedTrait, UniqueSerialTrait;
 
     const LOCATION = 'location';
@@ -180,11 +181,6 @@ class Asset extends Depreciable
      */
     public function save(array $params = [])
     {
-        $settings = \App\Models\Setting::getSettings();
-
-        // I don't remember why we have this here? Asset tag would always be required, even if auto increment is on...
-        $this->rules['asset_tag'] = ($settings->auto_increment_assets == '1') ? 'max:255' : 'required';
-
         if($this->model_id != '') {
             $model = AssetModel::find($this->model_id);
 
@@ -313,8 +309,14 @@ class Asset extends Depreciable
         }
 
         if ($this->save()) {
-
-            event(new CheckoutableCheckedOut($this, $target, Auth::user(), $note));
+            if (is_integer($admin)){
+                $checkedOutBy = User::findOrFail($admin);
+            } elseif (get_class($admin) === 'App\Models\User') {
+                $checkedOutBy = $admin;
+            } else {
+                $checkedOutBy = Auth::user();
+            }
+            event(new CheckoutableCheckedOut($this, $target, $checkedOutBy, $note));
 
             $this->increment('checkout_counter', 1);
             return true;
@@ -374,7 +376,7 @@ class Asset extends Depreciable
      */
     public function components()
     {
-        return $this->belongsToMany('\App\Models\Component', 'components_assets', 'asset_id', 'component_id')->withPivot('id', 'assigned_qty')->withTrashed();
+        return $this->belongsToMany('\App\Models\Component', 'components_assets', 'asset_id', 'component_id')->withPivot('id', 'assigned_qty', 'created_at')->withTrashed();
     }
 
 
@@ -663,13 +665,15 @@ class Asset extends Depreciable
      */
     public static function getExpiringWarrantee($days = 30)
     {
+        $days = (is_null($days)) ? 30 : $days;
+        
         return Asset::where('archived', '=', '0')
             ->whereNotNull('warranty_months')
             ->whereNotNull('purchase_date')
             ->whereNull('deleted_at')
             ->whereRaw(\DB::raw('DATE_ADD(`purchase_date`,INTERVAL `warranty_months` MONTH) <= DATE(NOW() + INTERVAL '
                                  . $days
-                                 . ' DAY) AND DATE_ADD(`purchase_date`,INTERVAL `warranty_months` MONTH) > NOW()'))
+                                 . ' DAY) AND DATE_ADD(`purchase_date`, INTERVAL `warranty_months` MONTH) > NOW()'))
             ->orderBy('purchase_date', 'ASC')
             ->get();
     }
@@ -812,7 +816,9 @@ class Asset extends Depreciable
      */
     public function checkin_email()
     {
-        return $this->model->category->checkin_email;
+        if (($this->model) && ($this->model->category)) {
+            return $this->model->category->checkin_email;
+        }
     }
 
     /**
@@ -884,7 +890,7 @@ class Asset extends Depreciable
                 ->orWhere('assets_users.first_name', 'LIKE', '%'.$term.'%')
                 ->orWhere('assets_users.last_name', 'LIKE', '%'.$term.'%')
                 ->orWhere('assets_users.username', 'LIKE', '%'.$term.'%')
-                ->orWhereRaw('CONCAT('.DB::getTablePrefix().'assets_users.first_name," ",'.DB::getTablePrefix().'assets_users.last_name) LIKE ?', ["%$term%", "%$term%"]);
+                ->orWhereRaw('CONCAT('.DB::getTablePrefix().'assets_users.first_name," ",'.DB::getTablePrefix().'assets_users.last_name) LIKE ?', ["%$term%"]);
 
         }
 
@@ -1254,7 +1260,7 @@ class Asset extends Depreciable
                 })->orWhere(function ($query) use ($search) {
                     $query->where('assets_users.first_name', 'LIKE', '%'.$search.'%')
                         ->orWhere('assets_users.last_name', 'LIKE', '%'.$search.'%')
-                        ->orWhereRaw('CONCAT('.DB::getTablePrefix().'assets_users.first_name," ",'.DB::getTablePrefix().'assets_users.last_name) LIKE ?', ["%$search%", "%$search%"])
+                        ->orWhereRaw('CONCAT('.DB::getTablePrefix().'assets_users.first_name," ",'.DB::getTablePrefix().'assets_users.last_name) LIKE ?', ["%$search%"])
                         ->orWhere('assets_users.username', 'LIKE', '%'.$search.'%')
                         ->orWhere('assets_locations.name', 'LIKE', '%'.$search.'%')
                         ->orWhere('assigned_assets.name', 'LIKE', '%'.$search.'%');

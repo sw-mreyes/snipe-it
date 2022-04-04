@@ -9,6 +9,7 @@ use App\Http\Transformers\SelectlistTransformer;
 use App\Models\Asset;
 use App\Models\AssetModel;
 use Illuminate\Http\Request;
+use App\Http\Requests\ImageUploadRequest;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -66,7 +67,7 @@ class AssetModelsController extends Controller
 
 
 
-        if ($request->filled('status')) {
+        if ($request->input('status')=='deleted') {
             $assetmodels->onlyTrashed();
         }
 
@@ -96,8 +97,9 @@ class AssetModelsController extends Controller
                 break;
         }
 
+        $total = $assetmodels->count();
         $assetmodels = $assetmodels->skip($offset)->take($limit)->get();
-        return (new AssetModelsTransformer)->transformAssetModels($assetmodels, $assetmodels->count());
+        return (new AssetModelsTransformer)->transformAssetModels($assetmodels, $total);
     }
 
 
@@ -106,14 +108,15 @@ class AssetModelsController extends Controller
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
      * @since [v4.0]
-     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Http\Requests\ImageUploadRequest  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(ImageUploadRequest $request)
     {
         $this->authorize('create', AssetModel::class);
         $assetmodel = new AssetModel;
         $assetmodel->fill($request->all());
+        $assetmodel = $request->handleImages($assetmodel);
 
         if ($assetmodel->save()) {
             return response()->json(Helper::formatStandardApiResponse('success', $assetmodel, trans('admin/models/message.create.success')));
@@ -158,16 +161,17 @@ class AssetModelsController extends Controller
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
      * @since [v4.0]
-     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Http\Requests\ImageUploadRequest  $request
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(ImageUploadRequest $request, $id)
     {
         $this->authorize('update', AssetModel::class);
         $assetmodel = AssetModel::findOrFail($id);
         $assetmodel->fill($request->all());
-
+        $assetmodel = $request->handleImages($assetmodel);
+        
         /**
          * Allow custom_fieldset_id to override and populate fieldset_id.
          * This is stupid, but required for legacy API support.
@@ -230,6 +234,7 @@ class AssetModelsController extends Controller
     public function selectlist(Request $request)
     {
 
+        $this->authorize('view.selectlists');
         $assetmodels = AssetModel::select([
             'models.id',
             'models.name',

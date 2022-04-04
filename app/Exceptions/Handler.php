@@ -8,6 +8,7 @@ use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use App\Helpers\Helper;
 use Illuminate\Validation\ValidationException;
 use Log;
+use JsonException;
 
 
 class Handler extends ExceptionHandler
@@ -26,6 +27,7 @@ class Handler extends ExceptionHandler
         \Illuminate\Validation\ValidationException::class,
         \Intervention\Image\Exception\NotSupportedException::class,
         \League\OAuth2\Server\Exception\OAuthServerException::class,
+        JsonException::class
     ];
 
     /**
@@ -39,7 +41,7 @@ class Handler extends ExceptionHandler
     public function report(Exception $exception)
     {
         if ($this->shouldReport($exception)) {
-            Log::error($exception);
+            \Log::error($exception);
             return parent::report($exception);
         }
     }
@@ -60,6 +62,12 @@ class Handler extends ExceptionHandler
             return redirect()->back()->with('error', trans('general.token_expired'));
         }
 
+        // Invalid JSON exception
+        // TODO: don't understand why we have to do this when we have the invalidJson() method, below, but, well, whatever
+        if ($e instanceof JsonException) {
+            return response()->json(Helper::formatStandardApiResponse('error', null, 'invalid JSON'), 422);
+        }
+
 
         // Handle Ajax requests that fail because the model doesn't exist
         if ($request->ajax() || $request->wantsJson()) {
@@ -76,10 +84,12 @@ class Handler extends ExceptionHandler
                 switch ($e->getStatusCode()) {
                     case '404':
                        return response()->json(Helper::formatStandardApiResponse('error', null, $statusCode . ' endpoint not found'), 404);
-                    case '405':
+                    case '429':
+                        return response()->json(Helper::formatStandardApiResponse('error', null, 'Too many requests'), 429);
+                     case '405':
                         return response()->json(Helper::formatStandardApiResponse('error', null, 'Method not allowed'), 405);
                     default:
-                        return response()->json(Helper::formatStandardApiResponse('error', null, $statusCode), 405);
+                        return response()->json(Helper::formatStandardApiResponse('error', null, $statusCode), $statusCode);
 
                 }
             }
@@ -121,6 +131,6 @@ class Handler extends ExceptionHandler
      */
     protected function invalidJson($request, ValidationException $exception)
     {
-        return response()->json(Helper::formatStandardApiResponse('error', null, $exception->errors(), 400));
+        return response()->json(Helper::formatStandardApiResponse('error', null, $exception->errors(), 422));
     }
 }

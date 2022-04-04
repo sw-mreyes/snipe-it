@@ -106,7 +106,7 @@
                 <div class="form-group {{ $errors->has('username') ? 'has-error' : '' }}">
                   <label class="col-md-3 control-label" for="username">{{ trans('admin/users/table.username') }}</label>
                   <div class="col-md-6{{  (\App\Helpers\Helper::checkIfRequired($user, 'username')) ? ' required' : '' }}">
-                    @if ($user->ldap_import!='1')
+                    @if ($user->ldap_import!='1' || str_contains(Route::currentRouteName(), 'clone'))
                       <input
                         class="form-control"
                         type="text"
@@ -137,7 +137,7 @@
                     {{ trans('admin/users/table.password') }}
                   </label>
                   <div class="col-md-6{{  (\App\Helpers\Helper::checkIfRequired($user, 'password')) ? ' required' : '' }}">
-                    @if ($user->ldap_import!='1')
+                    @if ($user->ldap_import!='1' || str_contains(Route::currentRouteName(), 'clone') )
                       <input
                         type="password"
                         name="password"
@@ -161,7 +161,7 @@
                   </div>
                 </div>
 
-                @if ($user->ldap_import!='1')
+                @if ($user->ldap_import!='1' || str_contains(Route::currentRouteName(), 'clone'))
                 <!-- Password Confirm -->
                 <div class="form-group {{ $errors->has('password_confirmation') ? 'has-error' : '' }}">
                   <label class="col-md-3 control-label" for="password_confirmation">
@@ -200,7 +200,7 @@
                                   <div class="icheckbox disabled" style="padding-left: 10px;">
                                       <input type="checkbox" value="1" name="activated" class="minimal disabled" {{ (old('activated', $user->activated)) == '1' ? ' checked="checked"' : '' }} disabled="disabled" aria-label="activated">
                                       <!-- this is necessary because the field is disabled and will reset -->
-                                      <input type="hidden" name="activated" value="{{ $user->activated }}">
+                                      <input type="hidden" name="activated" value="{{ (int)$user->activated }}">
                                       {{ trans('admin/users/general.activated_help_text') }}
                                       <p class="help-block">{{ trans('general.feature_disabled') }}</p>
 
@@ -508,6 +508,10 @@
             <div class="col-md-12">
               @if (!Auth::user()->isSuperUser())
                 <p class="alert alert-warning">Only superadmins may grant a user superadmin access.</p>
+              @endif
+
+              @if (!Auth::user()->hasAccess('admin'))
+                <p class="alert alert-warning">Only users with admins rights or greater may grant a user admin access.</p>              
               @endif
             </div>
 

@@ -58,7 +58,7 @@
           </div>
 
           <!-- Element values -->
-          <div class="form-group {{ $errors->has('element') ? ' has-error' : '' }}" id="field_values_text" style="display:none;">
+          <div class="form-group {{ $errors->has('field_values') ? ' has-error' : '' }}" id="field_values_text" style="display:none;">
             <label for="field_values" class="col-md-4 control-label">
               {{ trans('admin/custom_fields/general.field_values') }}
             </label>
@@ -168,10 +168,10 @@
             });
         }).change();
 
-        // If the element is a radiobutton, doesn't show the format input box
+        // If the element is a radiobutton/checkbox, doesn't show the format input box
         $(".field_element").change(function(){
             $(this).find("option:selected").each(function(){
-                if (($(this).attr("value") != "radio")){
+                if (($(this).attr("value") != "radio") && ($(this).attr("value") != "checkbox")){
                     $("#format_values").show();
                 } else{
                     $("#format_values").hide();

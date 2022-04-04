@@ -11,10 +11,14 @@ use Illuminate\Http\Request;
 | routes are loaded by the RouteServiceProvider within a group which
 | is assigned the "api" middleware group. Enjoy building your API!
 |
+| We *could* put the middleware specification in the RouteServiceProvider's mapApiRoutes() 
+| method, but we felt it was clearer to keep it here, since we look at the api routes for more
+| often than we look at the RouteServiceProvider. - @snipe
+| 
 */
 
 
-Route::group(['prefix' => 'v1','namespace' => 'Api', 'middleware' => 'auth:api'], function () {
+Route::group(['prefix' => 'v1','namespace' => 'Api', 'middleware' => ['api', 'throttle:'.config('app.api_throttle_per_minute').',1']], function () {
 
 
     Route::get('/', function() {
@@ -160,14 +164,13 @@ Route::group(['prefix' => 'v1','namespace' => 'Api', 'middleware' => 'auth:api']
                 'destroy' => 'api.companies.destroy'
             ],
             'except' => ['create', 'edit'],
-            'parameters' => ['component' => 'component_id']
+            'parameters' => ['company' => 'company_id']
         ]
     ); // Companies resource
 
 
     /*--- Departments API ---*/
 
-    /*--- Suppliers API ---*/
     Route::group(['prefix' => 'departments'], function () {
 
 
@@ -202,9 +205,33 @@ Route::group(['prefix' => 'v1','namespace' => 'Api', 'middleware' => 'auth:api']
 
     /*--- Components API ---*/
 
-    Route::resource(
-        'components',
-        'ComponentsController',
+    Route::group(['prefix' => 'components'], function () {
+
+        Route::get('{component}/assets',
+            [
+                'as' =>'api.components.assets',
+                'uses' => 'ComponentsController@getAssets',
+            ]
+        );
+
+        Route::post('{component}/checkout',
+            [
+                'as' =>'api.components.checkout',
+                'uses' => 'ComponentsController@checkout',
+            ]
+        );
+
+        Route::post('{component}/checkin',
+        [
+            'as' =>'api.components.checkin',
+            'uses' => 'ComponentsController@checkin',
+        ]
+    );
+
+    }); // Components group
+    
+
+    Route::resource('components', 'ComponentsController',
         [
             'names' =>
             [
@@ -245,6 +272,7 @@ Route::group(['prefix' => 'v1','namespace' => 'Api', 'middleware' => 'auth:api']
             ]
         );
     }); // Components group
+   
 
 
     /*--- Consumables API ---*/
@@ -469,6 +497,21 @@ Route::group(['prefix' => 'v1','namespace' => 'Api', 'middleware' => 'auth:api']
                 'uses' => 'AssetsController@checkin'
             ]
         );
+
+        Route::post('{asset_id}/restore',
+            [
+                'as' => 'api.assets.restore',
+                'uses' => 'AssetsController@restore'
+            ]
+        );
+
+        Route::post('{asset_id}/destroy',
+            [
+                'as' => 'api.assets.destroy',
+                'uses' => 'AssetsController@destroy'
+            ]
+        );
+
     });
 
     /*--- Asset Maintenances API ---*/
@@ -544,11 +587,6 @@ Route::group(['prefix' => 'v1','namespace' => 'Api', 'middleware' => 'auth:api']
     /*--- Licenses API ---*/
 
     Route::group(['prefix' => 'licenses'], function () {
-        Route::get('{licenseId}/seats', [
-            'as' => 'api.license.seats',
-            'uses' => 'LicensesController@seats'
-        ]);
-        
         Route::get('selectlist',
             [
                 'as' => 'api.licenses.selectlist',
@@ -575,7 +613,18 @@ Route::group(['prefix' => 'v1','namespace' => 'Api', 'middleware' => 'auth:api']
         ]
     ); // Licenses resource
 
-
+    Route::resource('licenses.seats', 'LicenseSeatsController',
+        [
+            'names' =>
+                [
+                    'index' => 'api.licenses.seats.index',
+                    'show' => 'api.licenses.seats.show',
+                    'update' => 'api.licenses.seats.update'
+                ],
+            'except' => ['create', 'edit', 'destroy', 'store'],
+            'parameters' => ['licenseseat' => 'licenseseat_id']
+        ]
+    ); // Licenseseats resource
 
     /*--- Locations API ---*/
 
@@ -896,6 +945,13 @@ Route::group(['prefix' => 'v1','namespace' => 'Api', 'middleware' => 'auth:api']
             ]
         );
 
+        Route::get('{user}/consumables',
+            [
+                'as' => 'api.users.consumablelist',
+                'uses' => 'UsersController@consumables'
+            ]
+        );
+
 
         Route::get('{user}/accessories',
             [
@@ -1029,6 +1085,14 @@ Route::group(['prefix' => 'v1','namespace' => 'Api', 'middleware' => 'auth:api']
             ]
         );
     });
+    Route::get(
+        'reports/depreciation',
+        [ 
+            'as' => 'api.depreciation-report.index', 
+            'uses' => 'AssetsController@index' 
+        ]
+    );
+
     /*--- Kits API ---*/
 
     Route::resource('kits', 'PredefinedKitsController',

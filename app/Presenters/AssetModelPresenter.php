@@ -115,6 +115,23 @@ class AssetModelPresenter extends Presenter
                 "title" => trans('general.notes'),
                 "visible" => false,
             ],
+            [
+                "field" => "created_at",
+                "searchable" => true,
+                "sortable" => true,
+                "visible" => false,
+                "title" => trans('general.created_at'),
+                "formatter" => "dateDisplayFormatter"
+            ],
+            [
+                "field" => "updated_at",
+                "searchable" => true,
+                "sortable" => true,
+                "visible" => false,
+                "title" => trans('general.updated_at'),
+                "formatter" => "dateDisplayFormatter"
+            ],
+
         ];
 
 
@@ -124,7 +141,7 @@ class AssetModelPresenter extends Presenter
             "sortable" => false,
             "switchable" => false,
             "title" => trans('table.actions'),
-            "formatter" => "licensesActionsFormatter",
+            "formatter" => "modelsActionsFormatter",
         ];
 
 

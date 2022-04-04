@@ -138,6 +138,36 @@
                             </div>
                         </div>
 
+                        <!-- LDAP Client-Side TLS key -->
+                        <div class="form-group {{ $errors->has('ldap_client_tls_key') ? 'error' : '' }}">
+                            <div class="col-md-3">
+                                {{ Form::label('ldap_client_tls_key', trans('admin/settings/general.ldap_client_tls_key')) }}
+                            </div>
+                            <div class="col-md-9">
+                                {{ Form::textarea('ldap_client_tls_key', Request::old('ldap_client_tls_key', $setting->ldap_client_tls_key), ['class' => 'form-control','placeholder' => '-----BEGIN RSA PRIVATE KEY-----'."\r\n1234567890\r\n-----END RSA PRIVATE KEY-----
+", $setting->demoMode]) }}
+                                {!! $errors->first('ldap_client_tls_key', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
+                                @if (config('app.lock_passwords')===true)
+                                    <p class="text-warning"><i class="fa fa-lock" aria-hidden="true"></i> {{ trans('general.feature_disabled') }}</p>
+                                @endif
+                            </div>
+                        </div><!-- LDAP Client-Side TLS key -->
+
+                        <!-- LDAP Client-Side TLS certificate -->
+                        <div class="form-group {{ $errors->has('ldap_client_tls_cert') ? 'error' : '' }}">
+                            <div class="col-md-3">
+                                {{ Form::label('ldap_client_tls_cert', trans('admin/settings/general.ldap_client_tls_cert')) }}
+                            </div>
+                            <div class="col-md-9">
+                                {{ Form::textarea('ldap_client_tls_cert', Request::old('ldap_client_tls_cert', $setting->ldap_client_tls_cert), ['class' => 'form-control','placeholder' => '-----BEGIN CERTIFICATE-----'."\r\n1234567890\r\n-----END CERTIFICATE-----", $setting->demoMode]) }}
+                                <p class="help-block">{{ trans('admin/settings/general.ldap_client_tls_cert_help') }}</p>
+                                {!! $errors->first('ldap_client_tls_cert', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
+                                @if (config('app.lock_passwords')===true)
+                                    <p class="text-warning"><i class="fa fa-lock" aria-hidden="true"></i> {{ trans('general.feature_disabled') }}</p>
+                                @endif
+                            </div>
+                        </div><!-- LDAP Client-Side TLS certificate -->
+
                         <!-- LDAP Server -->
                         <div class="form-group {{ $errors->has('ldap_server') ? 'error' : '' }}">
                             <div class="col-md-3">
@@ -333,8 +363,21 @@
                                 {{ Form::label('ldap_emp_num', trans('admin/settings/general.ldap_emp_num')) }}
                             </div>
                             <div class="col-md-9">
-                                {{ Form::text('ldap_emp_num', Request::old('ldap_emp_num', $setting->ldap_emp_num), ['class' => 'form-control','placeholder' => '', $setting->demoMode]) }}
+                                {{ Form::text('ldap_emp_num', Request::old('ldap_emp_num', $setting->ldap_emp_num), ['class' => 'form-control','placeholder' => 'employeenumber/employeeid', $setting->demoMode]) }}
                                 {!! $errors->first('ldap_emp_num', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
+                                @if (config('app.lock_passwords')===true)
+                                    <p class="text-warning"><i class="fa fa-lock" aria-hidden="true"></i> {{ trans('general.feature_disabled') }}</p>
+                                @endif
+                            </div>
+                        </div>
+                        <!-- LDAP department -->
+                        <div class="form-group {{ $errors->has('ldap_dept') ? 'error' : '' }}">
+                            <div class="col-md-3">
+                                {{ Form::label('ldap_dept', trans('admin/settings/general.ldap_dept')) }}
+                            </div>
+                            <div class="col-md-9">
+                                {{ Form::text('ldap_dept', Request::old('ldap_dept', $setting->ldap_dept), ['class' => 'form-control','placeholder' => 'department', $setting->demoMode]) }}
+                                {!! $errors->first('ldap_dept', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
                                 @if (config('app.lock_passwords')===true)
                                     <p class="text-warning"><i class="fa fa-lock" aria-hidden="true"></i> {{ trans('general.feature_disabled') }}</p>
                                 @endif
@@ -347,7 +390,7 @@
                                 {{ Form::label('ldap_email', trans('admin/settings/general.ldap_email')) }}
                             </div>
                             <div class="col-md-9">
-                                {{ Form::text('ldap_email', Request::old('ldap_email', $setting->ldap_email), ['class' => 'form-control','placeholder' => '', $setting->demoMode]) }}
+                                {{ Form::text('ldap_email', Request::old('ldap_email', $setting->ldap_email), ['class' => 'form-control','placeholder' => 'mail', $setting->demoMode]) }}
                                 {!! $errors->first('ldap_email', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
                                 @if (config('app.lock_passwords')===true)
                                     <p class="text-warning"><i class="fa fa-lock" aria-hidden="true"></i> {{ trans('general.feature_disabled') }}</p>
@@ -355,7 +398,47 @@
                             </div>
                         </div>
 
+                        <!-- LDAP Phone -->
+                        <div class="form-group {{ $errors->has('ldap_phone') ? 'error' : '' }}">
+                            <div class="col-md-3">
+                                {{ Form::label('ldap_phone', trans('admin/settings/general.ldap_phone')) }}
+                            </div>
+                            <div class="col-md-9">
+                                {{ Form::text('ldap_phone', Request::old('ldap_phone', $setting->ldap_phone_field), ['class' => 'form-control','placeholder' => 'telephonenumber', $setting->demoMode]) }}
+                                {!! $errors->first('ldap_phone', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
+                                @if (config('app.lock_passwords')===true)
+                                    <p class="text-warning"><i class="fa fa-lock" aria-hidden="true"></i> {{ trans('general.feature_disabled') }}</p>
+                                @endif
+                            </div>
+                        </div>
 
+                        <!-- LDAP Job title -->
+                        <div class="form-group {{ $errors->has('ldap_jobtitle') ? 'error' : '' }}">
+                            <div class="col-md-3">
+                                {{ Form::label('ldap_jobtitle', trans('admin/settings/general.ldap_jobtitle')) }}
+                            </div>
+                            <div class="col-md-9">
+                                {{ Form::text('ldap_jobtitle', Request::old('ldap_jobtitle', $setting->ldap_jobtitle), ['class' => 'form-control','placeholder' => 'title', $setting->demoMode]) }}
+                                {!! $errors->first('ldap_jobtitle', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
+                                @if (config('app.lock_passwords')===true)
+                                    <p class="text-warning"><i class="fa fa-lock" aria-hidden="true"></i> {{ trans('general.feature_disabled') }}</p>
+                                @endif
+                            </div>
+                        </div>
+
+                        <!-- LDAP Country -->
+                        <div class="form-group {{ $errors->has('ldap_country') ? 'error' : '' }}">
+                            <div class="col-md-3">
+                                {{ Form::label('ldap_country', trans('admin/settings/general.ldap_country')) }}
+                            </div>
+                            <div class="col-md-9">
+                                {{ Form::text('ldap_country', Request::old('ldap_country', $setting->ldap_country), ['class' => 'form-control','placeholder' => 'c', $setting->demoMode]) }}
+                                {!! $errors->first('ldap_country', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
+                                @if (config('app.lock_passwords')===true)
+                                    <p class="text-warning"><i class="fa fa-lock" aria-hidden="true"></i> {{ trans('general.feature_disabled') }}</p>
+                                @endif
+                            </div>
+                        </div>
                         @if ($setting->ldap_enabled)
 
                             <!-- LDAP test -->
@@ -364,7 +447,7 @@
                                     {{ Form::label('test_ldap_sync', 'Test LDAP Sync') }}
                                 </div>
                                 <div class="col-md-9" id="ldaptestrow">
-                                    <a {{ $setting->demoMode }} class="btn btn-default btn-sm pull-left" id="ldaptest" style="margin-right: 10px;">Test LDAP Syncronization</a>
+                                    <a {{ $setting->demoMode }} class="btn btn-default btn-sm pull-left" id="ldaptest" style="margin-right: 10px;">Test LDAP Synchronization</a>
                                 </div>
                                 <div class="col-md-9 col-md-offset-3">
                                     <br />

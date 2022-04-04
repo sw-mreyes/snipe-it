@@ -47,6 +47,7 @@ class LdapAd extends LdapAdConfiguration
       '262688', // 0x40220  NORMAL_ACCOUNT, PASSWD_NOTREQD, SMARTCARD_REQUIRED
       '328192', // 0x50200  NORMAL_ACCOUNT, SMARTCARD_REQUIRED, DONT_EXPIRE_PASSWORD
       '328224', // 0x50220  NORMAL_ACCOUNT, PASSWD_NOT_REQD, SMARTCARD_REQUIRED, DONT_EXPIRE_PASSWORD
+      '4194816',// 0x400200 NORMAL_ACCOUNT, DONT_REQ_PREAUTH
       '4260352',// 0x410200 NORMAL_ACCOUNT, DONT_EXPIRE_PASSWORD, DONT_REQ_PREAUTH
       '1049088',// 0x100200 NORMAL_ACCOUNT, NOT_DELEGATED
       '1114624',// 0x110200 NORMAL_ACCOUNT, NOT_DELEGATED, DONT_EXPIRE_PASSWORD
@@ -129,7 +130,13 @@ class LdapAd extends LdapAdConfiguration
             $login_username = $username;
         }
 
-        if ($this->ldap->auth()->attempt($login_username, $password, true) === false) {
+        if ($this->ldapConfig['username'] && $this->ldapConfig['password']) {
+            $bind_as_user = false;
+        } else {
+            $bind_as_user = true;
+        }
+
+        if (($this->ldap) && ($this->ldap->auth()->attempt($login_username, $password, $bind_as_user) === false)) {
             throw new Exception('Unable to validate user credentials!');
         }    
 
@@ -504,9 +511,9 @@ class LdapAd extends LdapAdConfiguration
     {
         try {
             $this->ldap->connect();
-        } catch (\Adldap\Auth\BindException $e) {
-            Log::error($e);
-            throw new Exception('Unable to connect to LDAP directory!');
+        } catch (\Exception $e) {
+            Log::debug('LDAP ERROR: '.$e->getMessage());
+            throw new Exception($e->getMessage());
         }
     }
 

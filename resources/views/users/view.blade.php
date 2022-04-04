@@ -114,13 +114,11 @@
                 <div class="callout callout-warning">
                   <i class="icon fa fa-warning"></i>
                   {{ trans('admin/users/message.user_deleted_warning') }}
-                  @can('update', $user)
-                      <a href="{{ route('restore/user', $user->id) }}">{{ trans('admin/users/general.restore_user') }}</a>
-                  @endcan
+                  
                 </div>
               </div>
             @endif
-            <div class="col-md-2 text-center">
+            <div class="text-center col-md-2">
               @if ($user->avatar)
                 <img src="/uploads/avatars/{{ $user->avatar }}" class="avatar img-thumbnail hidden-print" alt="{{ $user->present()->fullName() }}">
               @else
@@ -128,7 +126,7 @@
               @endif
             </div>
 
-            <div class="col-md-8">
+            <div class="col-md-7">
               <div class="table table-responsive">
                 <table class="table table-striped">
                   @if (!is_null($user->company))
@@ -248,10 +246,14 @@
                       </tr>
                     @endif
 
-                    @if (!is_null($user->department))
+                    @if ($user->department)
                       <tr>
                         <td class="text-nowrap">{{ trans('general.department') }}</td>
-                        <td><a href="{{ route('departments.show', $user->department) }}">{{ $user->department->name }}</a></td>
+                        <td>
+                          <a href="{{ route('departments.show', $user->department) }}">
+                            {{ $user->department->name }}
+                          </a>
+                        </td>
                       </tr>
                     @endif
                   @if ($user->created_at)
@@ -322,7 +324,7 @@
             </div> <!--/col-md-8-->
 
             <!-- Start button column -->
-            <div class="col-md-2">
+            <div class="col-md-3">
               @can('update', $user)
                 <div class="col-md-12">
                   <a href="{{ route('users.edit', $user->id) }}" style="width: 100%;" class="btn btn-sm btn-primary hidden-print">{{ trans('admin/users/general.edit') }}</a>
@@ -340,9 +342,21 @@
                   <a href="{{ route('users.print', $user->id) }}" style="width: 100%;" class="btn btn-sm btn-primary hidden-print" target="_blank" rel="noopener">{{ trans('admin/users/general.print_assigned') }}</a>
                 </div>
                 @endcan
+
+                @can('update', $user)
+                  @if (($user->activated == '1') && ($user->email != '') && ($user->ldap_import == '0'))
+                      <div class="col-md-12" style="padding-top: 5px;">
+                        <form action="{{ route('users.password',['userId'=> $user->id]) }}" method="POST">
+                          {{ csrf_field() }}
+                          <button style="width: 100%;" class="btn btn-sm btn-primary hidden-print">{{ trans('button.send_password_link') }}</button>
+                        </form>
+                      </div>
+                  @endif
+                @endcan
+
                 @can('delete', $user)
                   @if ($user->deleted_at=='')
-                    <div class="col-md-12" style="padding-top: 5px;">
+                    <div class="col-md-12" style="padding-top: 30px;">
                       <form action="{{route('users.destroy',$user->id)}}" method="POST">
                         {{csrf_field()}}
                         {{ method_field("DELETE")}}
@@ -361,7 +375,12 @@
                     </div>
                   @else
                     <div class="col-md-12" style="padding-top: 5px;">
-                      <a href="{{ route('restore/user', $user->id) }}" style="width: 100%;" class="btn btn-sm btn-warning hidden-print">{{ trans('button.restore') }}</a>
+                      @if ($user->deleted_at!='')
+                            <form method="POST" action="{{ route('restore/user', ['userId' => $user->id]) }}">
+                            @csrf 
+                            <button style="width: 100%;" class="btn btn-sm btn-warning hidden-print">{{ trans('button.restore') }}</button>
+                            </form>
+                        @endif
                     </div>
                   @endif
                 @endcan
@@ -444,7 +463,7 @@
                     @endcan
                   </td>
                   <td class="col-md-2">
-                    {{ $license->purchase_cost }}
+                    {{ Helper::formatCurrencyOutput($license->purchase_cost) }}
                   </td>
                   <td>
                     {{ $license->purchase_order }}
@@ -496,7 +515,7 @@
                   <tr>
                     <td>{!!$accessory->present()->nameUrl()!!}</td>
                     <td>
-                      {!! $accessory->purchase_cost !!}
+                      {!! Helper::formatCurrencyOutput($accessory->purchase_cost) !!}
                     </td>
                     <td class="hidden-print">
                       @can('checkin', $accessory)
@@ -542,7 +561,7 @@
                 <tr>
                   <td>{!! $consumable->present()->nameUrl() !!}</td>
                   <td>
-                    {!! $consumable->purchase_cost !!}
+                    {!! Helper::formatCurrencyOutput($consumable->purchase_cost) !!}
                   </td>
                   <td>{{ $consumable->created_at }}</td>
                 </tr>
@@ -557,7 +576,7 @@
 
             <div class="col-md-12 col-sm-12">
               <div class="table-responsive">
-                <table id="files-table" class="display table table-striped">
+                <table id="files-table" class="table display table-striped">
                   <thead>
                     <tr>
                       <th class="col-md-5">{{ trans('general.notes') }}</th>
@@ -635,7 +654,7 @@
 
         <div class="tab-pane" id="managed">
           <div class="table-responsive">
-            <table class="display table table-striped">
+            <table class="table display table-striped">
               <thead>
                 <tr>
                   <th class="col-md-8">{{ trans('general.name') }}</th>

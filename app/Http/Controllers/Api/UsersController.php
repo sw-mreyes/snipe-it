@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\SaveUserRequest;
 use App\Http\Transformers\AccessoriesTransformer;
 use App\Http\Transformers\AssetsTransformer;
+use App\Http\Transformers\ConsumablesTransformer;
 use App\Http\Transformers\LicensesTransformer;
 use App\Http\Transformers\SelectlistTransformer;
 use App\Http\Transformers\UsersTransformer;
@@ -16,6 +17,7 @@ use App\Models\License;
 use App\Models\User;
 use Auth;
 use Illuminate\Http\Request;
+use App\Http\Requests\ImageUploadRequest;
 use Illuminate\Support\Facades\Storage;
 
 class UsersController extends Controller
@@ -49,6 +51,7 @@ class UsersController extends Controller
             'users.jobtitle',
             'users.last_login',
             'users.last_name',
+            'users.locale',
             'users.location_id',
             'users.manager_id',
             'users.notes',
@@ -73,6 +76,10 @@ class UsersController extends Controller
             $users = $users->withTrashed();
         }
 
+        if ($request->filled('activated')) {
+            $users = $users->where('users.activated', '=', $request->input('activated'));
+        }
+
         if ($request->filled('company_id')) {
             $users = $users->where('users.company_id', '=', $request->input('company_id'));
         }
@@ -89,12 +96,60 @@ class UsersController extends Controller
             $users = $users->where('users.username', '=', $request->input('username'));
         }
 
+        if ($request->filled('first_name')) {
+            $users = $users->where('users.first_name', '=', $request->input('first_name'));
+        }
+
+        if ($request->filled('last_name')) {
+            $users = $users->where('users.last_name', '=', $request->input('last_name'));
+        }
+
+        if ($request->filled('employee_num')) {
+            $users = $users->where('users.employee_num', '=', $request->input('employee_num'));
+        }
+
+        if ($request->filled('state')) {
+            $users = $users->where('users.state', '=', $request->input('state'));
+        }
+
+        if ($request->filled('country')) {
+            $users = $users->where('users.country', '=', $request->input('country'));
+        }
+
+        if ($request->filled('zip')) {
+            $users = $users->where('users.zip', '=', $request->input('zip'));
+        }
+
         if ($request->filled('group_id')) {
             $users = $users->ByGroup($request->get('group_id'));
         }
 
         if ($request->filled('department_id')) {
             $users = $users->where('users.department_id','=',$request->input('department_id'));
+        }
+
+        if ($request->filled('manager_id')) {
+            $users = $users->where('users.manager_id','=',$request->input('manager_id'));
+        }
+
+        if ($request->filled('ldap_import')) {
+            $users = $users->where('ldap_import', '=', $request->input('ldap_import'));
+        }
+
+        if ($request->filled('assets_count')) {
+           $users->has('assets', '=', $request->input('assets_count'));
+        }
+
+        if ($request->filled('consumables_count')) {
+            $users->has('consumables', '=', $request->input('consumables_count'));
+        }
+
+        if ($request->filled('licenses_count')) {
+            $users->has('licenses', '=', $request->input('licenses_count'));
+        }
+
+        if ($request->filled('accessories_count')) {
+            $users->has('accessories', '=', $request->input('accessories_count'));
         }
 
         if ($request->filled('search')) {
@@ -236,7 +291,8 @@ class UsersController extends Controller
         $tmp_pass = substr(str_shuffle("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"), 0, 20);
         $user->password = bcrypt($request->get('password', $tmp_pass));
 
-
+        app('App\Http\Requests\ImageUploadRequest')->handleImages($user, 600, 'image', 'avatars', 'avatar');
+        
         if ($user->save()) {
             if ($request->filled('groups')) {
                 $user->groups()->sync($request->input('groups'));
@@ -279,9 +335,15 @@ class UsersController extends Controller
 
         $user = User::findOrFail($id);
 
-        // This is a janky hack to prevent people from changing admin demo user data on the public demo.
-        // The $ids 1 and 2 are special since they are seeded as superadmins in the demo seeder.
-        // Thanks, jerks. You are why we can't have nice things. - snipe
+        /**
+         * This is a janky hack to prevent people from changing admin demo user data on the public demo.
+         * 
+         * The $ids 1 and 2 are special since they are seeded as superadmins in the demo seeder.
+         * 
+         *  Thanks, jerks. You are why we can't have nice things. - snipe
+         * 
+         */ 
+
 
         if ((($id == 1) || ($id == 2)) && (config('app.lock_passwords'))) {
             return response()->json(Helper::formatStandardApiResponse('error', null, 'Permission denied. You cannot update user information via API on the demo.'));
@@ -289,7 +351,7 @@ class UsersController extends Controller
 
 
         $user->fill($request->all());
-
+        
         if ($user->id == $request->input('manager_id')) {
             return response()->json(Helper::formatStandardApiResponse('error', null, 'You cannot be your own manager'));
         }
@@ -319,6 +381,9 @@ class UsersController extends Controller
         Asset::where('assigned_type', User::class)
             ->where('assigned_to', $user->id)->update(['location_id' => $request->input('location_id', null)]);
 
+        
+        app('App\Http\Requests\ImageUploadRequest')->handleImages($user, 600, 'image', 'avatars', 'avatar');
+          
         if ($user->save()) {
 
             // Sync group memberships:
@@ -396,12 +461,30 @@ class UsersController extends Controller
      * @param $userId
      * @return string JSON
      */
-    public function assets($id)
+    public function assets(Request $request, $id)
     {
         $this->authorize('view', User::class);
         $this->authorize('view', Asset::class);
         $assets = Asset::where('assigned_to', '=', $id)->where('assigned_type', '=', User::class)->with('model')->get();
-        return (new AssetsTransformer)->transformAssets($assets, $assets->count());
+        return (new AssetsTransformer)->transformAssets($assets, $assets->count(), $request);
+    }
+
+
+    /**
+     * Return JSON containing a list of consumables assigned to a user.
+     *
+     * @author [A. Gianotto] [<snipe@snipe.net>]
+     * @since [v3.0]
+     * @param $userId
+     * @return string JSON
+     */
+    public function consumables(Request $request, $id)
+    {
+        $this->authorize('view', User::class);
+        $this->authorize('view', Consumable::class);
+        $user = User::findOrFail($id);
+        $consumables = $user->consumables;
+        return (new ConsumablesTransformer)->transformConsumables($consumables, $consumables->count(), $request);
     }
 
     /**

@@ -112,7 +112,14 @@ class ComponentPresenter extends Presenter
                 "title" => trans('general.purchase_cost'),
                 "visible" => true,
                 "footerFormatter" => 'sumFormatter',
-            ],
+            ], [
+                "field" => "notes",
+                "searchable" => true,
+                "sortable" => true,
+                "visible" => false,
+                "title" => trans('general.notes'),
+                "formatter" => "notesFormatter"
+            ]
         ];
 
         $layout[] = [

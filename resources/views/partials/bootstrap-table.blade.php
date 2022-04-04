@@ -1,12 +1,14 @@
 @push('css')
 <link rel="stylesheet" href="{{ url(mix('css/dist/bootstrap-table.css')) }}">
+
 @endpush
 
 @push('js')
-<script src="{{ asset(mix('js/dist/bootstrap-table.js')) }}"></script>
+<script src="{{ url(mix('js/dist/bootstrap-table.js')) }}"></script>
 <script nonce="{{ csrf_token() }}">
 
     $(function () {
+
 
         var stickyHeaderOffsetY = 0;
 
@@ -21,7 +23,7 @@
 
         var keyBlocked = function(key) {
             for(var j in blockedFields) {
-                if(key === blockedFields[j]) {
+                if (key === blockedFields[j]) {
                     return true;
                 }
             }
@@ -41,15 +43,15 @@
             iconsPrefix: 'fa',
             cookie: true,
             cookieExpire: '2y',
-            cookieIdTable: '{{ Route::currentRouteName() }}',
             mobileResponsive: true,
             maintainSelected: true,
             trimOnSearch: false,
+            showSearchClearButton: true,
             paginationFirstText: "{{ trans('general.first') }}",
             paginationLastText: "{{ trans('general.last') }}",
             paginationPreText: "{{ trans('general.previous') }}",
             paginationNextText: "{{ trans('general.next') }}",
-            pageList: ['10', '20', '30', '50', '100', '150', '200', '500'],
+            pageList: ['10','20', '30','50','100','150','200', '500', '1000'],
             pageSize: {{  (($snipeSettings->per_page!='') && ($snipeSettings->per_page > 0)) ? $snipeSettings->per_page : 20 }},
             paginationVAlign: 'both',
             queryParams: function (params) {
@@ -70,13 +72,20 @@
                 paginationSwitchUp: 'fa-caret-square-o-up',
                 columns: 'fa-columns',
                 refresh: 'fa-refresh',
-                export: 'fa-download'
+                export: 'fa-download',
+                clearSearch: 'fa-times'
             },
+            exportOptions: {
+                htmlContent: true,
+            },
+
             exportTypes: ['csv', 'excel', 'doc', 'txt','json', 'xml', 'pdf'],
             onLoadSuccess: function () {
-                $('[data-toggle="tooltip"]').tooltip(); // Need to attach tooltips after ajax call
+                $('[data-toggle="tooltip"]').tooltip(); // Needed to attach tooltips after ajax call
             }
-        });
+
+        });   
+
     });
 
 
@@ -88,30 +97,52 @@
     }
 
 
+    // These methods dynamically add/remove hidden input values in the bulk actions form
+    $('.snipe-table').on('check.bs.table .btSelectItem', function (row, $element) {
+        $('#bulkEdit').removeAttr('disabled');
+        $('#bulkEdit').prepend('<input id="checkbox_' + $element.id + '" type="hidden" name="ids[]" value="' + $element.id + '">');
+    });
+
+    $('.snipe-table').on('uncheck.bs.table .btSelectItem', function (row, $element) {
+        $( "#checkbox_" + $element.id).remove();
+    });
+    
+
     // Handle whether or not the edit button should be disabled
-    $('.snipe-table').on('check.bs.table', function () {
-        $('#bulkEdit').removeAttr('disabled');
-    });
-
-    $('.snipe-table').on('check-all.bs.table', function () {
-        $('#bulkEdit').removeAttr('disabled');
-    });
-
     $('.snipe-table').on('uncheck.bs.table', function () {
         if ($('.snipe-table').bootstrapTable('getSelections').length == 0) {
             $('#bulkEdit').attr('disabled', 'disabled');
         }
     });
 
-    $('.snipe-table').on('uncheck-all.bs.table', function (e, row) {
+    $('.snipe-table').on('uncheck-all.bs.table', function (event, rowsAfter, rowsBefore) {
         $('#bulkEdit').attr('disabled', 'disabled');
+        //console.dir(rowsBefore);
+
+        for (var i in rowsBefore) {
+            $( "#checkbox_" + rowsBefore[i].id).remove();
+        }
+
     });
+
+    $('.snipe-table').on('check-all.bs.table', function (event, rowsAfter, rowsBefore) {
+        
+        $('#bulkEdit').removeAttr('disabled');
+        //console.dir(rowsAfter);
+        
+        for (var i in rowsAfter) {
+            // console.log(rowsAfter[i].id);
+            $('#bulkEdit').prepend('<input id="checkbox_' + rowsAfter[i].id + '" type="hidden" name="ids[]" value="' + rowsAfter[i].id + '">');
+        }
+    });
+
+    
 
     // This only works for model index pages because it uses the row's model ID
     function genericRowLinkFormatter(destination) {
         return function (value, row) {
             if (value) {
-                return '<a href="{{ url('/') }}/' + destination + '/' + row.id + '"> ' + value + '</a>';
+                return '<a href="{{ url('/') }}/' + destination + '/' + row.id + '">' + value + '</a>';
             }
         };
     }
@@ -157,11 +188,12 @@
 
                 // Add some overrides for any funny urls we have
                 var dest = destination;
+                var dpolymorphicItemFormatterest = '';
                 if (destination=='fieldsets') {
-                    var dpolymorphicItemFormatterest = 'fields/fieldsets';
+                    var dpolymorphicItemFormatterest = 'fields/';
                 }
 
-                return '<nobr><a href="{{ url('/') }}/' + dest + '/' + value.id + '"> ' + value.name + '</a></span>';
+                return '<nobr><a href="{{ url('/') }}/' + dpolymorphicItemFormatterest + dest + '/' + value.id + '">' + value.name + '</a></span>';
             }
         };
     }
@@ -240,7 +272,7 @@
             }
 
             if ((row.available_actions) && (row.available_actions.update === true)) {
-                actions += '<a href="{{ url('/') }}/' + dest + '/' + row.id + '/edit" class="btn btn-sm btn-warning" data-tooltip="true" title="Update Item"><i class="fa fa-pencil" aria-hidden="true"></i><span class="sr-only">Update</span></a>&nbsp;';
+                actions += '<a href="{{ url('/') }}/' + dest + '/' + row.id + '/edit" class="btn btn-sm btn-warning" data-tooltip="true" title="{{ trans('general.update') }}"><i class="fa fa-pencil" aria-hidden="true"></i><span class="sr-only">{{ trans('general.update') }}</span></a>&nbsp;';
             }
 
             if ((row.available_actions) && (row.available_actions.delete === true)) {
@@ -249,13 +281,17 @@
                     + ' data-toggle="modal" '
                     + ' data-content="{{ trans('general.sure_to_delete') }} ' + row.name + '?" '
                     + ' data-title="{{  trans('general.delete') }}" onClick="return false;">'
-                    + '<i class="fa fa-trash" aria-hidden="true"></i><span class="sr-only">Delete</span></a>&nbsp;';
+                    + '<i class="fa fa-trash" aria-hidden="true"></i><span class="sr-only">{{ trans('general.delete') }}</span></a>&nbsp;';
             } else {
                 actions += '<a class="btn btn-danger btn-sm delete-asset disabled" onClick="return false;"><i class="fa fa-trash"></i></a>&nbsp;';
             }
+            
 
             if ((row.available_actions) && (row.available_actions.restore === true)) {
-                actions += '<a href="{{ url('/') }}/' + dest + '/' + row.id + '/restore" class="btn btn-sm btn-warning" data-toggle="tooltip" title="Restore"><i class="fa fa-retweet"></i></a>&nbsp;';
+                actions += '<form style="display: inline;" method="POST" action="{{ url('/') }}/' + dest + '/' + row.id + '/restore"> ';
+                actions += '@csrf';
+                actions += '<button class="btn btn-sm btn-warning" data-toggle="tooltip" title="{{ trans('general.restore') }}">';
+                actions += '<i class="fa fa-retweet" aria-hidden="true"></i><span class="sr-only">{{ trans('general.restore') }}</span></button></form>&nbsp;';
             }
 
             actions += '</nobr>';
@@ -368,9 +404,9 @@
     // This is only used by the requestable assets section
     function assetRequestActionsFormatter (row, value) {
         if (value.available_actions.cancel == true)  {
-            return '<form action="{{ url('/') }}/account/request-asset/'+ value.id + '" method="GET"><button class="btn btn-danger btn-sm" data-toggle="tooltip" title="Cancel this item request">{{ trans('button.cancel') }}</button></form>';
+            return '<form action="{{ url('/') }}/account/request-asset/'+ value.id + '" method="POST">@csrf<button class="btn btn-danger btn-sm" data-toggle="tooltip" title="Cancel this item request">{{ trans('button.cancel') }}</button></form>';
         } else if (value.available_actions.request == true)  {
-            return '<form action="{{ url('/') }}/account/request-asset/'+ value.id + '" method="GET"><button class="btn btn-primary btn-sm" data-toggle="tooltip" title="Request this item">{{ trans('button.request') }}</button></form>';
+            return '<form action="{{ url('/') }}/account/request-asset/'+ value.id + '" method="POST">@csrf<button class="btn btn-primary btn-sm" data-toggle="tooltip" title="Request this item">{{ trans('button.request') }}</button></form>';
         }
 
     }
@@ -488,7 +524,7 @@
         if (value) {
             var groups = '';
             for (var index in value.rows) {
-                groups += '<a href="{{ url('/') }}/admin/groups/' + value.rows[index].id + '" class="label label-default"> ' + value.rows[index].name + '</a> ';
+                groups += '<a href="{{ url('/') }}/admin/groups/' + value.rows[index].id + '" class="label label-default">' + value.rows[index].name + '</a> ';
             }
             return groups;
         }
@@ -515,16 +551,16 @@
 
 
     function deployedLocationFormatter(row, value) {
-        if ((row) && (row != undefined)) {
-            return '<a href="{{ url('/') }}/locations/' + row.id + '"> ' + row.name + '</a>';
+        if ((row) && (row!=undefined)) {
+            return '<a href="{{ url('/') }}/locations/' + row.id + '">' + row.name + '</a>';
         } else if (value.rtd_location) {
-            return '<a href="{{ url('/') }}/locations/' + value.rtd_location.id + '" data-toggle="tooltip" title="Default Location"> ' + value.rtd_location.name + '</a>';
+            return '<a href="{{ url('/') }}/locations/' + value.rtd_location.id + '" data-toggle="tooltip" title="Default Location">' + value.rtd_location.name + '</a>';
         }
 
     }
 
     function groupsAdminLinkFormatter(value, row) {
-        return '<a href="{{ url('/') }}/admin/groups/' + row.id + '"> ' + value + '</a>';
+        return '<a href="{{ url('/') }}/admin/groups/' + row.id + '">' + value + '</a>';
     }
 
     function assetTagLinkFormatter(value, row) {
@@ -544,14 +580,14 @@
 
     function departmentNameLinkFormatter(value, row) {
         if ((row.assigned_user) && (row.assigned_user.department) && (row.assigned_user.department.name)) {
-            return '<a href="{{ url('/') }}/department/' + row.assigned_user.department.id + '"> ' + row.assigned_user.department.name + '</a>';
+            return '<a href="{{ url('/') }}/department/' + row.assigned_user.department.id + '">' + row.assigned_user.department.name + '</a>';
         }
 
     }
 
     function assetNameLinkFormatter(value, row) {
         if ((row.asset) && (row.asset.name)) {
-            return '<a href="{{ url('/') }}/hardware/' + row.asset.id + '"> ' + row.asset.name + '</a>';
+            return '<a href="{{ url('/') }}/hardware/' + row.asset.id + '">' + row.asset.name + '</a>';
         }
 
     }
@@ -578,31 +614,31 @@
 
     function emailFormatter(value) {
         if (value) {
-            return '<a href="mailto:' + value + '"> ' + value + '</a>';
+            return '<a href="mailto:' + value + '">' + value + '</a>';
         }
     }
 
     function linkFormatter(value) {
         if (value) {
-            return '<a href="' + value + '"> ' + value + '</a>';
+            return '<a href="' + value + '">' + value + '</a>';
         }
     }
 
     function assetCompanyFilterFormatter(value, row) {
         if (value) {
-            return '<a href="{{ url('/') }}/hardware/?company_id=' + row.id + '"> ' + value + '</a>';
+            return '<a href="{{ url('/') }}/hardware/?company_id=' + row.id + '">' + value + '</a>';
         }
     }
 
     function assetCompanyObjFilterFormatter(value, row) {
         if ((row) && (row.company)) {
-            return '<a href="{{ url('/') }}/hardware/?company_id=' + row.company.id + '"> ' + row.company.name + '</a>';
+            return '<a href="{{ url('/') }}/hardware/?company_id=' + row.company.id + '">' + row.company.name + '</a>';
         }
     }
 
     function usersCompanyObjFilterFormatter(value, row) {
         if (value) {
-            return '<a href="{{ url('/') }}/users/?company_id=' + row.id + '"> ' + value + '</a>';
+            return '<a href="{{ url('/') }}/users/?company_id=' + row.id + '">' + value + '</a>';
         } else {
             return value;
         }
@@ -611,13 +647,13 @@
     function employeeNumFormatter(value, row) {
 
         if ((row) && (row.assigned_to) && ((row.assigned_to.employee_number))) {
-            return '<a href="{{ url('/') }}/users/' + row.assigned_to.id + '"> ' + row.assigned_to.employee_number + '</a>';
+            return '<a href="{{ url('/') }}/users/' + row.assigned_to.id + '">' + row.assigned_to.employee_number + '</a>';
         }
     }
 
     function orderNumberObjFilterFormatter(value, row) {
         if (value) {
-            return '<a href="{{ url('/') }}/hardware/?order_number=' + row.order_number + '"> ' + row.order_number + '</a>';
+            return '<a href="{{ url('/') }}/hardware/?order_number=' + row.order_number + '">' + row.order_number + '</a>';
         }
     }
 
@@ -654,11 +690,26 @@
         }
     }
 
+    function cleanFloat(number) {
+        if(!number) { // in a JavaScript context, meaning, if it's null or zero or unset
+            return 0.0;
+        }
+        if ("{{$snipeSettings->digit_separator}}" == "1.234,56") {
+            // yank periods, change commas to periods
+            periodless = number.toString().replace(/\./g,"");
+            decimalfixed = periodless.replace(/,/g,".");
+        } else {
+            // yank commas, that's it.
+            decimalfixed = number.toString().replace(",","");
+        }
+        return parseFloat(decimalfixed);
+    }
+
     function sumFormatter(data) {
         if (Array.isArray(data)) {
             var field = this.field;
-            var total_sum = data.reduce(function (sum, row) {
-                return (sum) + (parseFloat(row[field]) || 0);
+            var total_sum = data.reduce(function(sum, row) {
+                return (sum) + (cleanFloat(row[field]) || 0);
             }, 0);
             return numberWithCommas(total_sum.toFixed(2));
         }
@@ -694,9 +745,13 @@
 
     function numberWithCommas(value) {
         if ((value) && ("{{$snipeSettings->digit_separator}}" == "1.234,56")){
-        var parts = value.toString().split(".");
-        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-        return parts.join(",");
+            var parts = value.toString().split(".");
+             parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+             return parts.join(",");
+         } else {
+             var parts = value.toString().split(",");
+             parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+             return parts.join(".");
         }
         return value
     }
@@ -712,13 +767,37 @@
     });
 
 
-    // This is necessary to make the bootstrap tooltips work inside of the
-    // wenzhixin/bootstrap-table formatters
-    $(function () {
+
+    $(function() {
+
+        // This handles the search box highlighting on both ajax and client-side
+        // bootstrap tables
+        var searchboxHighlighter = function (event) {
+
+            $('.search-input').each(function (index, element) {
+
+                if ($(element).val() != '') {
+                    $(element).addClass('search-highlight');
+                    $(element).next().children().addClass('search-highlight');
+                } else {
+                    $(element).removeClass('search-highlight');
+                    $(element).next().children().removeClass('search-highlight');
+                }
+            });
+        };
+
+        $('.search button[name=clearSearch]').click(searchboxHighlighter);
+        searchboxHighlighter({ name:'pageload'});
+        $('.search-input').keyup(searchboxHighlighter);
+
+        //  This is necessary to make the bootstrap tooltips work inside of the
+        // wenzhixin/bootstrap-table formatters
         $('#table').on('post-body.bs.table', function () {
             $('[data-toggle="tooltip"]').tooltip({
                 container: 'body'
             });
+
+
         });
     });
 
