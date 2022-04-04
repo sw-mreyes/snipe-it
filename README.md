@@ -1,3 +1,7 @@
+# Warning
+
+this is not the official repository, dont use any of this unless you know what you are doing.
+
 # original readme.md
 
 ![Build Status](https://app.chipperci.com/projects/0e5f8979-31eb-4ee6-9abf-050b76ab0383/status/master) [![Crowdin](https://d322cqt584bo4o.cloudfront.net/snipe-it/localized.svg)](https://crowdin.com/project/snipe-it) [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/snipe/snipe-it?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Docker Pulls](https://img.shields.io/docker/pulls/snipe/snipe-it.svg)](https://hub.docker.com/r/snipe/snipe-it/) [![Twitter Follow](https://img.shields.io/twitter/follow/snipeitapp.svg?style=social)](https://twitter.com/snipeitapp)  [![Codacy Badge](https://api.codacy.com/project/badge/Grade/553ce52037fc43ea99149785afcfe641)](https://www.codacy.com/app/snipe/snipe-it?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=snipe/snipe-it&amp;utm_campaign=Badge_Grade)
