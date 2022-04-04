@@ -18,7 +18,6 @@ use Illuminate\Http\Request;
 use App\Http\Requests\ImageUploadRequest;
 use App\Events\CheckoutableCheckedIn;
 use App\Events\ComponentCheckedIn;
-use App\Models\Asset;
 
 class ComponentsController extends Controller
 {
