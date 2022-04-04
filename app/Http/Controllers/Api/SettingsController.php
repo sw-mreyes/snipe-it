@@ -167,7 +167,7 @@ class SettingsController extends Controller
     {
 
         $validator = Validator::make($request->all(), [
-            'slack_endpoint'                      => 'url|required_with:slack_channel|starts_with:https://hooks.slack.com/|nullable',
+            'slack_endpoint'                      => 'url|required_with:slack_channel|nullable',
             'slack_channel'                       => 'required_with:slack_endpoint|starts_with:#|nullable',
         ]);
 
