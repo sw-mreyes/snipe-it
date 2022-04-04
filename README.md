@@ -1,6 +1,6 @@
 # Warning
 
-this is not the official repository, dont use any of this unless you know what you are doing.
+This is not the official repository, dont use any of this unless you know what you are doing.
 
 # original readme.md
 
