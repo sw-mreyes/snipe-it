@@ -47,6 +47,7 @@
 
     function format_date(x) {
         const d = new Date(x);
+        console.log("format_date",x,d);
         return d.getFullYear() + '-' +
             ("00" + (d.getMonth() + 1)).slice(-2) + "-" +
             ("00" + d.getDate()).slice(-2) + " " +
@@ -56,6 +57,7 @@
     }
 
     function reservation_list_dom(data) {
+        console.log("reservation_list_dom",data);
         const ul = document.createElement('ul');
         for (let i in data) {
             const li = document.createElement('li');

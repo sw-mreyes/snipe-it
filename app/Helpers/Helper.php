@@ -863,7 +863,9 @@ class Helper
         $settings = Setting::getSettings();
         $tmp_date = new \Carbon($date);
 
-        if ($type == 'datetime') {
+        if ($type == 'timestamp'){
+            return $tmp_date->timestamp;
+        } else if ($type == 'datetime') {
             $dt['datetime'] = $tmp_date->format('Y-m-d H:i:s');
             $dt['formatted'] = $tmp_date->format($settings->date_display_format . ' ' . $settings->time_display_format);
         } else {
