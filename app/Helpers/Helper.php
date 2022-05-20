@@ -1166,8 +1166,8 @@ class Helper
 
     public static function parse_printer_config()
     {
-        $server_list_str = env('PRINT_SERVER', '');        
-        $location_mapping_str = env('LOCATION_MAPPING', '');
+        $server_list_str = config('label-printer.printers');    
+        $location_mapping_str = config('label-printer.location_mapping');
         Debugbar::info("server_list_str=".$server_list_str." | location_mapping_str=".$location_mapping_str);        
         // Parse [ name => ip-address ] mapping
         $server_list = [];
