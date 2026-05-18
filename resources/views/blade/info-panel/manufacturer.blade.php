@@ -54,7 +54,7 @@
                 @if($manufacturer->support_url)
                     <x-icon type="external-link" class="fa-fw"/>
                     <x-info-element.url>
-                        {{ $manufacturer->support_url }}
+                         {{ $asset->present()->dynamicUrl($asset->model->manufacturer->support_url) }}
                     </x-info-element.url>
                     <br>
                 @endif
