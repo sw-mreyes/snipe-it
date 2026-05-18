@@ -13,6 +13,7 @@ use App\Models\Actionlog;
 use App\Models\Asset;
 use App\Models\Company;
 use App\Models\Maintenance;
+use App\Models\Setting;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -65,8 +66,8 @@ class MaintenancesController extends Controller
             $maintenances->where('maintenances.url', '=', $request->input('url'));
         }
 
-        if ($request->filled('asset_maintenance_type')) {
-            $maintenances->where('asset_maintenance_type', '=', $request->input('asset_maintenance_type'));
+        if ($request->filled('maintenance_type')) {
+            $maintenances->where('maintenance_type', '=', $request->input('maintenance_type'));
         }
 
         if ($request->filled('maintenance_type_id')) {
@@ -77,6 +78,29 @@ class MaintenancesController extends Controller
             $maintenances->where('responsible_party_id', '=', $request->input('responsible_party_id'));
         }
 
+        if ($request->filled('completed')) {
+            if ($request->input('completed') === 'true') {
+                $maintenances->completed();
+            } else {
+                $maintenances->active();
+            }
+        }
+
+        if ($request->filled('upcoming_status')) {
+            $settings = Setting::getSettings();
+            switch ($request->input('upcoming_status')) {
+                case 'due':
+                    $maintenances->dueForCompletion($settings);
+                    break;
+                case 'overdue':
+                    $maintenances->overdueForCompletion();
+                    break;
+                case 'due-or-overdue':
+                    $maintenances->dueOrOverdueForCompletion($settings);
+                    break;
+            }
+        }
+
         // Make sure the offset and limit are actually integers and do not exceed system limits
         $offset = ($request->input('offset') > $maintenances->count()) ? $maintenances->count() : abs($request->input('offset'));
         $limit = app('api_limit_value');
@@ -85,10 +109,10 @@ class MaintenancesController extends Controller
             'id',
             'name',
             'asset_maintenance_time',
-            'asset_maintenance_type',
             'cost',
             'start_date',
             'completion_date',
+            'completed_at',
             'notes',
             'asset_tag',
             'asset_name',
@@ -100,6 +124,7 @@ class MaintenancesController extends Controller
             'status_label',
             'model',
             'model_number',
+            'maintenance_type',
         ];
 
         $order = $request->input('order') === 'asc' ? 'asc' : 'desc';
@@ -107,31 +132,37 @@ class MaintenancesController extends Controller
 
         switch ($sort) {
             case 'created_by':
-                $maintenances = $maintenances->OrderByCreatedBy($order);
+                $maintenances = $maintenances->orderByCreatedBy($order);
                 break;
             case 'supplier':
-                $maintenances = $maintenances->OrderBySupplier($order);
+                $maintenances = $maintenances->orderBySupplier($order);
                 break;
             case 'asset_tag':
-                $maintenances = $maintenances->OrderByTag($order);
+                $maintenances = $maintenances->orderByTag($order);
                 break;
             case 'asset_name':
-                $maintenances = $maintenances->OrderByAssetName($order);
+                $maintenances = $maintenances->orderByAssetName($order);
                 break;
             case 'model':
-                $maintenances = $maintenances->OrderByAssetModelName($order);
+                $maintenances = $maintenances->orderByAssetModelName($order);
                 break;
             case 'model_number':
-                $maintenances = $maintenances->OrderByAssetModelNumber($order);
+                $maintenances = $maintenances->orderByAssetModelNumber($order);
                 break;
             case 'serial':
-                $maintenances = $maintenances->OrderByAssetSerial($order);
+                $maintenances = $maintenances->orderByAssetSerial($order);
                 break;
             case 'location':
-                $maintenances = $maintenances->OrderLocationName($order);
+                $maintenances = $maintenances->orderLocationName($order);
                 break;
             case 'status_label':
-                $maintenances = $maintenances->OrderStatusName($order);
+                $maintenances = $maintenances->orderStatusName($order);
+                break;
+            case 'maintenance_type':
+                $maintenances = $maintenances->orderByMaintenanceType($order);
+                break;
+            case 'completed_at':
+                $maintenances = $maintenances->orderByCompletedAt($order);
                 break;
             default:
                 $maintenances = $maintenances->orderBy($sort, $order);
@@ -322,6 +353,7 @@ class MaintenancesController extends Controller
 
         $maintenance->completed_at = now();
         $maintenance->completed_by = auth()->id();
+        $maintenance->asset_maintenance_time = (int) $maintenance->created_at->diffInDays(now(), true);
         $maintenance->saveQuietly();
 
         $logAction = new Actionlog;
@@ -330,6 +362,7 @@ class MaintenancesController extends Controller
         $logAction->target_type = Asset::class;
         $logAction->target_id = $maintenance->asset_id;
         $logAction->created_by = auth()->id();
+        $logAction->note = $request->input('note');
         $logAction->logaction(ActionType::MaintenanceComplete);
 
         return response()->json(Helper::formatStandardApiResponse('success', (new MaintenancesTransformer)->transformMaintenance($maintenance->fresh()), trans('admin/maintenances/message.complete.success')));
@@ -345,5 +378,51 @@ class MaintenancesController extends Controller
         $history = (clone $historyQuery)->skip($offset)->take($limit)->get();
 
         return response()->json((new ActionlogsTransformer)->transformActionlogs($history, $total), 200, ['Content-Type' => 'application/json;charset=utf8'], JSON_UNESCAPED_UNICODE);
+    }
+
+    public function notesIndex(Maintenance $maintenance): JsonResponse
+    {
+        $this->authorize('journal', $maintenance);
+
+        $notes = Actionlog::with('user:id,username')
+            ->where('item_type', Maintenance::class)
+            ->where('item_id', $maintenance->id)
+            ->where('action_type', 'note added')
+            ->orderBy('created_at', 'desc')
+            ->get(['id', 'created_at', 'note', 'created_by', 'item_id', 'item_type', 'action_type']);
+
+        $notesArray = $notes->map(fn ($note) => [
+            'id' => $note->id,
+            'created_at' => $note->created_at,
+            'note' => $note->note,
+            'created_by' => $note->created_by,
+            'username' => $note->user?->username,
+            'item_id' => $note->item_id,
+            'item_type' => $note->item_type,
+            'action_type' => $note->action_type,
+        ]);
+
+        return response()->json(Helper::formatStandardApiResponse('success', ['notes' => $notesArray, 'maintenance_id' => $maintenance->id]));
+    }
+
+    public function notesStore(Request $request, Maintenance $maintenance): JsonResponse
+    {
+        $this->authorize('update', $maintenance);
+
+        if (! $request->filled('note')) {
+            return response()->json(Helper::formatStandardApiResponse('error', null, trans('validation.required', ['attribute' => 'note'])), 422);
+        }
+
+        $logaction = new Actionlog;
+        $logaction->item_type = Maintenance::class;
+        $logaction->created_by = auth()->id();
+        $logaction->item_id = $maintenance->id;
+        $logaction->note = $request->input('note');
+
+        if ($logaction->logaction('note added')) {
+            return response()->json(Helper::formatStandardApiResponse('success', ['note' => $logaction->note, 'item_id' => $maintenance->id], trans('general.note_added')));
+        }
+
+        return response()->json(Helper::formatStandardApiResponse('error', null, 'Something went wrong'), 500);
     }
 }

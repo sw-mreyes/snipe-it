@@ -10,7 +10,6 @@ use App\Models\Asset;
 use App\Models\Company;
 use App\Models\Maintenance;
 use App\Models\MaintenanceType;
-use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -108,15 +107,6 @@ class MaintenancesController extends Controller
             $maintenance->responsible_party_id = $request->input('responsible_party_id') ?: auth()->id();
             $maintenance->created_by = auth()->id();
 
-            if (($maintenance->completion_date !== null)
-                && ($maintenance->start_date !== '')
-                && ($maintenance->start_date !== '0000-00-00')
-            ) {
-                $startDate = Carbon::parse($maintenance->start_date);
-                $completionDate = Carbon::parse($maintenance->completion_date);
-                $maintenance->asset_maintenance_time = (int) $completionDate->diffInDays($startDate, true);
-            }
-
             $request->handleImages($maintenance);
 
             // Was the asset maintenance created?
@@ -187,24 +177,6 @@ class MaintenancesController extends Controller
         $maintenance->completion_date = $request->input('completion_date');
         $maintenance->responsible_party_id = $request->input('responsible_party_id');
         $maintenance->url = $request->input('url');
-
-        // Todo - put this in a getter/setter?
-        if (($maintenance->completion_date == null)) {
-            if (($maintenance->asset_maintenance_time !== 0)
-              || (! is_null($maintenance->asset_maintenance_time))
-            ) {
-                $maintenance->asset_maintenance_time = null;
-            }
-        }
-
-        if (($maintenance->completion_date !== null)
-          && ($maintenance->start_date !== '')
-          && ($maintenance->start_date !== '0000-00-00')
-        ) {
-            $startDate = Carbon::parse($maintenance->start_date);
-            $completionDate = Carbon::parse($maintenance->completion_date);
-            $maintenance->asset_maintenance_time = (int) $completionDate->diffInDays($startDate, true);
-        }
         $request->handleImages($maintenance);
 
         if ($maintenance->save()) {
@@ -281,6 +253,7 @@ class MaintenancesController extends Controller
 
         $maintenance->completed_at = now();
         $maintenance->completed_by = auth()->id();
+        $maintenance->asset_maintenance_time = (int) $maintenance->created_at->diffInDays(now(), true);
         $maintenance->saveQuietly();
 
         $logAction = new Actionlog;
@@ -289,6 +262,7 @@ class MaintenancesController extends Controller
         $logAction->target_type = Asset::class;
         $logAction->target_id = $maintenance->asset_id;
         $logAction->created_by = auth()->id();
+        $logAction->note = $request->input('note');
         $logAction->logaction(ActionType::MaintenanceComplete);
 
         return redirect()->back()

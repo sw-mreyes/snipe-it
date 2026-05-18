@@ -18,4 +18,5 @@ return [
     'completed_by' => 'Completed By',
     'mark_complete' => 'Mark Complete',
     'already_complete' => 'Already Completed',
+    'completion_notes' => 'Completion Notes',
 ];

@@ -82,13 +82,9 @@ class MaintenancesTransformer
                 'id' => (int) $assetmaintenance->adminuser->id,
                 'name' => e($assetmaintenance->adminuser->display_name),
             ] : null,
-            'maintenance_type' => ($assetmaintenance->maintenanceType) ? [
-                'id' => (int) $assetmaintenance->maintenanceType->id,
-                'name' => e($assetmaintenance->maintenanceType->name),
-            ] : null,
-            'maintenance_type_name' => $assetmaintenance->maintenanceType
+            'maintenance_type' => $assetmaintenance->maintenanceType
                 ? e($assetmaintenance->maintenanceType->name)
-                : ($assetmaintenance->asset_maintenance_type ? e($assetmaintenance->asset_maintenance_type) : null),
+                : null,
             'responsible_party' => ($assetmaintenance->responsibleParty) ? [
                 'id' => (int) $assetmaintenance->responsibleParty->id,
                 'name' => e($assetmaintenance->responsibleParty->display_name),
@@ -149,9 +145,9 @@ class MaintenancesTransformer
             'supplier' => ($assetmaintenance->supplier) ? e($assetmaintenance->supplier?->name) : null,
             'url' => ($assetmaintenance->url) ? e($assetmaintenance->url) : null,
             'cost' => Helper::formatCurrencyOutput($assetmaintenance->cost),
-            'maintenance_type_name' => $assetmaintenance->maintenanceType
+            'maintenance_type' => $assetmaintenance->maintenanceType
                 ? e($assetmaintenance->maintenanceType->name)
-                : ($assetmaintenance->asset_maintenance_type ? e($assetmaintenance->asset_maintenance_type) : null),
+                : null,
             'asset_maintenance_type' => e($assetmaintenance->asset_maintenance_type),
             'start_date' => Helper::getFormattedDateObject($assetmaintenance->start_date, 'date'),
             'asset_maintenance_time' => $assetmaintenance->asset_maintenance_time,

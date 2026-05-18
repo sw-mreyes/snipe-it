@@ -87,7 +87,6 @@ class Maintenance extends SnipeModel implements ICompanyableChild
         [
             'name',
             'notes',
-            'asset_maintenance_type',
             'cost',
             'start_date',
             'completion_date',
@@ -105,6 +104,7 @@ class Maintenance extends SnipeModel implements ICompanyableChild
         'asset.status' => ['name'],
         'supplier' => ['name'],
         'adminuser' => ['first_name', 'last_name', 'display_name'],
+        'maintenanceType' => ['name'],
     ];
 
     public function getCompanyableParents()
@@ -232,6 +232,11 @@ class Maintenance extends SnipeModel implements ICompanyableChild
     public function checkedOutTo()
     {
         return $this->morphTo('checked_out_to');
+    }
+
+    public function journal()
+    {
+        return $this->assetlog()->where('action_type', '=', 'note added');
     }
 
     public function getDisplayNameAttribute()
