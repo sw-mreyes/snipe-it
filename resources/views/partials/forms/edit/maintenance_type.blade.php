@@ -9,7 +9,7 @@
                               class="form-control select2"
                               data-placeholder="{{ trans('admin/maintenances/form.select_type') }}"
                               style="width: 100%;"
-                              aria-label="maintenance_type_id">
+                              aria-label="maintenance_type_id" required>
                           <option value=""></option>
                           @foreach ($maintenanceTypes as $type)
                               <option value="{{ $type->id }}"
