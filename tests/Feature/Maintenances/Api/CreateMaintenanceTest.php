@@ -4,6 +4,7 @@ namespace Tests\Feature\Maintenances\Api;
 
 use App\Models\Asset;
 use App\Models\Maintenance;
+use App\Models\MaintenanceType;
 use App\Models\Supplier;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
@@ -27,13 +28,14 @@ class CreateMaintenanceTest extends TestCase
 
         $asset = Asset::factory()->create();
         $supplier = Supplier::factory()->create();
+        $type = MaintenanceType::factory()->create();
 
         $response = $this->actingAsForApi($actor)
             ->postJson(route('api.maintenances.store'), [
                 'name' => 'Test Maintenance',
                 'asset_id' => $asset->id,
                 'supplier_id' => $supplier->id,
-                'asset_maintenance_type' => 'Maintenance',
+                'maintenance_type_id' => $type->id,
                 'start_date' => '2021-01-01',
                 'completion_date' => '2021-01-10',
                 'is_warranty' => '1',
@@ -54,7 +56,8 @@ class CreateMaintenanceTest extends TestCase
         $this->assertDatabaseHas('maintenances', [
             'asset_id' => $asset->id,
             'supplier_id' => $supplier->id,
-            'asset_maintenance_type' => 'Maintenance',
+            'maintenance_type_id' => $type->id,
+            'asset_maintenance_type' => $type->name,
             'name' => 'Test Maintenance',
             'is_warranty' => 1,
             'start_date' => '2021-01-01',
