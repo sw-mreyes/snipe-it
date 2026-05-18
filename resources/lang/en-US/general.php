@@ -238,7 +238,7 @@ return [
     'note_added' => 'Note Added',
     'options' => 'Options',
     'preview' => 'Preview',
-    'add_note' => 'Add Note',
+    'add_note' => 'Add Journal Note',
     'note_edited' => 'Note Edited',
     'edit_note' => 'Edit Note',
     'note_deleted' => 'Note Deleted',
