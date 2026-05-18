@@ -58,7 +58,6 @@ class EditMaintenanceTest extends TestCase
             'is_warranty' => 1,
             'start_date' => '2021-01-01',
             'completion_date' => '2021-01-10',
-            'asset_maintenance_time' => '9',
             'notes' => 'A note',
             'url' => 'https://snipeitapp.com',
             'image' => $maintenance->image,

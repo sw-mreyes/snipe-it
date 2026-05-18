@@ -5,6 +5,7 @@ namespace Tests\Feature\Maintenances\Api;
 use App\Models\Actionlog;
 use App\Models\Maintenance;
 use App\Models\User;
+use Carbon\Carbon;
 use Tests\TestCase;
 
 class CompleteMaintenanceTest extends TestCase
@@ -61,5 +62,43 @@ class CompleteMaintenanceTest extends TestCase
             ->assertStatusMessageIs('error');
 
         $this->assertHasTheseActionLogs($maintenance, ['create']);
+    }
+
+    public function test_completion_note_is_saved_in_actionlog()
+    {
+        $actor = User::factory()->superuser()->create();
+        $maintenance = Maintenance::factory()->create();
+
+        $this->actingAsForApi($actor)
+            ->postJson(route('api.maintenances.complete', $maintenance), ['note' => 'Fixed the thing'])
+            ->assertOk();
+
+        $log = Actionlog::where('item_type', Maintenance::class)
+            ->where('item_id', $maintenance->id)
+            ->where('action_type', 'completed')
+            ->first();
+
+        $this->assertNotNull($log);
+        $this->assertEquals('Fixed the thing', $log->note);
+    }
+
+    public function test_duration_is_calculated_from_created_at()
+    {
+        $actor = User::factory()->superuser()->create();
+
+        Carbon::setTestNow(Carbon::create(2026, 1, 1));
+        $maintenance = Maintenance::factory()->create(['start_date' => '2025-06-01']);
+        Carbon::setTestNow(Carbon::create(2026, 1, 11));
+
+        try {
+            $this->actingAsForApi($actor)
+                ->postJson(route('api.maintenances.complete', $maintenance))
+                ->assertOk();
+
+            $maintenance->refresh();
+            $this->assertEquals(10, $maintenance->asset_maintenance_time);
+        } finally {
+            Carbon::setTestNow();
+        }
     }
 }
