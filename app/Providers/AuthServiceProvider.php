@@ -40,7 +40,7 @@ use App\Policies\PredefinedKitPolicy;
 use App\Policies\StatuslabelPolicy;
 use App\Policies\SupplierPolicy;
 use App\Policies\UserPolicy;
-use Carbon\Carbon;
+use Carbon\CarbonInterval;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 use Laravel\Passport\Console\ClientCommand;
@@ -93,9 +93,10 @@ class AuthServiceProvider extends ServiceProvider
         ]);
 
         $this->registerPolicies();
-        Passport::tokensExpireIn(Carbon::now()->addYears((int) config('passport.expiration_years')));
-        Passport::refreshTokensExpireIn(Carbon::now()->addYears((int) config('passport.expiration_years')));
-        Passport::personalAccessTokensExpireIn(Carbon::now()->addYears((int) config('passport.expiration_years')));
+        $expirationYears = (int) config('passport.expiration_years');
+        Passport::tokensExpireIn(CarbonInterval::years($expirationYears));
+        Passport::refreshTokensExpireIn(CarbonInterval::years($expirationYears));
+        Passport::personalAccessTokensExpireIn(CarbonInterval::years($expirationYears));
 
         Passport::cookie(config('passport.cookie_name'));
 

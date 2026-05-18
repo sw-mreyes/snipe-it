@@ -51,7 +51,7 @@
                     <br>
                 @endif
 
-                @if($manufacturer->support_url)
+                    @if(($asset) && ($asset->manufacturer) && ($asset->manufacturer->support_url))
                     <x-icon type="external-link" class="fa-fw"/>
                     <x-info-element.url>
                          {{ $asset->present()->dynamicUrl($asset->model->manufacturer->support_url) }}
