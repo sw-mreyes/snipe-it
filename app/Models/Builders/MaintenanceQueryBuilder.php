@@ -8,6 +8,16 @@ use Illuminate\Database\Eloquent\Builder;
 
 class MaintenanceQueryBuilder extends Builder
 {
+    public function active(): static
+    {
+        return $this->whereNull('maintenances.completed_at');
+    }
+
+    public function completed(): static
+    {
+        return $this->whereNotNull('maintenances.completed_at');
+    }
+
     public function dueForCompletion(Setting $settings): static
     {
         $interval = (int) ($settings->audit_warning_days ?? 0);
