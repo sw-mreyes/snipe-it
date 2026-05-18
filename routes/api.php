@@ -625,6 +625,14 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api', 'api-throttle:api']], fu
         ]
     )->name('api.maintenances.history')->withTrashed();
 
+    Route::get('/maintenances/{maintenance}/notes',
+        [Api\MaintenancesController::class, 'notesIndex']
+    )->name('api.maintenances.notes.index');
+
+    Route::post('/maintenances/{maintenance}/notes',
+        [Api\MaintenancesController::class, 'notesStore']
+    )->name('api.maintenances.notes.store');
+
     Route::post('/maintenances/{maintenance}/complete',
         [Api\MaintenancesController::class, 'complete']
     )->name('api.maintenances.complete');
