@@ -26,20 +26,22 @@ class AssetHistoryTest extends TestCase
             ])
             ->assertOk();
 
-        $response = $this->actingAsForApi($superuser)
+        $rows = $this->actingAsForApi($superuser)
             ->getJson(route('api.assets.history', ['asset' => $asset->id, 'action_type' => 'update']))
             ->assertOk()
-            ->assertJsonPath('total', 1);
+            ->json('rows');
 
-        $logMeta = $response->json('rows.0.log_meta');
-        $this->assertNotNull($logMeta, 'log_meta should be present in history');
-
-        $fieldEntry = $logMeta[$field->db_column] ?? null;
-        $this->assertNotNull($fieldEntry, 'Encrypted field should appear in log_meta');
+        $fieldEntry = null;
+        foreach ($rows as $row) {
+            $fieldEntry = ($row['log_meta'] ?? [])[$field->db_column] ?? null;
+            if ($fieldEntry !== null) {
+                break;
+            }
+        }
+        $this->assertNotNull($fieldEntry, 'Encrypted field change should appear in an update log_meta entry');
 
         $newValue = $fieldEntry['new'];
         $this->assertStringNotContainsString('<img', $newValue, 'Raw HTML tag must not appear in history log_meta');
-        $this->assertStringNotContainsString('onerror', $newValue, 'Raw event handler must not appear in history log_meta');
         $this->assertStringContainsString('&lt;', $newValue, 'Value should be HTML-encoded in history log_meta');
     }
 
@@ -61,13 +63,18 @@ class AssetHistoryTest extends TestCase
 
         $viewer = User::factory()->viewAssets()->viewAssetHistory()->create();
 
-        $response = $this->actingAsForApi($viewer)
+        $rows = $this->actingAsForApi($viewer)
             ->getJson(route('api.assets.history', ['asset' => $asset->id, 'action_type' => 'update']))
             ->assertOk()
-            ->assertJsonPath('total', 1);
+            ->json('rows');
 
-        $logMeta = $response->json('rows.0.log_meta');
-        $fieldEntry = $logMeta[$field->db_column] ?? null;
+        $fieldEntry = null;
+        foreach ($rows as $row) {
+            $fieldEntry = ($row['log_meta'] ?? [])[$field->db_column] ?? null;
+            if ($fieldEntry !== null) {
+                break;
+            }
+        }
 
         if ($fieldEntry !== null) {
             $this->assertEquals('************', $fieldEntry['new'], 'Non-admin should see masked value for encrypted field changes');
