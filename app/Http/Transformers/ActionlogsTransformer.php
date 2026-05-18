@@ -118,8 +118,8 @@ class ActionlogsTransformer
 
                                         // Display the changes if the user is an admin or superadmin
                                         if (Gate::allows('admin')) {
-                                            $clean_meta[$fieldname]['old'] = ($enc_old) ? unserialize($enc_old, ['allowed_classes' => false]) : '';
-                                            $clean_meta[$fieldname]['new'] = ($enc_new) ? unserialize($enc_new, ['allowed_classes' => false]) : '';
+                                            $clean_meta[$fieldname]['old'] = ($enc_old) ? e(unserialize($enc_old, ['allowed_classes' => false])) : '';
+                                            $clean_meta[$fieldname]['new'] = ($enc_new) ? e(unserialize($enc_new, ['allowed_classes' => false])) : '';
                                         }
 
                                     }
