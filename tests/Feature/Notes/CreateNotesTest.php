@@ -53,7 +53,7 @@ class CreateNotesTest extends TestCase
                 'type' => 'asset',
                 'note' => 'my special note',
             ])
-            ->assertRedirect(route('hardware.show', $asset->id).'#history')
+            ->assertRedirect(route('hardware.show', $asset->id).'#notes')
             ->assertSessionHas('success', trans('general.note_added'));
 
         $this->assertDatabaseHas('action_logs', [
