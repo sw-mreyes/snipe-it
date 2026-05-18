@@ -49,25 +49,15 @@ return new class extends Migration
             $table->unsignedBigInteger('completed_by')->nullable();
         });
 
-        // Map existing string values to new type IDs (best-effort, case-insensitive)
-        $typeMap = [
-            'maintenance' => 'Maintenance',
-            'repair' => 'Repair',
-            'upgrade' => 'Upgrade',
-            'pat_test' => 'PAT Test',
-            'calibration' => 'Calibration',
-            'software_support' => 'Software Support',
-            'hardware_support' => 'Hardware Support',
-            'configuration_change' => 'Configuration Change',
-        ];
+        // Map existing asset_maintenance_type strings to the new FK.
+        // The stored values are the same strings we just seeded into maintenance_types.
+        $types = DB::table('maintenance_types')->pluck('id', 'name');
 
-        foreach ($typeMap as $oldValue => $newName) {
-            $newId = DB::table('maintenance_types')->where('name', $newName)->value('id');
-            if ($newId) {
-                DB::table('maintenances')
-                    ->where('asset_maintenance_type', $oldValue)
-                    ->update(['maintenance_type_id' => $newId]);
-            }
+        foreach ($types as $name => $id) {
+            DB::table('maintenances')
+                ->whereNull('maintenance_type_id')
+                ->where('asset_maintenance_type', $name)
+                ->update(['maintenance_type_id' => $id]);
         }
     }
 
