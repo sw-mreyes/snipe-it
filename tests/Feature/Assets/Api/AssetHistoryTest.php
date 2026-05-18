@@ -10,7 +10,36 @@ use Tests\TestCase;
 
 class AssetHistoryTest extends TestCase
 {
-    public function test_encrypted_custom_field_values_are_html_encoded_in_history_for_admins()
+    private function findFieldEntry(array $rows, string $dbColumn): ?array
+    {
+        foreach ($rows as $row) {
+            $entry = ($row['log_meta'] ?? [])[$dbColumn] ?? null;
+            if ($entry !== null) {
+                return $entry;
+            }
+        }
+
+        return null;
+    }
+
+    private function updateAssetEncryptedField(Asset $asset, CustomField $field, string $value, User $actor): void
+    {
+        $this->actingAsForApi($actor)
+            ->patchJson(route('api.assets.update', $asset->id), [
+                $field->db_column_name() => $value,
+            ])
+            ->assertOk();
+    }
+
+    private function getUpdateRows(Asset $asset, User $viewer): array
+    {
+        return $this->actingAsForApi($viewer)
+            ->getJson(route('api.assets.history', ['asset' => $asset->id, 'action_type' => 'update']))
+            ->assertOk()
+            ->json('rows');
+    }
+
+    public function test_encrypted_custom_field_values_are_visible_to_users_with_encrypted_field_permission()
     {
         $this->markIncompleteIfMySQL('Custom Fields tests do not work on MySQL');
 
@@ -20,32 +49,19 @@ class AssetHistoryTest extends TestCase
         ]);
         $superuser = User::factory()->superuser()->create();
 
-        $this->actingAsForApi($superuser)
-            ->patchJson(route('api.assets.update', $asset->id), [
-                $field->db_column_name() => '<img src=x onerror=alert(1)>',
-            ])
-            ->assertOk();
+        $this->updateAssetEncryptedField($asset, $field, '<img src=x onerror=alert(1)>', $superuser);
 
-        $rows = $this->actingAsForApi($superuser)
-            ->getJson(route('api.assets.history', ['asset' => $asset->id, 'action_type' => 'update']))
-            ->assertOk()
-            ->json('rows');
+        $viewer = User::factory()->viewAssets()->viewAssetHistory()->viewEncryptedCustomFields()->create();
 
-        $fieldEntry = null;
-        foreach ($rows as $row) {
-            $fieldEntry = ($row['log_meta'] ?? [])[$field->db_column] ?? null;
-            if ($fieldEntry !== null) {
-                break;
-            }
-        }
-        $this->assertNotNull($fieldEntry, 'Encrypted field change should appear in an update log_meta entry');
+        $fieldEntry = $this->findFieldEntry($this->getUpdateRows($asset, $viewer), $field->db_column);
+        $this->assertNotNull($fieldEntry, 'Encrypted field change should be visible to users with the encrypted fields permission');
 
         $newValue = $fieldEntry['new'];
         $this->assertStringNotContainsString('<img', $newValue, 'Raw HTML tag must not appear in history log_meta');
         $this->assertStringContainsString('&lt;', $newValue, 'Value should be HTML-encoded in history log_meta');
     }
 
-    public function test_encrypted_custom_field_values_are_masked_for_non_admins()
+    public function test_encrypted_custom_field_values_are_masked_for_users_without_encrypted_field_permission()
     {
         $this->markIncompleteIfMySQL('Custom Fields tests do not work on MySQL');
 
@@ -55,29 +71,14 @@ class AssetHistoryTest extends TestCase
         ]);
         $superuser = User::factory()->superuser()->create();
 
-        $this->actingAsForApi($superuser)
-            ->patchJson(route('api.assets.update', $asset->id), [
-                $field->db_column_name() => '<img src=x onerror=alert(1)>',
-            ])
-            ->assertOk();
+        $this->updateAssetEncryptedField($asset, $field, '<img src=x onerror=alert(1)>', $superuser);
 
         $viewer = User::factory()->viewAssets()->viewAssetHistory()->create();
 
-        $rows = $this->actingAsForApi($viewer)
-            ->getJson(route('api.assets.history', ['asset' => $asset->id, 'action_type' => 'update']))
-            ->assertOk()
-            ->json('rows');
-
-        $fieldEntry = null;
-        foreach ($rows as $row) {
-            $fieldEntry = ($row['log_meta'] ?? [])[$field->db_column] ?? null;
-            if ($fieldEntry !== null) {
-                break;
-            }
-        }
+        $fieldEntry = $this->findFieldEntry($this->getUpdateRows($asset, $viewer), $field->db_column);
 
         if ($fieldEntry !== null) {
-            $this->assertEquals('************', $fieldEntry['new'], 'Non-admin should see masked value for encrypted field changes');
+            $this->assertEquals('************', $fieldEntry['new'], 'Users without encrypted field permission should see masked value');
             $this->assertStringNotContainsString('<img', $fieldEntry['new']);
         }
     }
