@@ -164,7 +164,7 @@ class UsersController extends Controller
 
             }
 
-            if (auth()->user()->can('canEditAuthFields', $user) && auth()->user()->can('editableOnDemo')) {
+            if (auth()->user()->isSuperUser() && auth()->user()->can('editableOnDemo')) {
                 $user->groups()->sync($request->input('groups'));
             }
 
