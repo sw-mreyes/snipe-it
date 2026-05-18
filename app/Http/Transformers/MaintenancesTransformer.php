@@ -82,6 +82,24 @@ class MaintenancesTransformer
                 'id' => (int) $assetmaintenance->adminuser->id,
                 'name' => e($assetmaintenance->adminuser->display_name),
             ] : null,
+            'maintenance_type' => ($assetmaintenance->maintenanceType) ? [
+                'id' => (int) $assetmaintenance->maintenanceType->id,
+                'name' => e($assetmaintenance->maintenanceType->name),
+            ] : null,
+            'maintenance_type_name' => $assetmaintenance->maintenanceType ? e($assetmaintenance->maintenanceType->name) : null,
+            'responsible_party' => ($assetmaintenance->responsibleParty) ? [
+                'id' => (int) $assetmaintenance->responsibleParty->id,
+                'name' => e($assetmaintenance->responsibleParty->display_name),
+            ] : null,
+            'checked_out_to_at_creation' => $assetmaintenance->checked_out_to_id ? [
+                'id' => (int) $assetmaintenance->checked_out_to_id,
+                'type' => $assetmaintenance->checked_out_to_type,
+            ] : null,
+            'completed_at' => Helper::getFormattedDateObject($assetmaintenance->completed_at, 'datetime'),
+            'completed_by' => ($assetmaintenance->completedByUser) ? [
+                'id' => (int) $assetmaintenance->completedByUser->id,
+                'name' => e($assetmaintenance->completedByUser->display_name),
+            ] : null,
             'created_at' => Helper::getFormattedDateObject($assetmaintenance->created_at, 'datetime'),
             'updated_at' => Helper::getFormattedDateObject($assetmaintenance->updated_at, 'datetime'),
             'is_warranty' => (bool) $assetmaintenance->is_warranty,
@@ -91,6 +109,7 @@ class MaintenancesTransformer
         $permissions_array['available_actions'] = [
             'update' => (Gate::allows('update', Asset::class) && ((($assetmaintenance->asset) && $assetmaintenance->asset->deleted_at == ''))) ? true : false,
             'delete' => Gate::allows('delete', Asset::class),
+            'complete' => Gate::allows('update', Asset::class) && ! $assetmaintenance->completed_at,
         ];
 
         $array += $permissions_array;

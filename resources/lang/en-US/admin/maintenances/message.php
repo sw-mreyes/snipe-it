@@ -18,4 +18,8 @@ return [
     'asset_maintenance_incomplete' => 'Not Completed Yet',
     'warranty' => 'Warranty',
     'not_warranty' => 'Not Warranty',
+    'complete' => [
+        'success' => 'Maintenance marked as complete.',
+        'error' => 'There was an issue marking this maintenance as complete. Please try again.',
+    ],
 ];

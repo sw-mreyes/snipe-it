@@ -111,8 +111,36 @@ use Carbon\Carbon;
                                         <x-icon type="x" class="text-danger"/>
                                         {{ trans('general.no') }}
                                     @endif
-
                                 </x-data-row>
+
+                                @if ($maintenance->responsibleParty)
+                                    <x-data-row :label="trans('admin/maintenances/form.responsible_party')">
+                                        {!! $maintenance->responsibleParty->present()->nameUrl() !!}
+                                    </x-data-row>
+                                @endif
+
+                                @if ($maintenance->checked_out_to_id)
+                                    <x-data-row :label="trans('admin/maintenances/form.checked_out_to_at_creation')">
+                                        {{ $maintenance->checked_out_to_type ? class_basename($maintenance->checked_out_to_type) : '' }}
+                                        #{{ $maintenance->checked_out_to_id }}
+
+                                        <p class="help-block">
+                                            {{ trans('admin/maintenances/form.checked_out_to_at_creation') }}
+                                        </p>
+                                    </x-data-row>
+                                @endif
+
+                                @if ($maintenance->completed_at)
+                                    <x-data-row :label="trans('admin/maintenances/form.completed_at')">
+                                        {{ Helper::getFormattedDateObject($maintenance->completed_at, 'datetime', false) }}
+                                    </x-data-row>
+                                    @if ($maintenance->completedByUser)
+                                        <x-data-row :label="trans('admin/maintenances/form.completed_by')">
+                                            {!! $maintenance->completedByUser->present()->nameUrl() !!}
+                                        </x-data-row>
+                                    @endif
+                                @endif
+
                             </x-page-data>
                             <!-- ./ definition list content -->
                             <div class="clearfix"></div>
@@ -178,6 +206,22 @@ use Carbon\Carbon;
 
                     <x-slot:buttons>
                         <x-button.edit :item="$maintenance" :route="route('maintenances.edit', $maintenance->id)" />
+                        @if (! $maintenance->completed_at)
+                            @can('update', $maintenance->asset)
+                                <form method="POST" action="{{ route('maintenances.complete', $maintenance->id) }}" style="display:inline;">
+                                    @csrf
+                                    <button type="submit" class="btn btn-success btn-sm" data-tooltip="true" title="{{ trans('admin/maintenances/form.mark_complete') }}">
+                                        <x-icon type="checkmark" class="fa-fw"/>
+                                        <span class="sr-only">{{ trans('admin/maintenances/form.mark_complete') }}</span>
+                                    </button>
+                                </form>
+                            @endcan
+                        @else
+                            <span class="btn btn-sm btn-default disabled" data-tooltip="true" title="{{ trans('admin/maintenances/form.already_complete') }}: {{ Helper::getFormattedDateObject($maintenance->completed_at, 'datetime', false) }}">
+                                <x-icon type="checkmark" class="fa-fw"/>
+                                <span class="sr-only">{{ trans('admin/maintenances/form.already_complete') }}</span>
+                            </span>
+                        @endif
                         <x-button.delete :item="$maintenance" />
                     </x-slot:buttons>
 

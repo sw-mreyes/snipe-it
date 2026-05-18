@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ActionType;
 use App\Http\Requests\ImageUploadRequest;
 use App\Http\Requests\UploadFileRequest;
+use App\Models\Actionlog;
 use App\Models\Asset;
 use App\Models\Maintenance;
+use App\Models\MaintenanceType;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -57,6 +60,7 @@ class MaintenancesController extends Controller
 
         return view('maintenances/edit')
             ->with('maintenanceType', Maintenance::getImprovementOptions())
+            ->with('maintenanceTypes', MaintenanceType::orderBy('name')->get())
             ->with('asset', $asset)
             ->with('item', new Maintenance);
     }
@@ -92,9 +96,11 @@ class MaintenancesController extends Controller
             // Save the asset maintenance data
             $maintenance->asset_id = $asset->id;
             $maintenance->asset_maintenance_type = $request->input('asset_maintenance_type');
+            $maintenance->maintenance_type_id = $request->input('maintenance_type_id');
             $maintenance->name = $request->input('name');
             $maintenance->start_date = $request->input('start_date');
             $maintenance->completion_date = $request->input('completion_date');
+            $maintenance->responsible_party_id = $request->input('responsible_party_id') ?: auth()->id();
             $maintenance->created_by = auth()->id();
 
             if (($maintenance->completion_date !== null)
@@ -141,6 +147,7 @@ class MaintenancesController extends Controller
             ->with('selected_assets', $maintenance->asset->pluck('id')->toArray())
             ->with('asset_ids', request()->input('asset_ids', []))
             ->with('maintenanceType', Maintenance::getImprovementOptions())
+            ->with('maintenanceTypes', MaintenanceType::orderBy('name')->get())
             ->with('item', $maintenance);
     }
 
@@ -169,9 +176,11 @@ class MaintenancesController extends Controller
         $maintenance->cost = $request->input('cost');
         $maintenance->notes = $request->input('notes');
         $maintenance->asset_maintenance_type = $request->input('asset_maintenance_type');
+        $maintenance->maintenance_type_id = $request->input('maintenance_type_id');
         $maintenance->name = $request->input('name');
         $maintenance->start_date = $request->input('start_date');
         $maintenance->completion_date = $request->input('completion_date');
+        $maintenance->responsible_party_id = $request->input('responsible_party_id');
         $maintenance->url = $request->input('url');
 
         // Todo - put this in a getter/setter?
@@ -251,6 +260,34 @@ class MaintenancesController extends Controller
             array_merge($request->all(), ['file' => $request->file('file')]),
             $uploadFileRequest->rules()
         )->validate();
+    }
+
+    /**
+     * Mark a maintenance record as complete, logging who completed it and when.
+     */
+    public function complete(Request $request, Maintenance $maintenance): RedirectResponse
+    {
+        $this->authorize('update', $maintenance->asset);
+
+        if ($maintenance->completed_at) {
+            return redirect()->back()
+                ->with('warning', trans('admin/maintenances/form.already_complete'));
+        }
+
+        $maintenance->completed_at = now();
+        $maintenance->completed_by = auth()->id();
+        $maintenance->saveQuietly();
+
+        $logAction = new Actionlog;
+        $logAction->item_type = Maintenance::class;
+        $logAction->item_id = $maintenance->id;
+        $logAction->target_type = Asset::class;
+        $logAction->target_id = $maintenance->asset_id;
+        $logAction->created_by = auth()->id();
+        $logAction->logaction(ActionType::MaintenanceComplete);
+
+        return redirect()->back()
+            ->with('success', trans('admin/maintenances/message.complete.success'));
     }
 
     /**

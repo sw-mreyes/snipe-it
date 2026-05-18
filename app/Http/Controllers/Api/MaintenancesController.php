@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\ActionType;
 use App\Helpers\Helper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\FilterRequest;
 use App\Http\Requests\ImageUploadRequest;
 use App\Http\Transformers\ActionlogsTransformer;
 use App\Http\Transformers\MaintenancesTransformer;
+use App\Models\Actionlog;
 use App\Models\Asset;
 use App\Models\Company;
 use App\Models\Maintenance;
@@ -39,7 +41,7 @@ class MaintenancesController extends Controller
 
         $maintenances = Maintenance::select('maintenances.*')
             ->whereHas('asset')
-            ->with('asset', 'asset.model', 'asset.location', 'asset.defaultLoc', 'supplier', 'asset.company', 'asset.status', 'adminuser', 'asset.assignedTo');
+            ->with('asset', 'asset.model', 'asset.location', 'asset.defaultLoc', 'supplier', 'asset.company', 'asset.status', 'adminuser', 'asset.assignedTo', 'maintenanceType', 'responsibleParty', 'completedByUser');
 
         // This invokes the Searchable model trait scopeTextSearch and will handle input by search or by advanced search filter
         if ($request->filled('filter') || $request->filled('search')) {
@@ -64,6 +66,14 @@ class MaintenancesController extends Controller
 
         if ($request->filled('asset_maintenance_type')) {
             $maintenances->where('asset_maintenance_type', '=', $request->input('asset_maintenance_type'));
+        }
+
+        if ($request->filled('maintenance_type_id')) {
+            $maintenances->where('maintenance_type_id', '=', $request->input('maintenance_type_id'));
+        }
+
+        if ($request->filled('responsible_party_id')) {
+            $maintenances->where('responsible_party_id', '=', $request->input('responsible_party_id'));
         }
 
         // Make sure the offset and limit are actually integers and do not exceed system limits
@@ -254,6 +264,33 @@ class MaintenancesController extends Controller
 
         return (new MaintenancesTransformer)->transformMaintenance($maintenance);
 
+    }
+
+    public function complete(Request $request, Maintenance $maintenance): JsonResponse
+    {
+        $this->authorize('update', Asset::class);
+
+        if (! Company::isCurrentUserHasAccess($maintenance->asset)) {
+            return response()->json(Helper::formatStandardApiResponse('error', null, trans('general.action_permission_denied', ['item_type' => trans('admin/maintenances/general.maintenance'), 'id' => $maintenance->id, 'action' => trans('admin/maintenances/form.mark_complete')])));
+        }
+
+        if ($maintenance->completed_at) {
+            return response()->json(Helper::formatStandardApiResponse('error', null, trans('admin/maintenances/form.already_complete')));
+        }
+
+        $maintenance->completed_at = now();
+        $maintenance->completed_by = auth()->id();
+        $maintenance->saveQuietly();
+
+        $logAction = new Actionlog;
+        $logAction->item_type = Maintenance::class;
+        $logAction->item_id = $maintenance->id;
+        $logAction->target_type = Asset::class;
+        $logAction->target_id = $maintenance->asset_id;
+        $logAction->created_by = auth()->id();
+        $logAction->logaction(ActionType::MaintenanceComplete);
+
+        return response()->json(Helper::formatStandardApiResponse('success', (new MaintenancesTransformer)->transformMaintenance($maintenance->fresh()), trans('admin/maintenances/message.complete.success')));
     }
 
     public function history(Request $request, Maintenance $maintenance): JsonResponse|array

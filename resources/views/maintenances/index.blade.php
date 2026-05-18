@@ -28,23 +28,31 @@
 @section('moar_scripts')
 @include ('partials.bootstrap-table', ['exportFile' => 'maintenances-export', 'search' => true])
 <script nonce="{{ csrf_token() }}">
-    function maintenanceActions(value, row) {
+    function maintenancesActionsFormatter(value, row) {
         var actions = '<nobr>';
-        if ((row) && (row.available_actions.update === true)) {
-            actions += '<a href="{{ config('app.url') }}/hardware/maintenances/' + row.id + '/edit" class="btn btn-sm btn-warning" data-tooltip="true" title="Update"><i class="fas fa-pencil-alt"></i></a>&nbsp;';
-        }
-        actions += '</nobr>'
-        if ((row) && (row.available_actions.delete === true)) {
-            actions += '<a href="{{ config('app.url') }}/hardware/maintenances/' + row.id + '" '
-                + ' class="btn btn-danger btn-sm delete-asset"  data-tooltip="true"  '
-                + ' data-toggle="modal" '
-                + ' data-content="{{ trans('general.sure_to_delete') }} ' + row.name + '?" '
-                + ' data-title="{{  trans('general.delete') }}" onClick="return false;">'
-                + '<i class="fas fa-trash"></i></a></nobr>';
+
+        if ((row.available_actions) && (row.available_actions.update === true)) {
+            actions += '<a href="{{ config('app.url') }}/hardware/maintenances/' + row.id + '/edit" class="actions btn btn-sm btn-warning hidden-print" data-tooltip="true" title="{{ trans('general.update') }}"><x-icon type="edit" class="fa-fw" /><span class="sr-only">{{ trans('general.update') }}</span></a>&nbsp;';
         }
 
+        if ((row.available_actions) && (row.available_actions.complete === true)) {
+            actions += '<form style="display:inline;" method="POST" action="{{ config('app.url') }}/hardware/maintenances/' + row.id + '/complete">';
+            actions += '{{ csrf_field() }}';
+            actions += '<button type="submit" class="actions btn btn-sm btn-success hidden-print" data-tooltip="true" title="{{ trans('admin/maintenances/form.mark_complete') }}"><x-icon type="checkmark" class="fa-fw" /><span class="sr-only">{{ trans('admin/maintenances/form.mark_complete') }}</span></button>&nbsp;';
+            actions += '</form>';
+        }
+
+        if ((row.available_actions) && (row.available_actions.delete === true)) {
+            actions += '<a href="{{ config('app.url') }}/hardware/maintenances/' + row.id + '" '
+                + ' class="actions btn btn-danger btn-sm delete-asset hidden-print" data-tooltip="true" '
+                + ' data-toggle="modal" data-icon="fa-trash"'
+                + ' data-content="{{ trans('general.sure_to_delete') }}: ' + row.name + '?" '
+                + ' data-title="{{ trans('general.delete') }}" onClick="return false;">'
+                + '<x-icon type="delete" class="fa-fw" /><span class="sr-only">{{ trans('general.delete') }}</span></a>&nbsp;';
+        }
+
+        actions += '</nobr>';
         return actions;
     }
-
 </script>
 @stop

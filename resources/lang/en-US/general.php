@@ -209,6 +209,7 @@ return [
     'logout' => 'Logout',
     'lookup_by_tag' => 'Lookup by Asset Tag',
     'maintenances' => 'Maintenances',
+    'maintenance_complete' => 'Maintenance Complete',
     'manage_api_keys' => 'Manage API keys',
     'manufacturer' => 'Manufacturer',
     'manufacturers' => 'Manufacturers',
