@@ -114,13 +114,13 @@ use Carbon\Carbon;
                                 </x-data-row>
 
                                 @if ($maintenance->responsibleParty)
-                                    <x-data-row :label="trans('admin/maintenances/form.responsible_party')">
+                                    <x-data-row :label="trans('admin/maintenances/form.responsible_party')" copy_what="responsible_party">
                                         {!! $maintenance->responsibleParty->present()->nameUrl() !!}
                                     </x-data-row>
                                 @endif
 
                                 @if ($maintenance->checkedOutTo)
-                                    <x-data-row :label="trans('admin/maintenances/form.checked_out_to_at_creation')" copy_what="checked_out_to">
+                                    <x-data-row :label="trans('admin/maintenances/form.checked_out_to_at_creation')">
                                         <x-icon type="{{ strtolower(class_basename($maintenance->checked_out_to_type)) }}" class="fa-fw"/>
                                         {!! $maintenance->checkedOutTo->present()->formattedNameLink() !!}
 
