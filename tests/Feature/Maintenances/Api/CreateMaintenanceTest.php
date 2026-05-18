@@ -3,6 +3,7 @@
 namespace Tests\Feature\Maintenances\Api;
 
 use App\Models\Asset;
+use App\Models\Company;
 use App\Models\Maintenance;
 use App\Models\MaintenanceType;
 use App\Models\Supplier;
@@ -69,5 +70,81 @@ class CreateMaintenanceTest extends TestCase
         ]);
 
         $this->assertHasTheseActionLogs($maintenance, ['create']);
+    }
+
+    public function test_bulk_create_creates_one_maintenance_per_asset()
+    {
+        $actor = User::factory()->superuser()->create();
+        $assets = Asset::factory()->count(3)->create();
+        $type = MaintenanceType::factory()->create();
+
+        $response = $this->actingAsForApi($actor)
+            ->postJson(route('api.maintenances.store'), [
+                'name' => 'Bulk Test',
+                'asset_ids' => $assets->pluck('id')->toArray(),
+                'maintenance_type_id' => $type->id,
+                'start_date' => '2026-01-01',
+                'is_warranty' => 0,
+            ])
+            ->assertOk()
+            ->assertJsonPath('status', 'success')
+            ->assertJsonPath('payload.total', 3);
+
+        foreach ($assets as $asset) {
+            $this->assertDatabaseHas('maintenances', [
+                'name' => 'Bulk Test',
+                'asset_id' => $asset->id,
+                'maintenance_type_id' => $type->id,
+            ]);
+        }
+    }
+
+    public function test_bulk_create_skips_inaccessible_assets_under_fmcs()
+    {
+        [$companyA, $companyB] = Company::factory()->count(2)->create();
+        $actor = $companyA->users()->save(User::factory()->editAssets()->make());
+
+        $this->settings->enableMultipleFullCompanySupport();
+
+        $ownAsset = Asset::factory()->create(['company_id' => $companyA->id]);
+        $otherAsset = Asset::factory()->create(['company_id' => $companyB->id]);
+        $type = MaintenanceType::factory()->create();
+
+        $this->actingAsForApi($actor)
+            ->postJson(route('api.maintenances.store'), [
+                'name' => 'FMCS Bulk Test',
+                'asset_ids' => [$ownAsset->id, $otherAsset->id],
+                'maintenance_type_id' => $type->id,
+                'start_date' => '2026-01-01',
+                'is_warranty' => 0,
+            ])
+            ->assertOk()
+            ->assertJsonPath('status', 'success')
+            ->assertJsonPath('payload.total', 1);
+
+        $this->assertDatabaseHas('maintenances', ['asset_id' => $ownAsset->id, 'name' => 'FMCS Bulk Test']);
+        $this->assertDatabaseMissing('maintenances', ['asset_id' => $otherAsset->id, 'name' => 'FMCS Bulk Test']);
+    }
+
+    public function test_bulk_create_returns_error_when_all_assets_inaccessible()
+    {
+        [$companyA, $companyB] = Company::factory()->count(2)->create();
+        $actor = $companyA->users()->save(User::factory()->editAssets()->make());
+
+        $this->settings->enableMultipleFullCompanySupport();
+
+        $otherAsset = Asset::factory()->create(['company_id' => $companyB->id]);
+        $type = MaintenanceType::factory()->create();
+
+        $this->actingAsForApi($actor)
+            ->postJson(route('api.maintenances.store'), [
+                'name' => 'All Denied Test',
+                'asset_ids' => [$otherAsset->id],
+                'maintenance_type_id' => $type->id,
+                'start_date' => '2026-01-01',
+                'is_warranty' => 0,
+            ])
+            ->assertOk()
+            ->assertJsonPath('status', 'error');
     }
 }

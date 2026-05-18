@@ -7,6 +7,7 @@ use App\Http\Requests\ImageUploadRequest;
 use App\Http\Requests\UploadFileRequest;
 use App\Models\Actionlog;
 use App\Models\Asset;
+use App\Models\Company;
 use App\Models\Maintenance;
 use App\Models\MaintenanceType;
 use Carbon\Carbon;
@@ -85,6 +86,10 @@ class MaintenancesController extends Controller
 
         // Loop through the selected assets
         foreach ($assets as $asset) {
+
+            if (! Company::isCurrentUserHasAccess($asset)) {
+                continue;
+            }
 
             $maintenance = new Maintenance;
             $maintenance->supplier_id = $request->input('supplier_id');

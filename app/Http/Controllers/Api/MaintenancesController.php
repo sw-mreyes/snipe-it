@@ -13,6 +13,7 @@ use App\Models\Actionlog;
 use App\Models\Asset;
 use App\Models\Company;
 use App\Models\Maintenance;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -163,19 +164,60 @@ class MaintenancesController extends Controller
     {
         $this->authorize('update', Asset::class);
 
-        // create a new model instance
-        $maintenance = new Maintenance;
-        $maintenance->fill($request->all());
-        $maintenance->created_by = auth()->id();
-        $maintenance = $request->handleImages($maintenance);
-        // Was the asset maintenance created?
-        if ($maintenance->save()) {
-            return response()->json(Helper::formatStandardApiResponse('success', $maintenance, trans('admin/maintenances/message.create.success')));
+        $isBulk = $request->has('asset_ids');
+        $assetIds = $isBulk
+            ? array_values(array_filter((array) $request->input('asset_ids')))
+            : [$request->input('asset_id')];
 
+        $created = new EloquentCollection;
+        $errors = [];
+
+        foreach ($assetIds as $assetId) {
+            $asset = Asset::find($assetId);
+
+            if (! $asset) {
+                $errors[] = trans('general.item_not_found', ['item_type' => trans('general.asset'), 'id' => $assetId]);
+
+                continue;
+            }
+
+            if (! Company::isCurrentUserHasAccess($asset)) {
+                $errors[] = trans('general.action_permission_denied', ['item_type' => trans('general.asset'), 'id' => $assetId, 'action' => trans('general.create')]);
+
+                continue;
+            }
+
+            $maintenance = new Maintenance;
+            $maintenance->fill($request->except(['asset_id', 'asset_ids']));
+            $maintenance->asset_id = $assetId;
+            $maintenance->created_by = auth()->id();
+            $request->handleImages($maintenance);
+
+            if ($maintenance->save()) {
+                $created->push($maintenance->fresh());
+            } else {
+                $errors[] = $maintenance->getErrors();
+            }
         }
 
-        return response()->json(Helper::formatStandardApiResponse('error', null, $maintenance->getErrors()));
+        if ($isBulk) {
+            if ($created->isEmpty()) {
+                return response()->json(Helper::formatStandardApiResponse('error', null, count($errors) === 1 ? $errors[0] : $errors));
+            }
 
+            return response()->json(Helper::formatStandardApiResponse(
+                'success',
+                (new MaintenancesTransformer)->transformMaintenances($created, $created->count()),
+                trans('admin/maintenances/message.create.success')
+            ));
+        }
+
+        // Single asset_id path — backward compatible response shape
+        if ($created->isNotEmpty()) {
+            return response()->json(Helper::formatStandardApiResponse('success', $created->first(), trans('admin/maintenances/message.create.success')));
+        }
+
+        return response()->json(Helper::formatStandardApiResponse('error', null, ! empty($errors) ? $errors[0] : null));
     }
 
     /**
