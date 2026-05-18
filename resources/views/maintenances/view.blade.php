@@ -119,13 +119,13 @@ use Carbon\Carbon;
                                     </x-data-row>
                                 @endif
 
-                                @if ($maintenance->checked_out_to_id)
-                                    <x-data-row :label="trans('admin/maintenances/form.checked_out_to_at_creation')">
-                                        {{ $maintenance->checked_out_to_type ? class_basename($maintenance->checked_out_to_type) : '' }}
-                                        #{{ $maintenance->checked_out_to_id }}
+                                @if ($maintenance->checkedOutTo)
+                                    <x-data-row :label="trans('admin/maintenances/form.checked_out_to_at_creation')" copy_what="checked_out_to">
+                                        <x-icon type="{{ strtolower(class_basename($maintenance->checked_out_to_type)) }}" class="fa-fw"/>
+                                        {!! $maintenance->checkedOutTo->present()->formattedNameLink() !!}
 
                                         <p class="help-block">
-                                            {{ trans('admin/maintenances/form.checked_out_to_at_creation') }}
+                                            {{ trans('admin/maintenances/general.checked_out_to_help') }}
                                         </p>
                                     </x-data-row>
                                 @endif
