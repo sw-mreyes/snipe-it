@@ -62,7 +62,7 @@ class AssetHistoryTest extends TestCase
         $viewer = User::factory()->viewAssets()->viewAssetHistory()->create();
 
         $response = $this->actingAsForApi($viewer)
-            ->getJson(route('api.assets.history', $asset->id))
+            ->getJson(route('api.assets.history', ['asset' => $asset->id, 'action_type' => 'update']))
             ->assertOk()
             ->assertJsonPath('total', 1);
 
