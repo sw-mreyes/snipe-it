@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Helpers\Helper;
+use App\Models\Builders\MaintenanceQueryBuilder;
 use App\Models\Traits\CompanyableChildTrait;
 use App\Models\Traits\HasUploads;
 use App\Models\Traits\Loggable;
@@ -12,7 +13,6 @@ use App\Presenters\Presentable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\Gate;
 use Watson\Validating\ValidatingTrait;
 
@@ -239,111 +239,8 @@ class Maintenance extends SnipeModel implements ICompanyableChild
         return $this->name;
     }
 
-    /**
-     * -----------------------------------------------
-     * BEGIN QUERY SCOPES
-     * -----------------------------------------------
-     **/
-
-    /**
-     * Query builder scope to order on a supplier
-     *
-     * @param  Builder  $query  Query builder instance
-     * @param  string  $order  Order
-     * @return Builder Modified query builder
-     */
-    public function scopeOrderBySupplier($query, $order)
+    public function newEloquentBuilder($query): MaintenanceQueryBuilder
     {
-        return $query->leftJoin('suppliers as suppliers_maintenances', 'maintenances.supplier_id', '=', 'suppliers_maintenances.id')
-            ->orderBy('suppliers_maintenances.name', $order);
-    }
-
-    /**
-     * Query builder scope to order on asset tag
-     *
-     * @param  Builder  $query  Query builder instance
-     * @param  string  $order  Order
-     * @return Builder Modified query builder
-     */
-    public function scopeOrderByTag($query, $order)
-    {
-        return $query->leftJoin('assets', 'maintenances.asset_id', '=', 'assets.id')
-            ->orderBy('assets.asset_tag', $order);
-    }
-
-    /**
-     * Query builder scope to order on asset tag
-     *
-     * @param  Builder  $query  Query builder instance
-     * @param  string  $order  Order
-     * @return Builder Modified query builder
-     */
-    public function scopeOrderByAssetName($query, $order)
-    {
-        return $query->leftJoin('assets', 'maintenances.asset_id', '=', 'assets.id')
-            ->orderBy('assets.name', $order);
-    }
-
-    /**
-     * Query builder scope to order on serial
-     *
-     * @param  Builder  $query  Query builder instance
-     * @param  string  $order  Order
-     * @return Builder Modified query builder
-     */
-    public function scopeOrderByAssetSerial($query, $order)
-    {
-        return $query->leftJoin('assets', 'maintenances.asset_id', '=', 'assets.id')
-            ->orderBy('assets.serial', $order);
-    }
-
-    /**
-     * Query builder scope to order on status label name
-     *
-     * @param  Builder  $query  Query builder instance
-     * @param  text  $order  Order
-     * @return Builder Modified query builder
-     */
-    public function scopeOrderStatusName($query, $order)
-    {
-        return $query->join('assets as maintained_asset', 'maintenances.asset_id', '=', 'maintained_asset.id')
-            ->leftjoin('status_labels as maintained_asset_status', 'maintained_asset_status.id', '=', 'maintained_asset.status_id')
-            ->orderBy('maintained_asset_status.name', $order);
-    }
-
-    /**
-     * Query builder scope to order on status label name
-     *
-     * @param  Builder  $query  Query builder instance
-     * @param  text  $order  Order
-     * @return Builder Modified query builder
-     */
-    public function scopeOrderLocationName($query, $order)
-    {
-        return $query->join('assets as maintained_asset', 'maintenances.asset_id', '=', 'maintained_asset.id')
-            ->leftjoin('locations as maintained_asset_location', 'maintained_asset_location.id', '=', 'maintained_asset.location_id')
-            ->orderBy('maintained_asset_location.name', $order);
-    }
-
-    /**
-     * Query builder scope to order on the user that created it
-     */
-    public function scopeOrderByCreatedBy($query, $order)
-    {
-        return $query->leftJoin('users as admin_sort', 'maintenances.created_by', '=', 'admin_sort.id')->select('maintenances.*')->orderBy('admin_sort.first_name', $order)->orderBy('admin_sort.last_name', $order);
-    }
-
-    public function scopeOrderByAssetModelName($query, $order)
-    {
-        return $query->join('assets as maintained_asset', 'maintenances.asset_id', '=', 'maintained_asset.id')
-            ->leftjoin('models as maintained_asset_model', 'maintained_asset_model.id', '=', 'maintained_asset.model_id')
-            ->orderBy('maintained_asset_model.name', $order);
-    }
-
-    public function scopeOrderByAssetModelNumber($query, $order)
-    {
-        return $query->join('assets as maintained_asset', 'maintenances.asset_id', '=', 'maintained_asset.id')
-            ->leftjoin('models as maintained_asset_model', 'maintained_asset_model.id', '=', 'maintained_asset.model_id')
-            ->orderBy('maintained_asset_model.model_number', $order);
+        return new MaintenanceQueryBuilder($query);
     }
 }
