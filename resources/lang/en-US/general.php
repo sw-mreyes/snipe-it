@@ -504,7 +504,7 @@ return [
     'fullscreen' => 'Fullscreen',
     'pie_chart_type' => 'Dashboard Pie Chart Type',
     'hello_name' => 'Hello, :name!',
-    'unaccepted_profile_warning' => 'You have one item requiring acceptance. Click here to accept or decline it | You have :count items requiring acceptance. Click here to accept or decline them',
+    'unaccepted_profile_warning' => '{1} You have one item requiring acceptance. Click here to accept or decline it|[2,4] You have :count items requiring acceptance. Click here to accept or decline them|[5,*] You have :count items requiring acceptance. Click here to accept or decline them',
     'start_date' => 'Start Date',
     'end_date' => 'End Date',
     'alt_uploaded_image_thumbnail' => 'Uploaded thumbnail',

@@ -504,7 +504,7 @@ return [
     'fullscreen' => 'Fullscreen',
     'pie_chart_type' => 'Typ wykresu Pie Dashboard',
     'hello_name' => 'Witaj, :name!',
-    'unaccepted_profile_warning' => 'Masz jeden przedmiot wymagający akceptacji. Kliknij tutaj, aby zaakceptować lub odrzucić | Masz :count elementów wymagających akceptacji. Kliknij tutaj, aby je zaakceptować lub odrzucić',
+    'unaccepted_profile_warning' => '{1} Masz jeden element wymagający akceptacji. Kliknij tutaj, aby go zaakceptować lub odrzucić|[2,4] Masz :count elementy wymagające akceptacji. Kliknij tutaj, aby je zaakceptować lub odrzucić|[5,*] Masz :count elementów wymagających akceptacji. Kliknij tutaj, aby je zaakceptować lub odrzucić',
     'start_date' => 'Data rozpoczęcia',
     'end_date' => 'Data zakończenia',
     'alt_uploaded_image_thumbnail' => 'Przesłano miniaturę',
