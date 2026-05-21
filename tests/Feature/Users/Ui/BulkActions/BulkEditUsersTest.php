@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Users\Ui\BulkActions;
 
-use App\Models\Asset;
+use App\Models\Group;
 use App\Models\User;
 use Tests\TestCase;
 
@@ -120,5 +120,35 @@ class BulkEditUsersTest extends TestCase
             ->assertRedirect(route('users.index'));
 
         $this->assertEquals('Shelbyville', $admin->fresh()->city);
+    }
+
+    public function test_superuser_can_assign_groups_via_bulk_edit()
+    {
+        $group = Group::factory()->create();
+        $target = User::factory()->create();
+
+        $this->actingAs(User::factory()->superuser()->create())
+            ->post(route('users/bulkeditsave'), [
+                'ids' => [$target->id],
+                'groups' => [$group->id],
+            ])
+            ->assertRedirect(route('users.index'));
+
+        $this->assertTrue($target->fresh()->groups->contains($group));
+    }
+
+    public function test_non_superuser_cannot_assign_groups_via_bulk_edit()
+    {
+        $group = Group::factory()->create();
+        $target = User::factory()->create();
+
+        $this->actingAs(User::factory()->editUsers()->create())
+            ->post(route('users/bulkeditsave'), [
+                'ids' => [$target->id],
+                'groups' => [$group->id],
+            ])
+            ->assertRedirect(route('users.index'));
+
+        $this->assertFalse($target->fresh()->groups->contains($group));
     }
 }
