@@ -171,8 +171,6 @@ class BulkUsersController extends Controller
             ->conditionallyAddItem('company_id')
             ->conditionallyAddItem('locale')
             ->conditionallyAddItem('remote')
-            ->conditionallyAddItem('ldap_import')
-            ->conditionallyAddItem('activated')
             ->conditionallyAddItem('display_name')
             ->conditionallyAddItem('start_date')
             ->conditionallyAddItem('end_date')
@@ -235,11 +233,21 @@ class BulkUsersController extends Controller
                 ->update(['location_id' => $this->update_array['location_id']]);
         }
 
-        // Only sync groups if groups were selected
-        if ($request->filled('groups')) {
-
-            foreach ($users as $user) {
-                if (auth()->user()->can('canEditAuthFields', $user) && auth()->user()->can('editableOnDemo')) {
+        // Fields that require canEditAuthFields (non-admins cannot touch admins/superusers,
+        // admins cannot touch superusers) must be applied per-user, not via mass update.
+        foreach ($users as $user) {
+            if (auth()->user()->can('canEditAuthFields', $user) && auth()->user()->can('editableOnDemo')) {
+                $authFieldUpdate = [];
+                if ($request->filled('activated')) {
+                    $authFieldUpdate['activated'] = $request->input('activated');
+                }
+                if ($request->filled('ldap_import')) {
+                    $authFieldUpdate['ldap_import'] = $request->input('ldap_import');
+                }
+                if (! empty($authFieldUpdate)) {
+                    $user->update($authFieldUpdate);
+                }
+                if ($request->filled('groups')) {
                     $user->groups()->sync($request->input('groups'));
                 }
             }
@@ -398,7 +406,7 @@ class BulkUsersController extends Controller
      */
     public function merge(Request $request)
     {
-        $this->authorize('update', User::class);
+        $this->authorize('delete', User::class);
 
         if (config('app.lock_passwords')) {
             return redirect()->route('users.index')->with('error', trans('general.feature_disabled'));
@@ -418,6 +426,10 @@ class BulkUsersController extends Controller
 
         // Walk users
         foreach ($users_to_merge as $user_to_merge) {
+
+            if (! auth()->user()->can('canEditAuthFields', $user_to_merge) || ! auth()->user()->can('editableOnDemo')) {
+                return redirect()->route('users.index')->with('error', trans('general.insufficient_permissions'));
+            }
 
             foreach ($user_to_merge->assets as $asset) {
                 Log::debug('Updating asset: '.$asset->asset_tag.' to '.$merge_into_user->id);

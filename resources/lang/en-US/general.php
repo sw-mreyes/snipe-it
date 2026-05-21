@@ -679,6 +679,7 @@ return [
     'user_managed_passwords' => 'Password Management',
     'user_managed_passwords_disallow' => 'Disallow users from managing their own passwords',
     'user_managed_passwords_allow' => 'Allow users to manage their own passwords',
+    'user_managed_passwords_bulk_help' => 'This setting will only be applied to users you are abler to edit authentication settings on.',
     'from' => 'From',
     'by' => 'By',
     'by_user' => 'By',
