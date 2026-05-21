@@ -581,6 +581,7 @@ return [
     'error_user_company_accept_view' => 'An Asset assigned to you belongs to a different company so you can\'t accept nor deny it, please check with your manager',
     'error_assets_already_checked_out' => 'One or more of the assets are already checked out',
     'assigned_assets_removed' => 'The following were removed from the selected assets because they are already checked out',
+    'unassigned_assets_removed' => 'The following were removed from the selected assets because they are not currently checked out',
     'upload_files' => 'Upload Files',
     'uploaded_files' => 'Uploaded Files',
     'sign_in_place' => 'Sign/Accept in place',
