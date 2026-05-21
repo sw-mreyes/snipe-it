@@ -10,6 +10,13 @@ use Tests\TestCase;
 
 class UsersForSelectListTest extends TestCase
 {
+    public function test_requires_view_selectlists_permission(): void
+    {
+        $this->actingAsForApi(User::factory()->create())
+            ->getJson(route('api.users.selectlist'))
+            ->assertForbidden();
+    }
+
     public function test_users_are_returned()
     {
         $users = User::factory()->superuser()->count(3)->create();
@@ -31,7 +38,7 @@ class UsersForSelectListTest extends TestCase
     {
         User::factory()->create(['first_name' => 'Luke', 'last_name' => 'Skywalker']);
 
-        Passport::actingAs(User::factory()->create());
+        Passport::actingAs(User::factory()->editUsers()->create());
         $response = $this->getJson(route('api.users.selectlist', ['search' => 'luke sky']))->assertOk();
 
         $results = collect($response->json('results'));
@@ -44,7 +51,7 @@ class UsersForSelectListTest extends TestCase
     {
         User::factory()->create(['first_name' => 'Luke', 'last_name' => 'Skywalker', 'email' => 'luke@jedis.org']);
 
-        Passport::actingAs(User::factory()->create());
+        Passport::actingAs(User::factory()->editUsers()->create());
         $response = $this->getJson(route('api.users.selectlist', ['search' => 'luke@jedis']))->assertOk();
 
         $results = collect($response->json('results'));
@@ -58,7 +65,7 @@ class UsersForSelectListTest extends TestCase
         $this->settings->enableMultipleFullCompanySupport();
 
         $jedi = Company::factory()->has(User::factory()->count(3)->sequence(
-            ['first_name' => 'Luke', 'last_name' => 'Skywalker', 'username' => 'lskywalker'],
+            ['first_name' => 'Luke', 'last_name' => 'Skywalker', 'username' => 'lskywalker', 'permissions' => json_encode(['users.edit' => '1'])],
             ['first_name' => 'Obi-Wan', 'last_name' => 'Kenobi', 'username' => 'okenobi'],
             ['first_name' => 'Anakin', 'last_name' => 'Skywalker', 'username' => 'askywalker'],
         ))->create();
@@ -86,7 +93,7 @@ class UsersForSelectListTest extends TestCase
         $this->settings->enableMultipleFullCompanySupport();
 
         $jedi = Company::factory()->has(User::factory()->count(3)->sequence(
-            ['first_name' => 'Luke', 'last_name' => 'Skywalker', 'username' => 'lskywalker', 'email' => 'lskywalker@jedis.org'],
+            ['first_name' => 'Luke', 'last_name' => 'Skywalker', 'username' => 'lskywalker', 'email' => 'lskywalker@jedis.org', 'permissions' => json_encode(['users.edit' => '1'])],
             ['first_name' => 'Obi-Wan', 'last_name' => 'Kenobi', 'username' => 'okenobi', 'email' => 'okenobi@jedis.org'],
             ['first_name' => 'Anakin', 'last_name' => 'Skywalker', 'username' => 'askywalker', 'email' => 'askywalker@alliance.org'],
         ))->create();
