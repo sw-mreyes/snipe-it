@@ -159,6 +159,7 @@
                                         <input type="radio" name="ldap_import" id="ldap_import" value="1" aria-label="ldap_import">
                                         {{ trans('general.user_managed_passwords_disallow') }}
                                     </label>
+                                    <p class="help-block">{{ trans('general.user_managed_passwords_bulk_help') }}</p>
                             </div>
                         </div> <!--/form-group-->
 
