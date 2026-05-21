@@ -52667,6 +52667,11 @@ document.addEventListener('livewire:init', function () {
       console.error("For data-livewire-component, you probably want to use $this->getId() or {{ $this->getId() }}, as appropriate");
       return false;
     }
+    // PHP property names cannot start with a digit — skip bare numeric names (e.g. "0") that would cause a 500
+    if (/^\d+$/.test(event.target.name)) {
+      console.error("Livewire select2: name attribute '" + event.target.name + "' is not a valid Livewire property name — skipping");
+      return false;
+    }
     Livewire.find(target.data('livewire-component')).set(event.target.name, this.options[this.selectedIndex].value);
   });
   Livewire.interceptMessage(function (_ref) {
