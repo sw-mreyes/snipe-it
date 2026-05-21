@@ -356,6 +356,8 @@ class ConsumablesController extends Controller
      */
     public function selectlist(Request $request): array
     {
+        $this->authorize('view.selectlists');
+
         $consumables = Consumable::select([
             'consumables.id',
             'consumables.name',

@@ -380,6 +380,8 @@ class UsersController extends Controller
      */
     public function selectlist(Request $request): array
     {
+        $this->authorize('view.selectlists');
+
         $users = User::select(
             [
                 'users.id',

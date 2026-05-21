@@ -268,6 +268,8 @@ class LicensesController extends Controller
      */
     public function selectlist(Request $request): array
     {
+        $this->authorize('view.selectlists');
+
         $licenses = License::select([
             'licenses.id',
             'licenses.name',

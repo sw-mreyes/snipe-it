@@ -590,6 +590,7 @@ class AssetsController extends Controller
      */
     public function selectlist(Request $request): array
     {
+        $this->authorize('view.selectlists');
 
         $assets = Asset::select([
             'assets.id',

@@ -405,6 +405,7 @@ class AccessoriesController extends Controller
      */
     public function selectlist(Request $request)
     {
+        $this->authorize('view.selectlists');
 
         $accessories = Accessory::select([
             'accessories.id',
