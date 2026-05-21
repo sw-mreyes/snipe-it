@@ -78,6 +78,10 @@ class BulkAssetsController extends Controller
         }
 
         if ($request->input('bulk_actions') === 'checkin') {
+            $referer = request()->headers->get('referer');
+            if ($referer && parse_url($referer, PHP_URL_HOST) === parse_url(config('app.url'), PHP_URL_HOST)) {
+                redirect()->setIntendedUrl($referer);
+            }
             $request->session()->flashInput(['selected_assets' => $asset_ids]);
 
             return redirect()->route('hardware.bulkcheckin.show');
@@ -867,7 +871,7 @@ class BulkAssetsController extends Controller
         });
 
         if (! $errors) {
-            return redirect()->to('hardware')->with('success', trans_choice('admin/hardware/message.multi-checkin.success', count($asset_ids)));
+            return redirect()->intended(route('hardware.index'))->with('success', trans_choice('admin/hardware/message.multi-checkin.success', count($asset_ids)));
         }
 
         return redirect()->route('hardware.bulkcheckin.show')->withInput()

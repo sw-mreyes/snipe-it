@@ -255,6 +255,61 @@ class BulkAssetCheckinTest extends TestCase
         $this->assertEquals($checkedOutLocation->id, $childAsset->fresh()->location_id);
     }
 
+    public function test_origin_url_is_stored_when_routing_to_bulk_checkin()
+    {
+        $assets = Asset::factory()->assignedToUser()->count(2)->create();
+        $originUrl = route('hardware.index').'?status_type=Deployed';
+
+        $this->actingAs(User::factory()->checkinAssets()->viewAssets()->create())
+            ->from($originUrl)
+            ->post(route('hardware.bulkedit.show'), [
+                'ids' => $assets->pluck('id')->toArray(),
+                'bulk_actions' => 'checkin',
+                'sort' => 'id',
+                'order' => 'asc',
+            ])
+            ->assertSessionHas('url.intended', $originUrl);
+    }
+
+    public function test_successful_checkin_redirects_to_origin_url()
+    {
+        $asset = Asset::factory()->assignedToUser()->create();
+        $originUrl = route('hardware.index').'?status_type=Deployed';
+
+        $this->actingAs(User::factory()->checkinAssets()->create())
+            ->withSession(['url.intended' => $originUrl])
+            ->post(route('hardware.bulkcheckin.store'), [
+                'selected_assets' => [$asset->id],
+            ])
+            ->assertRedirect($originUrl);
+    }
+
+    public function test_external_referer_is_not_stored_as_intended_url()
+    {
+        $assets = Asset::factory()->assignedToUser()->count(2)->create();
+
+        $this->actingAs(User::factory()->checkinAssets()->viewAssets()->create())
+            ->from('https://evil.example.com/phish')
+            ->post(route('hardware.bulkedit.show'), [
+                'ids' => $assets->pluck('id')->toArray(),
+                'bulk_actions' => 'checkin',
+                'sort' => 'id',
+                'order' => 'asc',
+            ])
+            ->assertSessionMissing('url.intended');
+    }
+
+    public function test_successful_checkin_falls_back_to_hardware_index_without_origin_url()
+    {
+        $asset = Asset::factory()->assignedToUser()->create();
+
+        $this->actingAs(User::factory()->checkinAssets()->create())
+            ->post(route('hardware.bulkcheckin.store'), [
+                'selected_assets' => [$asset->id],
+            ])
+            ->assertRedirect(route('hardware.index'));
+    }
+
     public function test_returns_error_when_no_assets_selected()
     {
         $this->actingAs(User::factory()->checkinAssets()->create())
