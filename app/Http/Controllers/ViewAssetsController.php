@@ -200,8 +200,12 @@ class ViewAssetsController extends Controller
 
         $settings = Setting::getSettings();
 
+        if ($cancel_by_admin) {
+            $this->authorize('index', Asset::class);
+        }
+
         if (($item_request = $item->isRequestedBy($user)) || $cancel_by_admin) {
-            $item->cancelRequest($requestingUser);
+            $item->cancelRequest($cancel_by_admin ? $requestingUser : null);
             $data['item_quantity'] = ($item_request) ? $item_request->qty : 1;
             $logaction->logaction(ActionType::RequestCanceled);
 
