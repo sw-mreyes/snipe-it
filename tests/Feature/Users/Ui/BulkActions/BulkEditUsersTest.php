@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Users\Ui\BulkActions;
 
-use App\Models\Asset;
 use App\Models\User;
 use Tests\TestCase;
 
