@@ -521,6 +521,7 @@ return [
     'pre_flight' => 'Pre-Flight',
     'skip_to_main_content' => 'Skip to main content',
     'toggle_navigation' => 'Toggle navigation',
+    'toggle_password_visibility' => 'Toggle password visibility',
     'alerts' => 'Alerts',
     'tasks_view_all' => 'View all tasks',
     'true' => 'True',
