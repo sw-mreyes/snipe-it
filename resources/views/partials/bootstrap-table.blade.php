@@ -1486,7 +1486,6 @@
     });
 
 
-
     // This specifies the footer columns that should have special styles associated
     // (usually numbers)
     window.footerStyle = column => ({
@@ -1814,13 +1813,10 @@
     // However since different bulk actions have different requirements, we have to walk through the available_actions object
     // to determine whether to disable it
     function checkboxEnabledFormatter (value, row) {
-
-        // add some stuff to get the value of the select2 option here?
-
-        if ((row.available_actions) && (row.available_actions.bulk_selectable) && (row.available_actions.bulk_selectable.delete !== true)) {
-            return {
-                disabled:true,
-                //checked: false, <-- not sure this will work the way we want?
+        if (row.available_actions && row.available_actions.bulk_selectable) {
+            var values = Object.values(row.available_actions.bulk_selectable);
+            if (values.length > 0 && !values.some(function (v) { return v === true; })) {
+                return { disabled: true };
             }
         }
     }

@@ -68,6 +68,9 @@ class LicenseSeatsTransformer
             'clone' => Gate::allows('create', License::class),
             'update' => Gate::allows('update', License::class),
             'delete' => Gate::allows('delete', License::class),
+            'bulk_selectable' => [
+                'checkin' => Gate::allows('checkin', License::class) && ($seat->assigned_to || $seat->asset_id),
+            ],
         ];
 
         $array += $permissions_array;

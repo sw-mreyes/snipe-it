@@ -290,6 +290,11 @@ class UserFactory extends Factory
         return $this->appendPermission(['licenses.checkout' => '1']);
     }
 
+    public function checkinLicenses()
+    {
+        return $this->appendPermission(['licenses.checkin' => '1']);
+    }
+
     public function viewKeysLicenses()
     {
         return $this->appendPermission(['licenses.keys' => '1']);
