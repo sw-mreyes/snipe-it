@@ -52647,6 +52647,17 @@ function htmlEntities(str) {
     });
   };
 })(jQuery);
+$(document).ready(function () {
+  $(".toggle-password").click(function () {
+    $(this).toggleClass("fa-eye fa-eye-slash");
+    var input = $($(this).attr("data-toggle"));
+    if (input.attr("type") === "password") {
+      input.attr("type", "text");
+    } else {
+      input.attr("type", "password");
+    }
+  });
+});
 
 /**
  * Universal Livewire Select2 integration
