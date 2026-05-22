@@ -125,5 +125,14 @@ class Version extends Command
 
         \File::put($versionFile, $content);
         info('New version: '.$full_app_version.' ('.$git_branch.')');
+
+        info('Building JS/CSS assets...');
+        passthru('npm run prod', $exitCode);
+
+        if ($exitCode !== 0) {
+            $this->error('Asset build failed with exit code '.$exitCode);
+        } else {
+            info('Assets built successfully.');
+        }
     }
 }
