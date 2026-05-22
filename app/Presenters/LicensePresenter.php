@@ -345,9 +345,22 @@ class LicensePresenter extends Presenter
         return json_encode($layout);
     }
 
-    public static function dataTableLayoutSeatsCheckedOutToAssets()
+    public static function dataTableLayoutSeatsCheckedOutToAssets($hide_fields = [])
     {
-        $layout = [
+        $layout = [];
+
+        if (! in_array('checkbox', $hide_fields)) {
+            $layout[] = [
+                'field' => 'checkbox',
+                'checkbox' => true,
+                'formatter' => 'checkboxEnabledFormatter',
+                'titleTooltip' => trans('general.select_all_none'),
+                'printIgnore' => true,
+                'class' => 'hidden-print',
+            ];
+        }
+
+        $layout = array_merge($layout, [
             [
                 'field' => 'id',
                 'searchable' => false,
@@ -398,7 +411,7 @@ class LicensePresenter extends Presenter
                 'printIgnore' => true,
                 'class' => 'hidden-print',
             ],
-        ];
+        ]);
 
         return json_encode($layout);
     }

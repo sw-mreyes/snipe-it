@@ -1822,17 +1822,14 @@
     }
 
     function licenseInOutFormatter(value, row) {
+        var user_can_checkout = row.available_actions && row.available_actions.user_can_checkout;
 
-        // check that checkin is not disabled
-        if (row.user_can_checkout === false) {
-            return '<span class="btn btn-sm bg-maroon btn-checkout disabled" data-tooltip="true" title="{{ trans('admin/licenses/message.checkout.unavailable') }}">{{ trans('general.checkout') }}</span>';
-        } else if (row.disabled === true) {
+        if (row.disabled === true) {
             return '<span class="btn btn-sm bg-maroon btn-checkout disabled" data-tooltip="true" title="{{ trans('admin/licenses/message.checkout.license_is_inactive') }}">{{ trans('general.checkout') }}</span>';
-
-        } else
-            // The user is allowed to check the license seat out and it's available
-        if ((row.available_actions.checkout === true) && (row.user_can_checkout === true) && (row.disabled === false)) {
+        } else if ((row.available_actions.checkout === true) && (user_can_checkout === true) && (row.disabled === false)) {
             return '<a href="{{ config('app.url') }}/licenses/' + row.id + '/checkout" class="btn btn-sm bg-maroon btn-checkout" data-tooltip="true" title="{{ trans('general.checkout_tooltip') }}">{{ trans('general.checkout') }}</a>';
+        } else if (row.available_actions.checkout === true) {
+            return '<span class="btn btn-sm bg-maroon btn-checkout disabled" data-tooltip="true" title="{{ trans('admin/licenses/message.checkout.unavailable') }}">{{ trans('general.checkout') }}</span>';
         }
     }
     // We need a special formatter for license seats, since they don't work exactly the same
