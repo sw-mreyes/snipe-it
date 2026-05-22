@@ -37,6 +37,11 @@ Route::group(['prefix' => 'licenses', 'middleware' => ['auth']], function () {
     )->name('licenses.bulkcheckin');
 
     Route::post(
+        'bulkcheckin/selected',
+        [Licenses\LicenseCheckinController::class, 'bulkCheckinSelected']
+    )->name('licenses.bulkcheckin.selected');
+
+    Route::post(
         '{licenseId}/bulkcheckout',
         [Licenses\LicenseCheckoutController::class, 'bulkCheckout']
     )->name('licenses.bulkcheckout');

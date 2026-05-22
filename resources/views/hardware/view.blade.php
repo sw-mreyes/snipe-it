@@ -330,7 +330,29 @@
                     </x-tabs.pane>
 
                     <x-tabs.pane name="licenses" :count="$asset->licenses->count()">
-                        <x-table.licenses show_search="false" :route="route('api.assets.licenselist', $asset)" :presenter="\App\Presenters\LicensePresenter::dataTableLayoutSeatsCheckedOutToAssets()"/>
+                        @can('view', \App\Models\License::class)
+                        <x-slot:table_header>{{ trans('general.licenses') }}</x-slot:table_header>
+                        @endcan
+
+                        @can('checkin', \App\Models\License::class)
+                        <x-slot:bulkactions>
+                            <x-table.bulk-actions
+                                action_route="{{ route('licenses.bulkcheckin.selected') }}"
+                                model_name="seat"
+                            >
+                                <option value="checkin">{{ trans('general.checkin') }}</option>
+                            </x-table.bulk-actions>
+                        </x-slot:bulkactions>
+                        @endcan
+
+                        @can('view', \App\Models\License::class)
+                        <x-table
+                            show_search="false"
+                            api_url="{{ route('api.assets.licenselist', $asset) }}"
+                            :presenter="\App\Presenters\LicensePresenter::dataTableLayoutSeatsCheckedOutToAssets()"
+                            export_filename="export-licenses-{{ str_slug($asset->asset_tag) }}-{{ date('Y-m-d') }}"
+                        />
+                        @endcan
                     </x-tabs.pane>
 
                     <x-tabs.pane name="components" :count="$asset->components->sum('assigned_qty')">
