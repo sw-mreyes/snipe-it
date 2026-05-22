@@ -1367,6 +1367,30 @@
     }
 
 
+    function updateSelectedCount(table) {
+        var countId = $(table).data('selected-count-id');
+        if (!countId || !$(countId).length) return;
+        var count = $(table).bootstrapTable('getSelections').length;
+        $(countId).find('.badge').text(count);
+        if (count > 0) {
+            $(countId).show();
+        } else {
+            $(countId).hide();
+        }
+    }
+
+    $('.snipe-table').on('post-body.bs.table', function () {
+        var countId = $(this).data('selected-count-id');
+        if (!countId) return;
+        var $paginationDetail = $(this).closest('.bootstrap-table')
+            .find('.fixed-table-pagination').first()
+            .find('.pagination-detail');
+        if ($paginationDetail.length && $(countId).length === 0) {
+            $paginationDetail.after('<span id="' + countId.substring(1) + '" style="display:none; float:left; margin-top:10px; margin-bottom:10px; margin-left:10px; line-height:34px;">&mdash; <span class="badge">0</span> {{ trans('general.selected') }}</span>');
+        }
+        updateSelectedCount(this);
+    });
+
     // These methods dynamically add/remove hidden input values in the bulk actions form
     $('.snipe-table').on('check.bs.table .btSelectItem', function (row, $element) {
         var buttonName =  $(this).data('bulk-button-id');
@@ -1374,12 +1398,12 @@
 
         $(buttonName).removeAttr('disabled');
         $(buttonName).after('<input id="' + tableId + '_checkbox_' + $element.id + '" type="hidden" name="ids[]" value="' + $element.id + '">');
+        updateSelectedCount(this);
     });
 
     $('.snipe-table').on('check-all.bs.table', function (event, rowsAfter) {
 
         var buttonName =  $(this).data('bulk-button-id');
-        $(buttonName).removeAttr('disabled');
         var tableId =  $(this).data('id-table');
 
         for (var i in rowsAfter) {
@@ -1388,12 +1412,18 @@
                 $(buttonName).after('<input id="' + tableId + '_checkbox_' + rowsAfter[i].id + '" type="hidden" name="ids[]" value="' + rowsAfter[i].id + '">');
             }
         }
+
+        if ($(this).bootstrapTable('getSelections').length > 0) {
+            $(buttonName).removeAttr('disabled');
+        }
+        updateSelectedCount(this);
     });
 
 
     $('.snipe-table').on('uncheck.bs.table .btSelectItem', function (row, $element) {
         var tableId =  $(this).data('id-table');
         $( "#" + tableId + "_checkbox_" + $element.id).remove();
+        updateSelectedCount(this);
     });
 
 
@@ -1416,6 +1446,7 @@
         for (var i in rowsBefore) {
             $('#' + tableId + "_checkbox_" + rowsBefore[i].id).remove();
         }
+        updateSelectedCount(this);
 
     });
 
