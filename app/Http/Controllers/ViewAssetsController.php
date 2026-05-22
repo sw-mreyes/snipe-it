@@ -19,6 +19,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 
 /**
  * This controller handles all actions related to the ability for users
@@ -199,17 +200,23 @@ class ViewAssetsController extends Controller
 
         $settings = Setting::getSettings();
 
-        if ($cancel_by_admin) {
-            $this->authorize('index', Asset::class);
+        $is_admin = $user->isSuperUser() || $user->isAdmin();
+
+        if ($cancel_by_admin && ! $is_admin) {
+            return redirect()->back()->with('error', trans('general.insufficient_permissions'));
         }
 
-        if (($item_request = $item->isRequestedBy($user)) || $cancel_by_admin) {
-            $item->cancelRequest($cancel_by_admin ? $requestingUser : null);
+        if (($item_request = $item->isRequestedBy($user)) || ($is_admin && $cancel_by_admin)) {
+            $item->cancelRequest($is_admin && $cancel_by_admin ? $requestingUser : null);
             $data['item_quantity'] = ($item_request) ? $item_request->qty : 1;
             $logaction->logaction(ActionType::RequestCanceled);
 
             if (($settings->alert_email != '') && ($settings->alerts_enabled == '1') && (! config('app.lock_passwords'))) {
-                $settings->notify((new RequestAssetCancelation($data))->locale($settings->locale));
+                try {
+                    $settings->notify((new RequestAssetCancelation($data))->locale($settings->locale));
+                } catch (Exception $e) {
+                    Log::warning('Could not send request cancellation notification: '.$e->getMessage());
+                }
             }
 
             return redirect()->back()->with('success')->with('success', trans('admin/hardware/message.requests.canceled'));
@@ -217,7 +224,11 @@ class ViewAssetsController extends Controller
             $item->request();
             if (($settings->alert_email != '') && ($settings->alerts_enabled == '1') && (! config('app.lock_passwords'))) {
                 $logaction->logaction('requested');
-                $settings->notify((new RequestAssetNotification($data))->locale($settings->locale));
+                try {
+                    $settings->notify((new RequestAssetNotification($data))->locale($settings->locale));
+                } catch (Exception $e) {
+                    Log::warning('Could not send asset request notification: '.$e->getMessage());
+                }
             }
 
             return redirect()->route('requestable-assets')->with('success')->with('success', trans('admin/hardware/message.requests.success'));
