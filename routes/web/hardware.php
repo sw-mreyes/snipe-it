@@ -168,6 +168,16 @@ Route::group(
             [BulkAssetsController::class, 'storeCheckout']
         )->name('hardware.bulkcheckout.store');
 
+        Route::get('bulkcheckin', [BulkAssetsController::class, 'showCheckin'])
+            ->name('hardware.bulkcheckin.show')
+            ->breadcrumbs(fn (Trail $trail) => $trail->parent('hardware.index')
+                ->push(trans('admin/hardware/general.bulk_checkin'), route('hardware.index'))
+            );
+
+        Route::post('bulkcheckin',
+            [BulkAssetsController::class, 'storeCheckin']
+        )->name('hardware.bulkcheckin.store');
+
     });
 
 Route::resource('hardware',
