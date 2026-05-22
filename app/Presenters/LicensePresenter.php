@@ -280,6 +280,7 @@ class LicensePresenter extends Presenter
             'formatter' => 'emailFormatter',
         ],
             [
+<<<<<<< HEAD
                 'field' => 'assigned_user.companies',
                 'searchable' => false,
                 'sortable' => false,
@@ -287,6 +288,15 @@ class LicensePresenter extends Presenter
                 'title' => trans('general.companies'),
                 'visible' => true,
                 'formatter' => 'companiesArrayLinkFormatter',
+=======
+                'field' => 'assigned_user.company',
+                'searchable' => false,
+                'sortable' => false,
+                'switchable' => true,
+                'title' => trans('general.company'),
+                'visible' => true,
+                'formatter' => 'companiesLinkObjFormatter',
+>>>>>>> d5ce5a82de (Bulk checkin license seats)
             ],
             [
                 'field' => 'assigned_user.department',
