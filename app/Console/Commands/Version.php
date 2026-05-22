@@ -110,6 +110,7 @@ class Version extends Command
 
         $content = <<<PHP
         <?php
+
         return [
             'app_version' => '$app_version',
             'full_app_version' => '$full_app_version',
