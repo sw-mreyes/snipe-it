@@ -48,7 +48,7 @@ class ResetDemoSettings extends Command
         $settings->auto_increment_assets = 1;
         $settings->logo = 'snipe-logo.png';
         $settings->alert_email = 'service@snipe-it.io';
-        $settings->login_note = 'Use `admin` / `password`, `assets` / `password`, or `testuser` / `password` to login to the demo.';
+        $settings->login_note = "Use any of the following credentials to login to the demo:\n\n- `admin` / `password`\n- `assets` / `password`\n- `testuser` / `password`";
         $settings->header_color = '#3c8dbc';
         $settings->link_dark_color = '#5fa4cc';
         $settings->link_light_color = '#296282;';
