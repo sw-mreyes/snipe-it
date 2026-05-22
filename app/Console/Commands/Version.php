@@ -120,6 +120,7 @@ class Version extends Command
             'full_hash' => '$full_hash_version',
             'branch' => '$git_branch',
         ];
+
         PHP;
 
         \File::put($versionFile, $content);
