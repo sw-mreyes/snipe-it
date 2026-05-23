@@ -206,7 +206,7 @@
                                         {{ $asset->journal->last()->note }}
                                         <i class="fa-solid fa-quote-right"></i>
                                         <span class="text-muted">
-                                            - {!!  $asset->journal->last()->adminuser->present()->formattedNameLink !!}
+                                            - {!!  $asset->journal->last()->adminuser?->present()->formattedNameLink !!}
                                             ({{ Helper::getFormattedDateObject($asset->journal->last()->created_at, 'datetime', false) }})
                                         </span>
                                     </x-data-row>
