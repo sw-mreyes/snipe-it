@@ -165,6 +165,17 @@ class UserImporter extends ItemImporter
             return;
         }
 
+        // With FMCS enabled, the scoped lookup above only sees users in the current user's companies.
+        // If the username exists in another company it would appear as "not found" and fall through
+        // to create — but usernames are unique system-wide, so we must skip instead.
+        if (Auth::check() && Company::isFullMultipleCompanySupportEnabled()) {
+            if (User::withoutGlobalScopes()->where('username', $this->item['username'])->exists()) {
+                $this->log('Skipping '.$this->item['username'].': username belongs to a user outside your company scope.');
+
+                return;
+            }
+        }
+
         // This needs to be applied after the update logic, otherwise we'll overwrite user passwords
         // Issue #5408
         $this->item['password'] = $this->tempPassword;
