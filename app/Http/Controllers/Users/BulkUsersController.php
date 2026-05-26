@@ -414,7 +414,7 @@ class BulkUsersController extends Controller
      */
     public function merge(Request $request)
     {
-        $this->authorize('update', User::class);
+        $this->authorize('delete', User::class);
 
         if (config('app.lock_passwords')) {
             return redirect()->route('users.index')->with('error', trans('general.feature_disabled'));
@@ -434,6 +434,10 @@ class BulkUsersController extends Controller
 
         // Walk users
         foreach ($users_to_merge as $user_to_merge) {
+
+            if (! auth()->user()->can('canEditAuthFields', $user_to_merge) || ! auth()->user()->can('editableOnDemo')) {
+                return redirect()->route('users.index')->with('error', trans('general.insufficient_permissions'));
+            }
 
             foreach ($user_to_merge->assets as $asset) {
                 Log::debug('Updating asset: '.$asset->asset_tag.' to '.$merge_into_user->id);
