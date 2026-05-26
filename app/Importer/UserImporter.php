@@ -137,11 +137,13 @@ class UserImporter extends ItemImporter
 
             $this->log('Updating User');
 
-            if (Auth::check() && (! Gate::allows('canEditAuthFields', $user))) {
-                unset($user->username);
-                unset($user->email);
-                unset($user->password);
-                unset($user->activated);
+            // CLI imports run unauthenticated and are fully trusted; only restrict web-initiated imports.
+            // Note: unset must target $this->item, not the model — sanitizeItemForUpdating() reads from $this->item.
+            if (Auth::check() && (! Auth::user()->hasAccess('users.edit') || ! Gate::allows('canEditAuthFields', $user))) {
+                unset($this->item['username']);
+                unset($this->item['email']);
+                unset($this->item['password']);
+                unset($this->item['activated']);
             }
 
             $user->update($this->sanitizeItemForUpdating($user));
