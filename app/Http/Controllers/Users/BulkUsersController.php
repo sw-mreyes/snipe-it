@@ -171,8 +171,6 @@ class BulkUsersController extends Controller
             ->conditionallyAddItem('department_id')
             ->conditionallyAddItem('locale')
             ->conditionallyAddItem('remote')
-            ->conditionallyAddItem('ldap_import')
-            ->conditionallyAddItem('activated')
             ->conditionallyAddItem('display_name')
             ->conditionallyAddItem('start_date')
             ->conditionallyAddItem('end_date')
@@ -251,11 +249,21 @@ class BulkUsersController extends Controller
             }
         }
 
-        // Only sync groups if groups were selected
-        if ($request->filled('groups')) {
-
-            foreach ($users as $user) {
-                if (auth()->user()->can('canEditAuthFields', $user) && auth()->user()->can('editableOnDemo')) {
+        // Fields that require canEditAuthFields (non-admins cannot touch admins/superusers,
+        // admins cannot touch superusers) must be applied per-user, not via mass update.
+        foreach ($users as $user) {
+            if (auth()->user()->can('canEditAuthFields', $user) && auth()->user()->can('editableOnDemo')) {
+                $authFieldUpdate = [];
+                if ($request->filled('activated')) {
+                    $authFieldUpdate['activated'] = $request->input('activated');
+                }
+                if ($request->filled('ldap_import')) {
+                    $authFieldUpdate['ldap_import'] = $request->input('ldap_import');
+                }
+                if (! empty($authFieldUpdate)) {
+                    $user->update($authFieldUpdate);
+                }
+                if ($request->filled('groups') && auth()->user()->isSuperUser()) {
                     $user->groups()->sync($request->input('groups'));
                 }
             }

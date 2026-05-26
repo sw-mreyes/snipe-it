@@ -3,6 +3,7 @@
 namespace App\Importer;
 
 use App\Models\Asset;
+use App\Models\Company;
 use App\Models\Department;
 use App\Models\Setting;
 use App\Models\User;
@@ -57,7 +58,7 @@ class UserImporter extends ItemImporter
             }
         }
 
-        return $ids;
+        return Company::getIdsForCurrentUser($ids);
     }
 
     /**
