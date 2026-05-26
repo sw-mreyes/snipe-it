@@ -345,14 +345,22 @@
 
                               <!-- Company -->
                               @if ((Gate::allows('canEditAuthFields', $user)) && (\App\Models\Company::canManageUsersCompanies()))
-                                  @include ('partials.forms.edit.company-select', ['translated_name' => trans('general.company'), 'fieldname' => 'company_id'])
+                                  @include ('partials.forms.edit.company-select', [
+                                      'translated_name' => trans('general.company'),
+                                      'fieldname' => 'company_ids',
+                                      'multiple' => 'true',
+                                      'selected' => old('company_ids', $user->companies->isNotEmpty() ? $user->companies->pluck('id')->toArray() : ($user->company_id ? [$user->company_id] : [])),
+                                  ])
                               @else
-                                  @if ($user->company)
+                                  @if ($user->companies->isNotEmpty())
                                       <div class="form-group">
                                           <label class="col-md-3 control-label" for="locale">{{ trans('general.company') }}</label>
                                           <div class="col-md-6">
                                               <p class="form-control-static">
-                                                  {{ $user->company ? $user->company->name : '' }}
+                                                  @foreach ($user->companies as $company)
+                                                      <span class="label label-light">{!! $company->present()->formattedNameLink !!}</span>
+                                                  @endforeach
+
                                               </p>
                                           </div>
                                       </div>

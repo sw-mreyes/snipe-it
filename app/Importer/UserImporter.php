@@ -3,6 +3,7 @@
 namespace App\Importer;
 
 use App\Models\Asset;
+use App\Models\Company;
 use App\Models\Department;
 use App\Models\Setting;
 use App\Models\User;
@@ -33,6 +34,31 @@ class UserImporter extends ItemImporter
     {
         parent::handle($row);
         $this->createUserIfNotExists($row);
+    }
+
+    /**
+     * Parse a pipe-separated company column value into an array of company IDs,
+     * creating companies that do not yet exist. Returns an empty array when the
+     * raw value is blank (so callers can treat that as "don't change").
+     *
+     * @param  string  $raw  Raw cell value, e.g. "Acme Corp|Widget Inc"
+     * @return int[]
+     */
+    private function resolveCompanyIds(string $raw): array
+    {
+        if ($raw === '') {
+            return [];
+        }
+
+        $ids = [];
+        foreach (array_filter(array_map('trim', explode('|', $raw))) as $name) {
+            $id = $this->createOrFetchCompany($name);
+            if ($id) {
+                $ids[] = (int) $id;
+            }
+        }
+
+        return Company::getIdsForCurrentUser($ids);
     }
 
     /**
@@ -80,6 +106,13 @@ class UserImporter extends ItemImporter
             $this->item['department_id'] = $this->createOrFetchDepartment($user_department);
         }
 
+        // Resolve pipe-separated company names (e.g. "Acme Corp|Widget Inc") into IDs.
+        // company_id is a legacy column — company membership is managed via the pivot.
+        // Unset whatever the parent set so it is not written to the DB.
+        $companyRaw = trim($this->findCsvMatch($row, 'company'));
+        $companyIds = $this->resolveCompanyIds($companyRaw);
+        unset($this->item['company_id']);
+
         if (is_null($this->item['username']) || $this->item['username'] == '') {
             $user_full_name = $this->item['first_name'].' '.$this->item['last_name'];
             $user_formatted_array = User::generateFormattedNameFromFullName($user_full_name, Setting::getSettings()->username_format);
@@ -116,6 +149,11 @@ class UserImporter extends ItemImporter
             // Why do we have to do this twice? Update should
             $user->save();
 
+            // Sync company pivot when companies were specified in this row.
+            if (! empty($companyIds)) {
+                $user->companies()->sync($companyIds);
+            }
+
             // Update the location of any assets checked out to this user
             Asset::where('assigned_type', User::class)
                 ->where('assigned_to', $user->id)
@@ -139,6 +177,13 @@ class UserImporter extends ItemImporter
 
         if ($user->save()) {
             $this->log('User '.$this->item['name'].' was created');
+
+            // Sync all resolved companies to the pivot. For single-company rows the
+            // User::created event already added company_id; sync() here is idempotent
+            // for that case and adds any additional companies for multi-company rows.
+            if (! empty($companyIds)) {
+                $user->companies()->sync($companyIds);
+            }
 
             if (($user->email) && ($user->activated == '1')) {
 
