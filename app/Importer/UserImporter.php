@@ -137,11 +137,13 @@ class UserImporter extends ItemImporter
 
             $this->log('Updating User');
 
-            if (Auth::check() && (! Gate::allows('canEditAuthFields', $user))) {
-                unset($user->username);
-                unset($user->email);
-                unset($user->password);
-                unset($user->activated);
+            // CLI imports run unauthenticated and are fully trusted; only restrict web-initiated imports.
+            // Note: unset must target $this->item, not the model — sanitizeItemForUpdating() reads from $this->item.
+            if (Auth::check() && (! Auth::user()->hasAccess('users.edit') || ! Gate::allows('canEditAuthFields', $user))) {
+                unset($this->item['username']);
+                unset($this->item['email']);
+                unset($this->item['password']);
+                unset($this->item['activated']);
             }
 
             $user->update($this->sanitizeItemForUpdating($user));
@@ -161,6 +163,17 @@ class UserImporter extends ItemImporter
 
             // Log::debug('UserImporter.php Updated User ' . print_r($user, true));
             return;
+        }
+
+        // With FMCS enabled, the scoped lookup above only sees users in the current user's companies.
+        // If the username exists in another company it would appear as "not found" and fall through
+        // to create — but usernames are unique system-wide, so we must skip instead.
+        if (Auth::check() && Company::isFullMultipleCompanySupportEnabled()) {
+            if (User::withoutGlobalScopes()->where('username', $this->item['username'])->exists()) {
+                $this->log('Skipping '.$this->item['username'].': username belongs to a user outside your company scope.');
+
+                return;
+            }
         }
 
         // This needs to be applied after the update logic, otherwise we'll overwrite user passwords

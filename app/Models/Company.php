@@ -114,7 +114,7 @@ final class Company extends SnipeModel
             ->toArray();
     }
 
-    private static function isFullMultipleCompanySupportEnabled()
+    public static function isFullMultipleCompanySupportEnabled()
     {
         $settings = Setting::getSettings();
 

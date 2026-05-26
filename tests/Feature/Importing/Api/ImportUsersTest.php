@@ -390,4 +390,48 @@ class ImportUsersTest extends ImportDataTestCase implements TestsPermissionsRequ
         $this->assertNull($newUser->reset_password_code);
         $this->assertEquals(0, $newUser->activated);
     }
+
+    #[Test]
+    public function import_only_user_cannot_overwrite_auth_fields_when_updating(): void
+    {
+        $victim = User::factory()->create([
+            'username' => 'victim_user',
+            'email' => 'original@example.com',
+        ]);
+
+        $importFileBuilder = new ImportFileBuilder([
+            array_merge(ImportFileBuilder::new()->definition(), [
+                'username' => 'victim_user',
+                'email' => 'hijacked@evil.com',
+            ]),
+        ]);
+        $import = Import::factory()->users()->create(['file_path' => $importFileBuilder->saveToImportsDirectory()]);
+
+        $this->actingAsForApi(User::factory()->canImport()->create());
+        $this->importFileResponse(['import' => $import->id, 'import-update' => true])->assertOk();
+
+        $this->assertEquals('original@example.com', $victim->refresh()->email);
+    }
+
+    #[Test]
+    public function user_with_import_and_edit_users_permission_can_update_auth_fields(): void
+    {
+        $target = User::factory()->create([
+            'username' => 'target_user',
+            'email' => 'original@example.com',
+        ]);
+
+        $importFileBuilder = new ImportFileBuilder([
+            array_merge(ImportFileBuilder::new()->definition(), [
+                'username' => 'target_user',
+                'email' => 'updated@example.com',
+            ]),
+        ]);
+        $import = Import::factory()->users()->create(['file_path' => $importFileBuilder->saveToImportsDirectory()]);
+
+        $this->actingAsForApi(User::factory()->canImport()->editUsers()->create());
+        $this->importFileResponse(['import' => $import->id, 'import-update' => true])->assertOk();
+
+        $this->assertEquals('updated@example.com', $target->refresh()->email);
+    }
 }
