@@ -2,11 +2,7 @@
 
 namespace Tests\Feature\Users\Ui\BulkActions;
 
-<<<<<<< HEAD
 use App\Models\Group;
-=======
-use App\Models\Asset;
->>>>>>> 403f9c848b (Disallow ldap_import and activated in bulk editing users if user doesn’t have permission)
 use App\Models\User;
 use Tests\TestCase;
 
@@ -125,7 +121,6 @@ class BulkEditUsersTest extends TestCase
 
         $this->assertEquals('Shelbyville', $admin->fresh()->city);
     }
-<<<<<<< HEAD
 
     public function test_superuser_can_assign_groups_via_bulk_edit()
     {
@@ -133,11 +128,11 @@ class BulkEditUsersTest extends TestCase
         $target = User::factory()->create();
 
         $this->actingAs(User::factory()->superuser()->create())
-            ->post(route('users/bulkeditsave'), [
-                'ids' => [$target->id],
-                'groups' => [$group->id],
+            ->post(route(‘users/bulkeditsave’), [
+                ‘ids’ => [$target->id],
+                ‘groups’ => [$group->id],
             ])
-            ->assertRedirect(route('users.index'));
+            ->assertRedirect(route(‘users.index’));
 
         $this->assertTrue($target->fresh()->groups->contains($group));
     }
@@ -148,14 +143,12 @@ class BulkEditUsersTest extends TestCase
         $target = User::factory()->create();
 
         $this->actingAs(User::factory()->editUsers()->create())
-            ->post(route('users/bulkeditsave'), [
-                'ids' => [$target->id],
-                'groups' => [$group->id],
+            ->post(route(‘users/bulkeditsave’), [
+                ‘ids’ => [$target->id],
+                ‘groups’ => [$group->id],
             ])
-            ->assertRedirect(route('users.index'));
+            ->assertRedirect(route(‘users.index’));
 
         $this->assertFalse($target->fresh()->groups->contains($group));
     }
-=======
->>>>>>> 403f9c848b (Disallow ldap_import and activated in bulk editing users if user doesn’t have permission)
 }
