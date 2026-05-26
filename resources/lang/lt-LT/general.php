@@ -504,7 +504,7 @@ return [
     'fullscreen' => 'Fullscreen',
     'pie_chart_type' => 'Valdymo skydo skritulinės diagramos tipas',
     'hello_name' => 'Sveiki, :name!',
-    'unaccepted_profile_warning' => 'Turite vieną daiktą, kurį reikia priimti. Spustelėkite čia, jei norite jį priimti arba atmesti | |[2,4] You have :count items requiring acceptance. Click here to accept or decline them|[5,*] You have :count items requiring acceptance. Click here to accept or decline them',
+    'unaccepted_profile_warning' => 'Turite vieną daiktą, kurį reikia priimti. Spustelėkite čia, jei norite jį priimti arba atmesti | Turite :count daiktus(-ų), kuriuos reikia priimti. Spustelėkite čia, jei norite juos priimti arba atmesti',
     'start_date' => 'Pradžios data',
     'end_date' => 'Pabaigos data',
     'alt_uploaded_image_thumbnail' => 'Įkelta miniatiūra',
