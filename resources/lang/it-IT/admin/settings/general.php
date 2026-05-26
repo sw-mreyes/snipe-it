@@ -34,7 +34,7 @@ return [
     'backups_help' => 'Crea, scarica e ripristina i backup ',
     'backups_restoring' => 'Ripristino da backup',
     'backups_clean' => 'Pulire il database di backup prima di ripristinare',
-    'backups_clean_helptext' => "Questo può essere utile se stai cambiando tra le versioni del database",
+    'backups_clean_helptext' => 'Questo può essere utile se stai cambiando tra le versioni del database',
     'backups_upload' => 'Carica Backup',
     'backups_path' => 'I backup sul server sono memorizzati in <code>:path</code>',
     'backups_restore_warning' => 'Usa il bottone di ripristino <small><span class="btn btn-xs btn-warning"><i class="text-white fas fa-retweet" aria-hidden="true"></i></span></small> per ripristinare un backup precedente. (Al momento non funziona con l\'archiviazione file S3.)<br><br> L\' <strong>intero database :app_name e qualsiasi file caricato verranno completamente rimpiazzati</strong> dal contenuto del file di backup  ',
