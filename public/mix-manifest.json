@@ -1,9 +1,56 @@
 {
+<<<<<<< HEAD
     "/js/dist/all.js": "/js/dist/all.js?id=4619b48bfce17ad41fc5a2e9ee578988",
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+    "/js/dist/all.js": "/js/dist/all.js?id=a7ea6cdd7a7105bc604ce52bf82f5920",
+    "/css/build/overrides.css": "/css/build/overrides.css?id=9bfab28a94932d45568ad50f3c6c5e2c",
+    "/css/build/app.css": "/css/build/app.css?id=4b2abd7fa3560ada549e9d08bd836aa8",
+    "/css/build/AdminLTE.css": "/css/build/AdminLTE.css?id=bdf169bc2141f453390614c138cdce95",
+    "/css/dist/all.css": "/css/dist/all.css?id=f5f404325dedd1abd00dc781664c0034",
+=======
+    "/js/dist/all.js": "/js/dist/all.js?id=c706ac698d63003a3bb7d74b2671ff9e",
+=======
+    "/js/dist/all.js": "/js/dist/all.js?id=215fe7f9d01295eb5318b4241583b955",
+>>>>>>> 6e749d34a4 (Dev assets)
+=======
+    "/js/dist/all.js": "/js/dist/all.js?id=4619b48bfce17ad41fc5a2e9ee578988",
+>>>>>>> c870dd0dae (Updated assets)
+=======
+=======
+>>>>>>> f5313f6ec0 (Updated dev assets)
+    "/js/dist/all.js": "/js/dist/all.js?id=4619b48bfce17ad41fc5a2e9ee578988",
+=======
+    "/js/dist/all.js": "/js/dist/all.js?id=9e8d236a555ae26809ad859e5a2bff9d",
+>>>>>>> b37adb8c49 (Moved password visibility toggle to snipeit.js)
+>>>>>>> 3206549170 (Moved password visibility toggle to snipeit.js)
+=======
+    "/js/dist/all.js": "/js/dist/all.js?id=4619b48bfce17ad41fc5a2e9ee578988",
+>>>>>>> aa0eb24e80 (Fixed merge mess)
+>>>>>>> e2fadf8ceb (Merge hell :()
     "/css/build/overrides.css": "/css/build/overrides.css?id=c173dd71d56c1089bf560a849586d93e",
     "/css/build/app.css": "/css/build/app.css?id=63ef76491d01db361ad53cf1c8c7114f",
     "/css/build/AdminLTE.css": "/css/build/AdminLTE.css?id=ee0ed88465dd878588ed044eefb67723",
     "/css/dist/all.css": "/css/dist/all.css?id=57e6bf27bcfad47e58a82b9842a7d5bd",
+<<<<<<< HEAD
+<<<<<<< HEAD
+>>>>>>> 17df4a08a7 (Updated JS to add the array endpoint for company_ids (plural))
+=======
+=======
+    "/js/dist/all.js": "/js/dist/all.js?id=a7ea6cdd7a7105bc604ce52bf82f5920",
+    "/css/build/overrides.css": "/css/build/overrides.css?id=9bfab28a94932d45568ad50f3c6c5e2c",
+    "/css/build/app.css": "/css/build/app.css?id=4b2abd7fa3560ada549e9d08bd836aa8",
+    "/css/build/AdminLTE.css": "/css/build/AdminLTE.css?id=bdf169bc2141f453390614c138cdce95",
+    "/css/dist/all.css": "/css/dist/all.css?id=f5f404325dedd1abd00dc781664c0034",
+>>>>>>> 6a1c3e29d0 (Updated dev assets)
+>>>>>>> f5313f6ec0 (Updated dev assets)
+=======
+>>>>>>> aa0eb24e80 (Fixed merge mess)
     "/css/dist/signature-pad.css": "/css/dist/signature-pad.css?id=6a89d3cd901305e66ced1cf5f13147f7",
     "/css/dist/signature-pad.min.css": "/css/dist/signature-pad.min.css?id=6a89d3cd901305e66ced1cf5f13147f7",
     "/js/select2/i18n/af.js": "/js/select2/i18n/af.js?id=4f6fcd73488ce79fae1b7a90aceaecde",
