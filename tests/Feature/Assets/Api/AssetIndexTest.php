@@ -171,8 +171,6 @@ class AssetIndexTest extends TestCase
 
     public function test_assets_can_be_filtered_by_custom_field()
     {
-        $this->markIncompleteIfMySQL('Custom Fields tests do not work on MySQL');
-
         $field = CustomField::factory()->create();
 
         $matchingAssets = Asset::factory()->count(3)->hasMultipleCustomFields([$field])->create();
