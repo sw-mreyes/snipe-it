@@ -233,7 +233,7 @@
                         </x-copy-to-clipboard>
                     </x-info-element>
                 </x-info-element>
-            @else
+            @elseif ($infoPanelObj->companies->isNotEmpty())
                 <x-info-element icon_type="company" icon_color="{{ $infoPanelObj->companies->first()->tag_color }}" title="{{ trans('general.company') }}">
                     <x-copy-to-clipboard class="pull-right" copy_what="company">
                         {!!  $infoPanelObj->companies->first()->present()->nameUrl !!}
