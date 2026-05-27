@@ -1771,6 +1771,12 @@
             } else if (value.type == 'model') {
                 item_destination = 'models'
                 item_icon = '';
+            } else if (value.type == 'supplier') {
+                item_destination = 'suppliers';
+                item_icon = 'fas fa-city';
+            } else if (value.type == 'department') {
+                item_destination = 'departments';
+                item_icon = 'fas fa-sitemap';
             }
 
             // display the username if it's checked out to a user, but don't do it if the username's there already
