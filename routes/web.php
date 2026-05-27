@@ -655,7 +655,7 @@ Route::group(['middleware' => 'web'], function () {
     Route::post(
         'two-factor',
         [LoginController::class, 'postTwoFactorAuth']
-    );
+    )->middleware('throttle:two_factor');
 
     Route::post(
         'password/email',
