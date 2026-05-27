@@ -31,12 +31,14 @@
                         </option>
                     @endforeach
                 @endisset
-                @if ($company_id = old($fieldname, (isset($item)) ? $item->{$fieldname} : ''))
-                    <option value="{{ $company_id }}" selected="selected">
-                        {{ (\App\Models\Company::find($company_id)) ? \App\Models\Company::find($company_id)->name : '' }}
-                    </option>
-                @else
-                    {!! (!isset($multiple) || ($multiple=='false')) ? '<option value="" role="option">'.trans('general.select_company').'</option>' : ''  !!}
+                @if (!isset($multiple) || $multiple !== 'true')
+                    @if ($company_id = old($fieldname, (isset($item)) ? $item->{$fieldname} : ''))
+                        <option value="{{ $company_id }}" selected="selected">
+                            {{ (\App\Models\Company::find($company_id)) ? \App\Models\Company::find($company_id)->name : '' }}
+                        </option>
+                    @else
+                        <option value="" role="option">{{ trans('general.select_company') }}</option>
+                    @endif
                 @endif
             </select>
         </div>
