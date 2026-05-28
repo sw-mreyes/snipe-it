@@ -125,6 +125,7 @@ return [
     'delete_confirm' => 'Are you sure you wish to delete :item?',
     'delete_confirm_no_undo' => 'Are you sure you wish to delete :item? This cannot be undone.',
     'deleted' => 'Deleted',
+    'deleted_at' => 'Deleted At',
     'delete_seats' => 'Deleted Seats',
     'deletion_failed' => 'Deletion failed',
     'departments' => 'Departments',
