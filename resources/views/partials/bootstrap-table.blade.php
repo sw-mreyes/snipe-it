@@ -1744,41 +1744,51 @@
 
         if ((value) && (value.type)) {
 
-            if (value.type == 'asset') {
+            if (value.type === 'asset') {
                 item_destination = 'hardware';
                 item_icon = 'fas fa-barcode';
-            } else if (value.type == 'accessory') {
+            }
+            else if (value.type === 'accessory') {
                 item_destination = 'accessories';
                 item_icon = 'far fa-keyboard';
-            } else if (value.type == 'component') {
+            }
+            else if (value.type === 'component') {
                 item_destination = 'components';
                 item_icon = 'far fa-hdd';
-            } else if (value.type == 'consumable') {
+            }
+            else if (value.type === 'consumable') {
                 item_destination = 'consumables';
                 item_icon = 'fas fa-tint';
-            } else if (value.type == 'license') {
+            }
+            else if (value.type === 'license') {
                 item_destination = 'licenses';
                 item_icon = 'far fa-save';
-            } else if (value.type == 'user') {
+            }
+            else if (value.type === 'user') {
                 item_destination = 'users';
                 item_icon = 'fas fa-user';
-            } else if (value.type == 'location') {
+            }
+            else if (value.type === 'location') {
                 item_destination = 'locations'
                 item_icon = 'fas fa-map-marker-alt';
-            } else if (value.type == 'maintenance') {
+            }
+            else if (value.type === 'maintenance') {
                 item_destination = 'maintenances'
                 item_icon = 'fa-solid fa-screwdriver-wrench';
-            } else if (value.type == 'model') {
+            }
+            else if (value.type === 'model') {
                 item_destination = 'models'
                 item_icon = 'fa-solid fa-boxes-stacked';
-            } else if (value.type == 'supplier') {
+            }
+            else if (value.type === 'supplier') {
                 item_destination = 'suppliers';
                 item_icon = 'fa-solid fa-store';
-            } else if (value.type == 'department') {
+            }
+            else if (value.type === 'department') {
                 item_destination = 'departments';
                 item_icon = 'fa-solid fa-building-user';
             }
-            else if (value.type == 'company') {
+            else if (value.type === 'company') {
                 item_destination = 'companies';
                 item_icon = 'fa-regular fa-building';
             }

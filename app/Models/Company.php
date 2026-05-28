@@ -405,6 +405,16 @@ final class Company extends SnipeModel
                 return $query->whereNull($table.$column);
             }
 
+            // action_logs: a NULL company_id means the logged object (AssetModel, Company, etc.)
+            // has no company_id column of its own. Those are global objects, visible to all users,
+            // so their log entries should not be hidden by the company filter.
+            if ($query->getModel()->getTable() === 'action_logs') {
+                return $query->where(function ($q) use ($table, $column, $companyIds) {
+                    $q->whereIn($table.$column, $companyIds)
+                        ->orWhereNull($table.$column);
+                });
+            }
+
             return $query->whereIn($table.$column, $companyIds);
         }
     }
