@@ -487,16 +487,18 @@ class Asset extends Depreciable
 
     public function availableForCheckIn()
     {
-
-        // This asset is currently assigned to anyone and is not deleted...
-        if (($this->assigned_to != '') && ($this->status) && ($this->status->archived == '0')
-            && ($this->status->deployable == '1')
-        ) {
-            return true;
-
+        if ($this->assigned_to == '') {
+            return false;
         }
 
-        return false;
+        // Deleted assets that are still checked out should always allow checkin
+        if ($this->deleted_at != '') {
+            return true;
+        }
+
+        return $this->status
+            && ($this->status->archived == '0')
+            && ($this->status->deployable == '1');
     }
 
     /**

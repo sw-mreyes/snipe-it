@@ -109,7 +109,7 @@ Route::group(
 
         Route::get('{asset}/checkin/{backto?}',
             [AssetCheckinController::class, 'create']
-        )->name('hardware.checkin.create')
+        )->name('hardware.checkin.create')->withTrashed()
             ->breadcrumbs(fn (Trail $trail, Asset $asset) => $trail->parent('hardware.show', $asset)
                 ->push(trans('admin/hardware/general.checkin'), route('hardware.index'))
             );

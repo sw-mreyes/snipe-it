@@ -24,6 +24,9 @@
                     @can('delete', \App\Models\Asset::class)
                         <option value="restore">{{trans('button.restore')}}</option>
                     @endcan
+                    @can('checkin', \App\Models\Asset::class)
+                        <option value="checkin">{{ trans('admin/hardware/general.bulk_checkin') }}</option>
+                    @endcan
                 @else
 
                     @can('update', \App\Models\Asset::class)

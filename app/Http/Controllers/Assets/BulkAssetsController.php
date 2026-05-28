@@ -783,7 +783,7 @@ class BulkAssetsController extends Controller
         $notAssigned = collect();
 
         if (old('selected_assets') && is_array(old('selected_assets'))) {
-            $assets = Asset::findMany(old('selected_assets'));
+            $assets = Asset::withTrashed()->findMany(old('selected_assets'));
 
             [$assigned, $notAssigned] = $assets->partition(function (Asset $asset) {
                 return $asset->assigned_to;
@@ -814,7 +814,7 @@ class BulkAssetsController extends Controller
 
         $asset_ids = array_filter($request->input('selected_assets'));
 
-        $assets = Asset::findOrFail($asset_ids);
+        $assets = Asset::withTrashed()->findOrFail($asset_ids);
 
         $checkin_at = date('Y-m-d H:i:s');
         if ($request->filled('checkin_at') && $request->input('checkin_at') != date('Y-m-d')) {
