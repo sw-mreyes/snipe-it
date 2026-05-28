@@ -11,30 +11,30 @@ class CssColorTest extends TestCase
     public static function validColorProvider(): array
     {
         return [
-            'hex 3-digit'      => ['#abc'],
-            'hex 6-digit'      => ['#3c8dbc'],
-            'hex uppercase'    => ['#FFFFFF'],
+            'hex 3-digit' => ['#abc'],
+            'hex 6-digit' => ['#3c8dbc'],
+            'hex uppercase' => ['#FFFFFF'],
             'hex 4-digit rgba' => ['#abcd'],
             'hex 8-digit rgba' => ['#3c8dbc80'],
-            'rgb'              => ['rgb(10,20,30)'],
-            'rgb with spaces'  => ['rgb( 10 , 20 , 30 )'],
-            'rgba'             => ['rgba(10,20,30,0.5)'],
-            'hsl'              => ['hsl(120,50%,50%)'],
-            'hsla'             => ['hsla(120,50%,50%,0.8)'],
+            'rgb' => ['rgb(10,20,30)'],
+            'rgb with spaces' => ['rgb( 10 , 20 , 30 )'],
+            'rgba' => ['rgba(10,20,30,0.5)'],
+            'hsl' => ['hsl(120,50%,50%)'],
+            'hsla' => ['hsla(120,50%,50%,0.8)'],
         ];
     }
 
     public static function invalidColorProvider(): array
     {
         return [
-            'named color'           => ['red'],
-            'css injection payload' => ["red; }body{background:url(//evil.com)} .x{color: #"],
-            'expression'            => ['expression(alert(1))'],
-            'url()'                 => ['url(http://evil.com)'],
-            'value with semicolon'  => ['#3c8dbc; color: red'],
-            'empty string'          => [''],
-            'arbitrary string'      => ['not-a-color'],
-            'javascript scheme'     => ['javascript:alert(1)'],
+            'named color' => ['red'],
+            'css injection payload' => ['red; }body{background:url(//evil.com)} .x{color: #'],
+            'expression' => ['expression(alert(1))'],
+            'url()' => ['url(http://evil.com)'],
+            'value with semicolon' => ['#3c8dbc; color: red'],
+            'empty string' => [''],
+            'arbitrary string' => ['not-a-color'],
+            'javascript scheme' => ['javascript:alert(1)'],
         ];
     }
 

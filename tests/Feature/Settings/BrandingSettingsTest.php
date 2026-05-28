@@ -14,22 +14,22 @@ class BrandingSettingsTest extends TestCase
     public static function validColorProvider(): array
     {
         return [
-            'hex 6-digit'  => ['#3c8dbc'],
-            'hex 3-digit'  => ['#fff'],
-            'rgb'          => ['rgb(10,20,30)'],
-            'rgba'         => ['rgba(10,20,30,0.5)'],
-            'hsl'          => ['hsl(120,50%,50%)'],
-            'hsla'         => ['hsla(120,50%,50%,0.8)'],
+            'hex 6-digit' => ['#3c8dbc'],
+            'hex 3-digit' => ['#fff'],
+            'rgb' => ['rgb(10,20,30)'],
+            'rgba' => ['rgba(10,20,30,0.5)'],
+            'hsl' => ['hsl(120,50%,50%)'],
+            'hsla' => ['hsla(120,50%,50%,0.8)'],
         ];
     }
 
     public static function invalidColorProvider(): array
     {
         return [
-            'named color'           => ['red'],
-            'css injection payload' => ["red; }body{background:url(//evil.com)} .x{color: #"],
-            'url()'                 => ['url(http://evil.com)'],
-            'value with semicolon'  => ['#3c8dbc; color: red'],
+            'named color' => ['red'],
+            'css injection payload' => ['red; }body{background:url(//evil.com)} .x{color: #'],
+            'url()' => ['url(http://evil.com)'],
+            'value with semicolon' => ['#3c8dbc; color: red'],
         ];
     }
 
@@ -60,8 +60,8 @@ class BrandingSettingsTest extends TestCase
         $this->actingAs(User::factory()->superuser()->create())
             ->post(route('settings.branding.save'), [
                 'link_light_color' => $color,
-                'link_dark_color'  => $color,
-                'nav_link_color'   => $color,
+                'link_dark_color' => $color,
+                'nav_link_color' => $color,
             ])
             ->assertValid(['link_light_color', 'link_dark_color', 'nav_link_color'])
             ->assertSessionHasNoErrors();
@@ -74,8 +74,8 @@ class BrandingSettingsTest extends TestCase
             ->from(route('settings.branding.index'))
             ->post(route('settings.branding.save'), [
                 'link_light_color' => $color,
-                'link_dark_color'  => $color,
-                'nav_link_color'   => $color,
+                'link_dark_color' => $color,
+                'nav_link_color' => $color,
             ])
             ->assertInvalid(['link_light_color', 'link_dark_color', 'nav_link_color'])
             ->assertSessionHasErrors(['link_light_color', 'link_dark_color', 'nav_link_color']);
