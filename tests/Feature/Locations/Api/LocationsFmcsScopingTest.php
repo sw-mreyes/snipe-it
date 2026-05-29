@@ -31,7 +31,7 @@ class LocationsFmcsScopingTest extends TestCase
         $user = User::factory()->viewLocationHistory()->createUsers()->create();
         DB::table('company_user')->insert([
             'company_id' => $company->id,
-            'user_id'    => $user->id,
+            'user_id' => $user->id,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -75,15 +75,15 @@ class LocationsFmcsScopingTest extends TestCase
         $companyA = Company::factory()->create();
         $companyB = Company::factory()->create();
 
-        $locationA  = Location::factory()->create(['company_id' => $companyA->id]);
-        $locationB  = Location::factory()->create(['company_id' => $companyB->id]);
+        $locationA = Location::factory()->create(['company_id' => $companyA->id]);
+        $locationB = Location::factory()->create(['company_id' => $companyB->id]);
         $locationNull = Location::factory()->create(['company_id' => null]);
 
         $user = $this->userInCompany($companyA);
-        $ids  = $this->indexIds($user);
+        $ids = $this->indexIds($user);
 
-        $this->assertContains($locationA->id,    $ids, 'Own-company location should be visible');
-        $this->assertContains($locationB->id,    $ids, 'Other-company location should be visible when FMCS off');
+        $this->assertContains($locationA->id, $ids, 'Own-company location should be visible');
+        $this->assertContains($locationB->id, $ids, 'Other-company location should be visible when FMCS off');
         $this->assertContains($locationNull->id, $ids, 'Null-company location should be visible when FMCS off');
     }
 
@@ -94,15 +94,15 @@ class LocationsFmcsScopingTest extends TestCase
         $companyA = Company::factory()->create();
         $companyB = Company::factory()->create();
 
-        $locationA    = Location::factory()->create(['company_id' => $companyA->id]);
-        $locationB    = Location::factory()->create(['company_id' => $companyB->id]);
+        $locationA = Location::factory()->create(['company_id' => $companyA->id]);
+        $locationB = Location::factory()->create(['company_id' => $companyB->id]);
         $locationNull = Location::factory()->create(['company_id' => null]);
 
         $user = $this->userInCompany($companyA);
-        $ids  = $this->selectlistIds($user);
+        $ids = $this->selectlistIds($user);
 
-        $this->assertContains($locationA->id,    $ids, 'Own-company location should be in selectlist');
-        $this->assertContains($locationB->id,    $ids, 'Other-company location should be in selectlist when FMCS off');
+        $this->assertContains($locationA->id, $ids, 'Own-company location should be in selectlist');
+        $this->assertContains($locationB->id, $ids, 'Other-company location should be in selectlist when FMCS off');
         $this->assertContains($locationNull->id, $ids, 'Null-company location should be in selectlist when FMCS off');
     }
 
@@ -114,9 +114,9 @@ class LocationsFmcsScopingTest extends TestCase
     {
         $this->settings->enableMultipleFullCompanySupport();
 
-        $company  = Company::factory()->create();
+        $company = Company::factory()->create();
         $location = Location::factory()->create(['company_id' => $company->id]);
-        $user     = $this->userInCompany($company);
+        $user = $this->userInCompany($company);
 
         $this->assertContains($location->id, $this->indexIds($user),
             'Location in same company should be visible');
@@ -130,7 +130,7 @@ class LocationsFmcsScopingTest extends TestCase
         $companyB = Company::factory()->create();
 
         $locationB = Location::factory()->create(['company_id' => $companyB->id]);
-        $user      = $this->userInCompany($companyA);
+        $user = $this->userInCompany($companyA);
 
         $this->assertNotContains($locationB->id, $this->indexIds($user),
             'Location in a different company should not be visible');
@@ -140,9 +140,9 @@ class LocationsFmcsScopingTest extends TestCase
     {
         $this->settings->enableMultipleFullCompanySupport();
 
-        $company      = Company::factory()->create();
+        $company = Company::factory()->create();
         $locationNull = Location::factory()->create(['company_id' => null]);
-        $user         = $this->userInCompany($company);
+        $user = $this->userInCompany($company);
 
         $this->assertNotContains($locationNull->id, $this->indexIds($user),
             'Location with no company should not be visible to company-scoped user');
@@ -152,9 +152,9 @@ class LocationsFmcsScopingTest extends TestCase
     {
         $this->settings->enableMultipleFullCompanySupport();
 
-        $company  = Company::factory()->create();
+        $company = Company::factory()->create();
         $location = Location::factory()->create(['company_id' => $company->id]);
-        $user     = $this->userInCompany($company);
+        $user = $this->userInCompany($company);
 
         $this->assertContains($location->id, $this->selectlistIds($user),
             'Location in same company should appear in selectlist');
@@ -168,7 +168,7 @@ class LocationsFmcsScopingTest extends TestCase
         $companyB = Company::factory()->create();
 
         $locationB = Location::factory()->create(['company_id' => $companyB->id]);
-        $user      = $this->userInCompany($companyA);
+        $user = $this->userInCompany($companyA);
 
         $this->assertNotContains($locationB->id, $this->selectlistIds($user),
             'Location in a different company should not appear in selectlist');
@@ -178,9 +178,9 @@ class LocationsFmcsScopingTest extends TestCase
     {
         $this->settings->enableMultipleFullCompanySupport();
 
-        $company      = Company::factory()->create();
+        $company = Company::factory()->create();
         $locationNull = Location::factory()->create(['company_id' => null]);
-        $user         = $this->userInCompany($company);
+        $user = $this->userInCompany($company);
 
         $this->assertNotContains($locationNull->id, $this->selectlistIds($user),
             'Location with no company should not appear in selectlist for company-scoped user');
@@ -195,7 +195,7 @@ class LocationsFmcsScopingTest extends TestCase
         $this->settings->enableMultipleFullCompanySupport();
 
         $locationNull = Location::factory()->create(['company_id' => null]);
-        $user         = $this->userWithNoCompany();
+        $user = $this->userWithNoCompany();
 
         $this->assertContains($locationNull->id, $this->indexIds($user),
             'Location with no company should be visible to user with no company');
@@ -205,9 +205,9 @@ class LocationsFmcsScopingTest extends TestCase
     {
         $this->settings->enableMultipleFullCompanySupport();
 
-        $company  = Company::factory()->create();
+        $company = Company::factory()->create();
         $location = Location::factory()->create(['company_id' => $company->id]);
-        $user     = $this->userWithNoCompany();
+        $user = $this->userWithNoCompany();
 
         $this->assertNotContains($location->id, $this->indexIds($user),
             'Location with a company should not be visible to user with no company');
@@ -218,7 +218,7 @@ class LocationsFmcsScopingTest extends TestCase
         $this->settings->enableMultipleFullCompanySupport();
 
         $locationNull = Location::factory()->create(['company_id' => null]);
-        $user         = $this->userWithNoCompany();
+        $user = $this->userWithNoCompany();
 
         $this->assertContains($locationNull->id, $this->selectlistIds($user),
             'Location with no company should appear in selectlist for user with no company');
@@ -228,9 +228,9 @@ class LocationsFmcsScopingTest extends TestCase
     {
         $this->settings->enableMultipleFullCompanySupport();
 
-        $company  = Company::factory()->create();
+        $company = Company::factory()->create();
         $location = Location::factory()->create(['company_id' => $company->id]);
-        $user     = $this->userWithNoCompany();
+        $user = $this->userWithNoCompany();
 
         $this->assertNotContains($location->id, $this->selectlistIds($user),
             'Location with a company should not appear in selectlist for user with no company');
@@ -252,10 +252,10 @@ class LocationsFmcsScopingTest extends TestCase
         $locationNull = Location::factory()->create(['company_id' => null]);
 
         $user = $this->userInCompany($companyA);
-        $ids  = $this->indexIds($user);
+        $ids = $this->indexIds($user);
 
-        $this->assertContains($locationA->id,    $ids, 'Own-company location should still be visible');
-        $this->assertNotContains($locationB->id,    $ids, 'Other-company location should still be hidden');
+        $this->assertContains($locationA->id, $ids, 'Own-company location should still be visible');
+        $this->assertNotContains($locationB->id, $ids, 'Other-company location should still be hidden');
         $this->assertNotContains($locationNull->id, $ids, 'Null-company location should still be hidden from company-scoped user');
     }
 
@@ -263,12 +263,12 @@ class LocationsFmcsScopingTest extends TestCase
     {
         $this->settings->enableScopedLocationsWithFullMultipleCompanySupport();
 
-        $company      = Company::factory()->create();
+        $company = Company::factory()->create();
         $locationNull = Location::factory()->create(['company_id' => null]);
-        $locationA    = Location::factory()->create(['company_id' => $company->id]);
+        $locationA = Location::factory()->create(['company_id' => $company->id]);
 
         $user = $this->userWithNoCompany();
-        $ids  = $this->indexIds($user);
+        $ids = $this->indexIds($user);
 
         $this->assertContains($locationNull->id, $ids, 'Null-company location should still be visible to no-company user');
         $this->assertNotContains($locationA->id, $ids, 'Company location should still be hidden from no-company user');
