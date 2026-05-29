@@ -12,6 +12,7 @@ use ArieTimmerman\Laravel\SCIMServer\Attribute\Meta;
 use ArieTimmerman\Laravel\SCIMServer\Attribute\MutableCollection;
 use ArieTimmerman\Laravel\SCIMServer\Attribute\Schema as AttributeSchema;
 use ArieTimmerman\Laravel\SCIMServer\Exceptions\SCIMException;
+use ArieTimmerman\Laravel\SCIMServer\Parser\Parser;
 use ArieTimmerman\Laravel\SCIMServer\Parser\Path;
 use ArieTimmerman\Laravel\SCIMServer\SCIM\Schema;
 use Illuminate\Database\Eloquent\Model;
@@ -29,6 +30,140 @@ function complex($name = null): Complex
 function eloquent($name, $attribute = null): Attribute
 {
     return new Eloquent($name, $attribute);
+}
+
+// Extends Complex to handle schema-qualified attribute keys in PATCH add/replace operations.
+// Azure Entra ID sends PATCH without a "path" field, putting the full URN as the value dict key
+// e.g. {"op":"add","value":{"urn:...grokability...:location":"Head Office"}}.
+// The upstream library's add() only searches the default (core) schema, silently dropping grokability attrs.
+class SnipeRootComplex extends Complex
+{
+    private function findInSchema(string $schemaUrn, string $attrName): ?object
+    {
+        $schemaNode = $this->getSubNode($schemaUrn);
+
+        return ($schemaNode instanceof AttributeSchema) ? $schemaNode->getSubNode($attrName) : null;
+    }
+
+    public function add($value, Model &$object)
+    {
+        $match = false;
+        $this->dirty = true;
+
+        if ($this->mutability == 'readOnly') {
+            return;
+        }
+
+        foreach ($value as $key => $v) {
+            if (is_numeric($key)) {
+                throw new SCIMException('Invalid key: '.$key.' for complex object '.$this->getFullKey());
+            }
+
+            $path = Parser::parse($key);
+
+            if ($path->isNotEmpty()) {
+                $attributeNames = $path->getAttributePathAttributes();
+                $schema = $path->getAttributePath()?->path?->schema;
+                $path = $path->shiftAttributePathAttributes();
+
+                $subNode = ($schema !== null) ? $this->findInSchema($schema, $attributeNames[0]) : null;
+                if ($subNode === null) {
+                    $subNode = $this->getSubNode($attributeNames[0]);
+                }
+
+                $match = true;
+
+                $newValue = $v;
+                if ($path->isNotEmpty()) {
+                    $newValue = [implode('.', $path->getAttributePathAttributes()) => $v];
+                }
+
+                if ($subNode !== null) {
+                    $subNode->add($newValue, $object);
+                }
+            }
+        }
+
+        if (! $match && $this->parent == null) {
+            foreach ($this->subAttributes as $attribute) {
+                if ($attribute instanceof AttributeSchema) {
+                    $attribute->add($value, $object);
+                }
+            }
+        }
+    }
+
+    public function replace($value, Model &$object, ?Path $path = null, $removeIfNotSet = false)
+    {
+        $this->dirty = true;
+
+        if ($this->mutability == 'readOnly') {
+            return;
+        }
+
+        foreach ($value as $key => $v) {
+            if (is_numeric($key)) {
+                throw new SCIMException('Invalid key: '.$key.' for complex object '.$this->getFullKey());
+            }
+
+            $subNode = null;
+
+            if (strpos($key, ':') !== false) {
+                $parsed = Parser::parse($key);
+                $schemaUrn = $parsed->getAttributePath()?->path?->schema;
+                $attrName = $parsed->getAttributePathAttributes()[0] ?? null;
+                if ($schemaUrn !== null && $attrName !== null) {
+                    $subNode = $this->findInSchema($schemaUrn, $attrName);
+                }
+                if ($subNode === null) {
+                    $subNode = $this->getSubNode($key);
+                }
+            } else {
+                $path = Parser::parse($key);
+                if ($path->isNotEmpty()) {
+                    $attributeNames = $path->getAttributePathAttributes();
+                    $path = $path->shiftAttributePathAttributes();
+                    $subNode = $this->getSubNode($attributeNames[0] ?? $path->getAttributePath()?->path?->schema);
+                }
+            }
+
+            if ($subNode !== null) {
+                $newValue = $v;
+                if ($path !== null && $path->isNotEmpty()) {
+                    $newValue = [implode('.', $path->getAttributePathAttributes()) => $v];
+                }
+                $subNode->replace($newValue, $object, $path);
+            }
+        }
+
+        if ($subNode == null && $this->parent == null) {
+            foreach ($this->subAttributes as $attribute) {
+                if ($attribute instanceof AttributeSchema) {
+                    $attribute->replace($value, $object, $path);
+                }
+            }
+        }
+
+        if ($removeIfNotSet) {
+            foreach ($this->subAttributes as $attribute) {
+                if (! $attribute->isDirty()) {
+                    $attribute->remove(null, $object);
+                }
+            }
+        }
+    }
+}
+
+// Azure Entra ID sends op=replace with path=members and only the single user being provisioned,
+// not the full member list. Using sync() would wipe all other members on every user update.
+// Override replace() to use syncWithoutDetaching() so it behaves like add(); op=remove with a
+// filter path still handles explicit removals correctly.
+class SnipeMutableCollection extends MutableCollection
+{
+    public function replace($value, Model &$object, ?Path $path = null)
+    {
+        $this->add($value, $object);
+    }
 }
 
 class EloquentWithRemove extends Eloquent
@@ -132,7 +267,7 @@ class SnipeSCIMConfig
             'withRelations' => [],
             'description' => 'User Account',
 
-            'map' => complex()->withSubAttributes(
+            'map' => (new SnipeRootComplex)->withSubAttributes(
                 new class('schemas', ['urn:ietf:params:scim:schemas:core:2.0:User', self::ENTERPRISE, self::GROKABILITY]) extends Constant
                 {
                     public function replace($value, &$object, $path = null)
@@ -471,7 +606,7 @@ class SnipeSCIMConfig
                             $fail('The name has already been taken.');
                         }
                     }),
-                    (new MutableCollection('members'))->withSubAttributes(
+                    (new SnipeMutableCollection('members'))->withSubAttributes(
                         eloquent('value', 'id')->ensure('required'),
                         (new class('$ref') extends Eloquent
                         {
