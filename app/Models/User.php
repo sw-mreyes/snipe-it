@@ -323,7 +323,7 @@ class User extends SnipeModel implements AuthenticatableContract, AuthorizableCo
     protected function displayName(): Attribute
     {
         return Attribute::make(
-            get: fn (mixed $value) => $value ?? $this->getFullNameAttribute(),
+            get: fn (mixed $value) => ($value !== null && $value !== '') ? $value : $this->getFullNameAttribute(),
         );
     }
 
@@ -601,7 +601,6 @@ class User extends SnipeModel implements AuthenticatableContract, AuthorizableCo
             && (($this->accessories_count ?? $this->accessories()->count()) === 0)
             && (($this->licenses_count ?? $this->licenses()->count()) === 0)
             && (($this->consumables_count ?? $this->consumables()->count()) === 0)
-            && (($this->accessories_count ?? $this->accessories()->count()) === 0)
             && (($this->manages_users_count ?? $this->managesUsers()->count()) === 0)
             && (($this->manages_locations_count ?? $this->managedLocations()->count()) === 0)
             && ($this->deleted_at == '');
@@ -624,6 +623,47 @@ class User extends SnipeModel implements AuthenticatableContract, AuthorizableCo
     public function companies(): BelongsToMany
     {
         return $this->belongsToMany(Company::class, 'company_user');
+    }
+
+    /**
+     * Returns whether an FMCS company check should block this user from receiving
+     * an asset that belongs to the given company.
+     *
+     * - If the user has no company associations at all: returns true (no restriction).
+     * - If the user has associations: returns true only when $companyId is among them.
+     *
+     * Checks both the primary company_id column and the many-to-many pivot table so
+     * that users assigned to multiple companies can receive assets from any of them.
+     */
+    public function canReceiveFromCompany(int $companyId): bool
+    {
+        // Primary company matches
+        if (! is_null($this->company_id) && (int) $this->company_id === $companyId) {
+            return true;
+        }
+
+        // Pivot company matches
+        if ($this->companies()->where('companies.id', $companyId)->exists()) {
+            return true;
+        }
+
+        // User has no company associations — don't enforce (mirrors legacy behaviour
+        // where a null company_id on the user skipped the FMCS check entirely).
+        if (is_null($this->company_id) && ! $this->companies()->exists()) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Returns all companies this user belongs to — union of the primary company_id
+     * column and the many-to-many pivot — as a deduplicated Collection.
+     * Used to scope FMCS dropdowns to companies the user is allowed to work with.
+     */
+    public function allCompanies(): Collection
+    {
+        return $this->companies->push($this->company)->filter()->unique('id')->values();
     }
 
     /**

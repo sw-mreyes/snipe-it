@@ -16,6 +16,7 @@ use App\Models\CustomField;
 use App\Models\LicenseSeat;
 use App\Models\Setting;
 use App\Models\Statuslabel;
+use App\Models\User;
 use App\View\Label;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
@@ -687,18 +688,25 @@ class BulkAssetsController extends Controller
                     ->with('error', trans('general.error_assets_already_checked_out'));
             }
 
-            // Prevent checking out assets across companies if FMCS enabled
-            if (Setting::getSettings()->full_multiple_companies_support && $target->company_id) {
-                $company_ids = $assets->pluck('company_id')->unique();
+            // Prevent checking out assets across companies if FMCS enabled.
+            // For users with multiple companies, check all their associated companies via the pivot.
+            if (Setting::getSettings()->full_multiple_companies_support) {
+                $company_ids = $assets->pluck('company_id')->filter()->unique();
 
-                // if there is more than one unique company id or the singular company id does not match
-                // then the checkout is invalid
-                if ($company_ids->count() > 1 || $company_ids->first() != $target->company_id) {
-                    // re-add the asset ids so the assets select is re-populated
-                    $request->session()->flashInput(['selected_assets' => $asset_ids]);
+                if ($company_ids->isNotEmpty()) {
+                    $assetCompanyId = (int) $company_ids->first();
 
-                    return redirect(route('hardware.bulkcheckout.show'))
-                        ->with('error', trans('general.error_user_company_multiple'));
+                    $mismatch = $company_ids->count() > 1
+                        || ($target instanceof User
+                            ? ! $target->canReceiveFromCompany($assetCompanyId)
+                            : (! is_null($target->company_id) && (int) $target->company_id !== $assetCompanyId));
+
+                    if ($mismatch) {
+                        $request->session()->flashInput(['selected_assets' => $asset_ids]);
+
+                        return redirect(route('hardware.bulkcheckout.show'))
+                            ->with('error', trans('general.error_user_company_multiple'));
+                    }
                 }
             }
 
