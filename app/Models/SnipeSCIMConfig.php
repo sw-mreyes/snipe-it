@@ -166,6 +166,42 @@ class SnipeMutableCollection extends MutableCollection
     }
 }
 
+// Company is stored only in the company_user pivot, not company_id. Read from the pivot
+// and sync it on write. For new users (not yet saved) defer the sync via a saved() callback.
+class SCIMCompanyAttribute extends MappedTable
+{
+    protected function doRead(&$object, $attributes = [])
+    {
+        return $object->companies->first()?->name;
+    }
+
+    private function applyCompany(?int $companyId, Model &$object): void
+    {
+        $ids = $companyId ? [$companyId] : [];
+
+        if ($object->exists) {
+            $object->companies()->sync($ids);
+        } else {
+            $object->saved(fn () => $object->companies()->sync($ids));
+        }
+    }
+
+    public function add($value, Model &$object)
+    {
+        $this->applyCompany($value ? Company::firstOrCreate(['name' => $value])->id : null, $object);
+    }
+
+    public function replace($value, Model &$object, $path = null, $removeIfNotSet = false)
+    {
+        $this->applyCompany($value ? Company::firstOrCreate(['name' => $value])->id : null, $object);
+    }
+
+    public function patch($operation, $value, Model &$object, ?Path $path = null, $removeIfNotSet = false)
+    {
+        $this->applyCompany($value ? Company::firstOrCreate(['name' => $value])->id : null, $object);
+    }
+}
+
 class EloquentWithRemove extends Eloquent
 {
     public function remove($value, Model &$object, ?Path $path = null)
@@ -557,7 +593,7 @@ class SnipeSCIMConfig
                 ),
                 (new AttributeSchema(self::GROKABILITY, false))->withSubAttributes(
                     new MappedTable('location', 'location', Location::class, 'location_id', 'name'),
-                    new MappedTable('company', 'company', Company::class, 'company_id', 'name'),
+                    new SCIMCompanyAttribute('company', 'company', Company::class, 'company_id', 'name'),
                 )
             ),
         ];
