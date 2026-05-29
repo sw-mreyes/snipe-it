@@ -269,7 +269,7 @@ final class Company extends SnipeModel
     {
         return ! self::isFullMultipleCompanySupportEnabled()
             || auth()->user()->isSuperUser()
-            || empty(self::getCurrentUserCompanyIds());
+            || ! empty(self::getCurrentUserCompanyIds());
     }
 
     /**

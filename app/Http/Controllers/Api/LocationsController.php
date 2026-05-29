@@ -444,13 +444,16 @@ class LocationsController extends Controller
             'locations.tag_color',
         ]);
 
-        // Only scope locations if the setting is enabled
+        // scope_locations_fmcs is an explicit opt-in to restrict locations by company.
+        // Without it, locations are visible to all users regardless of FMCS state.
         if (Setting::getSettings()->scope_locations_fmcs) {
             $locations = Company::scopeCompanyables($locations);
-        }
 
-        if ((Setting::getSettings()->full_multiple_companies_support == '1') && $request->filled('companyId')) {
-            $locations->where('locations.company_id', $request->input('companyId'));
+            // Allow further narrowing to a specific company (e.g. passed via data-company-id
+            // from a checkout form). Superusers are exempt so they can always see all locations.
+            if ($request->filled('companyId') && ! auth()->user()->isSuperUser()) {
+                $locations->where('locations.company_id', $request->input('companyId'));
+            }
         }
 
         $page = 1;
