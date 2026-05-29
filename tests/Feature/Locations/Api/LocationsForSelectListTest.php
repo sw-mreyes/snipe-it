@@ -42,11 +42,9 @@ class LocationsForSelectListTest extends TestCase
         $this->actingAsForApi(User::factory()->createUsers()->create())
             ->getJson(route('api.locations.selectlist', ['excludeId' => $locationA->id]))
             ->assertOk()
-            ->assertJson(fn (AssertableJson $json) =>
-                $json->where('results', fn ($results) =>
-                    collect($results)->doesntContain('id', $locationA->id) &&
+            ->assertJson(fn (AssertableJson $json) => $json->where('results', fn ($results) => collect($results)->doesntContain('id', $locationA->id) &&
                     collect($results)->contains('id', $locationB->id)
-                )->etc()
+            )->etc()
             );
     }
 
