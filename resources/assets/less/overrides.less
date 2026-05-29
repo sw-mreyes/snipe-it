@@ -1186,6 +1186,19 @@ caption.tableCaption {
   padding-left: 8px;
 }
 
+
+.markdown-field-content {
+  h1 { font-size: 22px; font-weight: 700; margin: 6px 0 4px; }
+  h2 { font-size: 20px; font-weight: 700; margin: 6px 0 4px; }
+  h3 { font-size: 18px; font-weight: 700; margin: 6px 0 4px; }
+  h4 { font-size: 16px; font-weight: 700; margin: 4px 0 4px; }
+  h5, h6 { font-size: 14px; font-weight: 700; margin: 4px 0 4px; }
+  p { margin: 0 0 4px; }
+  p:last-child { margin-bottom: 0; }
+  ul, ol { margin: 0 0 4px; padding-left: 20px; }
+  > *:first-child { margin-top: 0; }
+}
+
 // via https://github.com/grokability/snipe-it/issues/11754
 .sidebar-toggle.btn {
   border-radius: 3px;
@@ -1307,6 +1320,7 @@ Radio toggle styles for permission settings and check/uncheck all
 }
 
 .js-copy-link {
+  float: left;
   color: grey;
 }
 

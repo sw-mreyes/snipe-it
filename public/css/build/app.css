@@ -1463,6 +1463,46 @@ caption.tableCaption {
   font-size: 18px;
   padding-left: 8px;
 }
+.markdown-field-content h1 {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 6px 0 4px;
+}
+.markdown-field-content h2 {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 6px 0 4px;
+}
+.markdown-field-content h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 6px 0 4px;
+}
+.markdown-field-content h4 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 4px 0 4px;
+}
+.markdown-field-content h5,
+.markdown-field-content h6 {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 4px 0 4px;
+}
+.markdown-field-content p {
+  margin: 0 0 4px;
+}
+.markdown-field-content p:last-child {
+  margin-bottom: 0;
+}
+.markdown-field-content ul,
+.markdown-field-content ol {
+  margin: 0 0 4px;
+  padding-left: 20px;
+}
+.markdown-field-content > *:first-child {
+  margin-top: 0;
+}
 .sidebar-toggle.btn {
   border-radius: 3px;
   box-shadow: none;
@@ -1565,6 +1605,7 @@ Radio toggle styles for permission settings and check/uncheck all
   cursor: pointer;
 }
 .js-copy-link {
+  float: left;
   color: grey;
 }
 .deleted {

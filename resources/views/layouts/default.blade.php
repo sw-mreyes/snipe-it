@@ -2377,6 +2377,8 @@
                 // Use element id to find the text element to hide / show
                 var targetElement = e.id+"-to-show";
                 var hiddenElement = e.id+"-to-hide";
+                var targetEl = document.getElementById(targetElement);
+                var isMarkdown = targetEl && targetEl.dataset.markdown;
                 var audio = new Audio('{{ config('app.url') }}/sounds/lock.mp3');
                 if($(e).hasClass('fa-lock')) {
                     @if ((isset($user)) && ($user->enable_sounds))
@@ -2384,7 +2386,11 @@
                     @endif
                     $(e).removeClass('fa-lock').addClass('fa-unlock');
                     // Show the encrypted custom value and hide the element with asterisks
-                    document.getElementById(targetElement).style.fontSize = "100%";
+                    if (isMarkdown) {
+                        targetEl.style.display = "block";
+                    } else {
+                        targetEl.style.fontSize = "100%";
+                    }
                     document.getElementById(hiddenElement).style.display = "none";
 
                 } else {
@@ -2393,7 +2399,12 @@
                     @endif
                     $(e).removeClass('fa-unlock').addClass('fa-lock');
                     // ClipboardJS can't copy display:none elements so use a trick to hide the value
-                    document.getElementById(targetElement).style.fontSize = "0px";
+                    if (isMarkdown) {
+                        targetEl.style.display = "none";
+                    } else {
+                        // ClipboardJS can't copy display:none elements so use a trick to hide the value
+                        targetEl.style.fontSize = "0px";
+                    }
                     document.getElementById(hiddenElement).style.display = "";
 
                  }
@@ -2523,8 +2534,8 @@
                         // This is necessary to avoid loop because value is generated dynamically
                         if (originalValue !== '' && originalValue !== asterisks) $element.attr('value', originalValue);
 
-                        // Hide the original value and show asterisks of the same length
-                        var asterisks = '*'.repeat(originalValue.length);
+                        // Hide the original value and show a fixed-length asterisk placeholder
+                        var asterisks = '*'.repeat(11);
                         $element.text(asterisks);
 
                         // Add click event to show original text

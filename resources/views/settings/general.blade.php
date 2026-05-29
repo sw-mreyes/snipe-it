@@ -381,7 +381,8 @@
                                        @endif
                                        <p class="help-block">
                                            {{ trans('admin/settings/general.dashboard_message_help') }}
-                                           {!!  trans('general.github_markdown') !!}</p>
+                                           <i class="fab fa-markdown" aria-hidden="true"> {!!  trans('general.github_markdown') !!}
+                                       </p>
                                    </div>
                                </div>
                        </fieldset>
