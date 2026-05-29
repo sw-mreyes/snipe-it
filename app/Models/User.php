@@ -657,6 +657,16 @@ class User extends SnipeModel implements AuthenticatableContract, AuthorizableCo
     }
 
     /**
+     * Returns all companies this user belongs to — union of the primary company_id
+     * column and the many-to-many pivot — as a deduplicated Collection.
+     * Used to scope FMCS dropdowns to companies the user is allowed to work with.
+     */
+    public function allCompanies(): Collection
+    {
+        return $this->companies->push($this->company)->filter()->unique('id')->values();
+    }
+
+    /**
      * Sync company pivot membership and log the change if the set of companies changed.
      *
      * When called after $user->save() in the same request, UserObserver::updating() will

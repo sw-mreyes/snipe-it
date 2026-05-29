@@ -609,6 +609,11 @@ class AssetsController extends Controller
         ])->with('model', 'status', 'assignedTo')
             ->NotArchived();
 
+        // When FMCS is enabled, automatically scope to companies the acting user belongs to.
+        // scopeCompanyables is a no-op for superusers and when FMCS is disabled.
+        $assets = Company::scopeCompanyables($assets);
+
+        // Allow further narrowing to a specific company passed via data-company-id on the select.
         if ((Setting::getSettings()->full_multiple_companies_support == '1') && $request->filled('companyId')) {
             $companyIds = array_values(array_filter(array_map('intval', explode(',', $request->input('companyId')))));
             if (! empty($companyIds)) {

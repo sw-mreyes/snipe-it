@@ -468,8 +468,15 @@ $(function () {
             syncCheckoutToTypeUi(true);
         });
 
-        // Apply the current radio selection on initial render.
-        syncCheckoutToTypeUi(false);
+        // Apply the current radio selection on initial render, but only when the
+        // selector row itself is already visible. On the asset create page the selector
+        // starts hidden (display:none) and user_add() reveals it after a deployability
+        // AJAX check — running here would prematurely show a panel before the radio
+        // group is visible. On the standalone checkout page the selector is visible
+        // from the start, so the sync runs normally there.
+        if ($('#assignto_selector').is(':visible')) {
+            syncCheckoutToTypeUi(false);
+        }
     });
 
 

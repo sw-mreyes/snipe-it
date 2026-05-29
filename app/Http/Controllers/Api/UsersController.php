@@ -396,6 +396,11 @@ class UsersController extends Controller
             ]
         )->where('show_in_list', '=', '1');
 
+        // When FMCS is enabled, automatically scope to companies the acting user belongs to.
+        // scopeCompanyables is a no-op for superusers and when FMCS is disabled.
+        $users = Company::scopeCompanyables($users, 'company_id', 'users');
+
+        // Allow further narrowing to a specific company passed via data-company-ids on the select.
         if ((Setting::getSettings()->full_multiple_companies_support == '1') && $request->filled('companyId')) {
             $companyIds = array_values(array_filter(array_map('intval', explode(',', $request->input('companyId')))));
             if (! empty($companyIds)) {
