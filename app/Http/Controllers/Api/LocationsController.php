@@ -455,6 +455,10 @@ class LocationsController extends Controller
             $locations = $locations->where('locations.name', 'LIKE', '%'.$request->input('search').'%');
         }
 
+        if ($request->filled('excludeId')) {
+            $locations->where('locations.id', '!=', (int) $request->input('excludeId'));
+        }
+
         $locations = $locations->orderBy('name', 'ASC')->get();
 
         $locations_with_children = [];

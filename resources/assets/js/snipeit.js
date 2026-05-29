@@ -211,6 +211,7 @@ $(function () {
                         page: params.page || 1,
                         statusType: link.data("asset-status-type"),
                         companyId: link.data("company-ids") || link.data("company-id"),
+                        excludeId: link.data("exclude-id"),
                     };
                     return data;
                 },

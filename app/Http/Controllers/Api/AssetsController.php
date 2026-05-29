@@ -621,6 +621,10 @@ class AssetsController extends Controller
             }
         }
 
+        if ($request->filled('excludeId')) {
+            $assets->where('assets.id', '!=', (int) $request->input('excludeId'));
+        }
+
         if ($request->filled('statusType') && $request->input('statusType') === 'RTD') {
             $assets = $assets->RTD();
         }

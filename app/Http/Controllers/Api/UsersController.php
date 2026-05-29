@@ -408,6 +408,10 @@ class UsersController extends Controller
             }
         }
 
+        if ($request->filled('excludeId')) {
+            $users->where('users.id', '!=', (int) $request->input('excludeId'));
+        }
+
         if ($request->filled('search')) {
             $users = $users->where(function ($query) use ($request) {
                 $query->SimpleNameSearch($request->input('search'))
