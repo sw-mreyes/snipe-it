@@ -626,6 +626,37 @@ class User extends SnipeModel implements AuthenticatableContract, AuthorizableCo
     }
 
     /**
+     * Returns whether an FMCS company check should block this user from receiving
+     * an asset that belongs to the given company.
+     *
+     * - If the user has no company associations at all: returns true (no restriction).
+     * - If the user has associations: returns true only when $companyId is among them.
+     *
+     * Checks both the primary company_id column and the many-to-many pivot table so
+     * that users assigned to multiple companies can receive assets from any of them.
+     */
+    public function canReceiveFromCompany(int $companyId): bool
+    {
+        // Primary company matches
+        if (! is_null($this->company_id) && (int) $this->company_id === $companyId) {
+            return true;
+        }
+
+        // Pivot company matches
+        if ($this->companies()->where('companies.id', $companyId)->exists()) {
+            return true;
+        }
+
+        // User has no company associations — don't enforce (mirrors legacy behaviour
+        // where a null company_id on the user skipped the FMCS check entirely).
+        if (is_null($this->company_id) && ! $this->companies()->exists()) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
      * Sync company pivot membership and log the change if the set of companies changed.
      *
      * When called after $user->save() in the same request, UserObserver::updating() will

@@ -904,11 +904,21 @@ class AssetsController extends Controller
 
     private function checkoutCompanyMismatchResponse(Asset $asset, User|Asset|Location $target): ?JsonResponse
     {
-        if ((Setting::getSettings()->full_multiple_companies_support == '1')
-            && (! is_null($asset->company_id))
-            && (! is_null($target->company_id))
-            && ((int) $asset->company_id !== (int) $target->company_id)
-        ) {
+        if (Setting::getSettings()->full_multiple_companies_support != '1' || is_null($asset->company_id)) {
+            return null;
+        }
+
+        // For users with multiple companies, check all their associated companies,
+        // not just the primary company_id column.
+        if ($target instanceof User) {
+            if (! $target->canReceiveFromCompany((int) $asset->company_id)) {
+                return response()->json(Helper::formatStandardApiResponse('error', null, trans('general.error_user_company')));
+            }
+
+            return null;
+        }
+
+        if (! is_null($target->company_id) && (int) $asset->company_id !== (int) $target->company_id) {
             return response()->json(Helper::formatStandardApiResponse('error', null, trans('general.error_user_company')));
         }
 
@@ -1062,13 +1072,8 @@ class AssetsController extends Controller
         }
 
         // In FMCS mode, enforce explicit same-company target checks before mutating checkout state.
-        $targetCompanyId = data_get($target, 'company_id');
-        if ((Setting::getSettings()->full_multiple_companies_support == '1')
-            && (! is_null($asset->company_id))
-            && (! is_null($targetCompanyId))
-            && ((int) $asset->company_id !== (int) $targetCompanyId)
-        ) {
-            return response()->json(Helper::formatStandardApiResponse('error', $error_payload, trans('general.error_user_company')));
+        if ($mismatch = $this->checkoutCompanyMismatchResponse($asset, $target)) {
+            return $mismatch;
         }
 
         $checkout_at = request('checkout_at', date('Y-m-d H:i:s'));
