@@ -67,7 +67,18 @@ class LocationsController extends Controller
             'notes',
         ];
 
-        $locations = Location::with('parent', 'manager', 'children')->select([
+        $locations = Location::with([
+            'parent',
+            'children',
+            'manager' => fn ($q) => $q->withCount([
+                'assets as assets_count',
+                'accessories as accessories_count',
+                'licenses as licenses_count',
+                'consumables as consumables_count',
+                'managesUsers as manages_users_count',
+                'managedLocations as manages_locations_count',
+            ]),
+        ])->select([
             'locations.id',
             'locations.name',
             'locations.address',
@@ -157,8 +168,6 @@ class LocationsController extends Controller
             $locations->where('tag_color', '=', $request->input('locations.tag_color'));
         }
 
-        // Make sure the offset and limit are actually integers and do not exceed system limits
-        $offset = ($request->input('offset') > $locations->count()) ? $locations->count() : app('api_offset_value');
         $limit = app('api_limit_value');
 
         $order = $request->input('order') === 'asc' ? 'asc' : 'desc';
@@ -180,6 +189,7 @@ class LocationsController extends Controller
         }
 
         $total = $locations->count();
+        $offset = ($request->input('offset') > $total) ? $total : app('api_offset_value');
         $locations = $locations->skip($offset)->take($limit)->get();
 
         return (new LocationsTransformer)->transformLocations($locations, $total);
@@ -227,7 +237,19 @@ class LocationsController extends Controller
     public function show($id): JsonResponse|array
     {
         $this->authorize('view', Location::class);
-        $location = Location::with('parent', 'manager', 'children', 'company')
+        $location = Location::with([
+            'parent',
+            'children',
+            'company',
+            'manager' => fn ($q) => $q->withCount([
+                'assets as assets_count',
+                'accessories as accessories_count',
+                'licenses as licenses_count',
+                'consumables as consumables_count',
+                'managesUsers as manages_users_count',
+                'managedLocations as manages_locations_count',
+            ]),
+        ])
             ->select([
                 'locations.id',
                 'locations.name',
