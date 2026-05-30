@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Events\CheckoutableCheckedIn;
+use App\Mail\BulkDeleteReportMail;
 use App\Models\Accessory;
 use App\Models\AccessoryCheckout;
 use App\Models\Actionlog;
@@ -13,18 +14,19 @@ use App\Models\Component;
 use App\Models\Consumable;
 use App\Models\License;
 use App\Models\LicenseSeat;
-use App\Models\Maintenance;
 use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\Console\Helper\ProgressBar;
 
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\error;
 use function Laravel\Prompts\info;
+use function Laravel\Prompts\multisearch;
 use function Laravel\Prompts\multiselect;
 use function Laravel\Prompts\search;
 use function Laravel\Prompts\select;
@@ -37,6 +39,8 @@ class BulkDelete extends Command
     protected $description = 'Interactively check in and/or delete items by company and type';
 
     private const CHECKIN_NOTE = 'Checked in via bulk CLI operation';
+
+    private array $reportLines = [];
 
     public function handle(): int
     {
@@ -76,25 +80,36 @@ class BulkDelete extends Command
         $admin = User::findOrFail((int) $adminId);
 
         // Step 3: Which companies?
-        $allCompanyOptions = Company::orderBy('name')
-            ->get()
-            ->mapWithKeys(fn (Company $c) => [$c->id => "{$c->name} (ID: {$c->id})"])
-            ->toArray();
-
-        if (empty($allCompanyOptions)) {
+        if (! Company::exists()) {
             error('No companies found. Please create at least one company before using this command.');
 
             return 1;
         }
 
-        // Add a virtual "No Company" option for items with a null company_id
-        $companyChoices = ['__null__' => '(No Company / Unassigned)'] + $allCompanyOptions;
-
-        $selectedCompanyKeys = multiselect(
+        $selectedCompanyKeys = multisearch(
             label: 'Which companies would you like to check in and delete items for?',
-            options: $companyChoices,
-            hint: 'Space to toggle, arrow keys to navigate, enter to confirm.',
+            placeholder: 'Type to search companies...',
+            options: function (string $value): array {
+                $results = [];
+
+                if ($value === '' || str_contains('(no company / unassigned)', strtolower($value))) {
+                    $results['__null__'] = '(No Company / Unassigned)';
+                }
+
+                $query = Company::orderBy('name');
+                if ($value !== '') {
+                    $query->where('name', 'like', "%{$value}%");
+                }
+
+                $query->get()->each(function (Company $c) use (&$results) {
+                    $results[$c->id] = "{$c->name} (ID: {$c->id})";
+                });
+
+                return $results;
+            },
+            scroll: 10,
             required: 'Please select at least one company.',
+            hint: 'If you\'re searching on several differently named companies, use the up-arrow to go back to the search box to search again. ',
         );
 
         $includeNullCompany = in_array('__null__', $selectedCompanyKeys);
@@ -103,7 +118,11 @@ class BulkDelete extends Command
             fn ($k) => $k !== '__null__'
         ));
 
-        $selectedCompanyNames = array_map(fn ($id) => $allCompanyOptions[$id] ?? '(No Company)', $selectedCompanyKeys);
+        $companyNamesById = Company::whereIn('id', $selectedCompanyIds)->pluck('name', 'id')->toArray();
+        $selectedCompanyNames = array_map(
+            fn ($id) => $id === '__null__' ? '(No Company)' : ($companyNamesById[$id] ?? "(ID: {$id})"),
+            $selectedCompanyKeys
+        );
 
         // Step 4: Which item types?
         $rawTypeSelection = multiselect(
@@ -191,14 +210,28 @@ class BulkDelete extends Command
             );
         }
 
-        // Step 9: Backup first?
+        // Step 9: Delete the companies themselves?
+        $deleteCompanyType = 'keep';
+        if (! empty($selectedCompanyIds)) {
+            $deleteCompanyType = select(
+                label: 'Should the selected companies also be deleted?',
+                options: [
+                    'keep' => 'Keep — do not delete the companies',
+                    'soft' => 'Soft delete — companies moved to trash (recoverable)',
+                    'hard' => 'Hard delete — permanently removed (cannot be recovered)',
+                ],
+                default: 'keep',
+            );
+        }
+
+        // Step 10: Backup first?
         $doBackup = confirm(
             label: 'Should we run a backup before proceeding?',
             default: true,
             hint: 'Strongly recommended. Saved as backup-before-bulk-delete-cli-[datetime].zip',
         );
 
-        // Step 10: Summary + final confirmation
+        // Step 11: Summary + final confirmation
         $this->line('');
         $this->line('  ════════════════════════════════════════════════════');
         $this->line('   SUMMARY OF ACTIONS');
@@ -210,6 +243,7 @@ class BulkDelete extends Command
         $this->line('   Notifications:   '.($sendNotifications ? 'Yes' : 'No'));
         $this->line('   Clear logs:      '.($clearLogs ? 'Yes' : 'No'));
         $this->line('   Delete files:    '.($deleteFiles ? 'Yes' : 'No'));
+        $this->line('   Delete companies: '.($deleteCompanyType === 'keep' ? 'No' : ucfirst($deleteCompanyType).' delete'));
         $this->line('   Backup first:    '.($doBackup ? 'Yes' : 'No'));
         $this->line('   Dry run:         '.($dryRun ? 'Yes' : 'No'));
         $this->line('');
@@ -223,24 +257,39 @@ class BulkDelete extends Command
         $this->line('  ════════════════════════════════════════════════════');
         $this->line('');
 
-        $confirmed = confirm(
-            label: $dryRun
-                ? 'Proceed with dry run?'
-                : 'Are you sure you want to proceed? This cannot be undone.',
-            default: false,
-        );
+        // Step 10.5: Email report?
+        $sendEmailReport = false;
+        if ($admin->email) {
+            $sendEmailReport = confirm(
+                label: "Send an email report to {$admin->email}?",
+                default: false,
+                hint: 'A summary of all '.($dryRun ? 'would-be ' : '').'actions will be emailed to you.',
+            );
+        }
 
-        if (! $confirmed) {
-            info('Aborted. No changes were made.');
+        if (! $dryRun) {
+            $confirmed = confirm(
+                label: 'Are you sure you want to proceed? This cannot be undone.',
+                default: false,
+            );
 
-            return 0;
+            if (! $confirmed) {
+                info('Aborted. No changes were made.');
+
+                return 0;
+            }
         }
 
         // Run backup if requested
         if ($doBackup && ! $dryRun) {
             $backupFilename = 'backup-before-bulk-delete-cli-'.now()->format('Y-m-d-H-i-s');
             info("Running backup ({$backupFilename}.zip)...");
-            $this->call('snipeit:backup', ['--filename' => $backupFilename]);
+            $result = $this->callSilently('snipeit:backup', ['--filename' => $backupFilename]);
+            if ($result === 0) {
+                info("Backup completed: {$backupFilename}.zip");
+            } else {
+                warning("Backup may have failed (exit code {$result}). Proceeding anyway.");
+            }
         }
 
         // Step 11: Execute with progress bar
@@ -266,10 +315,41 @@ class BulkDelete extends Command
         $this->line('');
         $this->line('');
 
+        // Delete companies if requested
+        if ($deleteCompanyType !== 'keep' && ! empty($selectedCompanyIds)) {
+            $companies = Company::whereIn('id', $selectedCompanyIds)->get();
+            foreach ($companies as $company) {
+                if ($dryRun) {
+                    $this->line("  [dry-run] Would {$deleteCompanyType}-delete company {$company->name}");
+                    $this->reportLines[] = "Would {$deleteCompanyType}-delete company {$company->name}";
+                } else {
+                    if ($deleteCompanyType === 'soft') {
+                        $company->delete();
+                    } else {
+                        $company->forceDelete();
+                    }
+                    $this->reportLines[] = ucfirst($deleteCompanyType)."-deleted company {$company->name}";
+                }
+            }
+        }
+
         if ($dryRun) {
             warning('Dry run complete — no changes were made.');
         } else {
             info('All actions completed successfully.');
+        }
+
+        if ($sendEmailReport && $admin->email) {
+            Mail::to($admin->email)->send(new BulkDeleteReportMail(
+                admin: $admin,
+                dryRun: $dryRun,
+                companyNames: $selectedCompanyNames,
+                selectedTypes: $selectedTypes,
+                deleteType: $deleteType,
+                reportLines: $this->reportLines,
+                runAt: now(),
+            ));
+            info("Report sent to {$admin->email}.");
         }
 
         return 0;
@@ -347,7 +427,8 @@ class BulkDelete extends Command
 
             if ($asset->assignedTo) {
                 if ($dryRun) {
-                    $this->line("\n  [dry-run] Would check in asset {$asset->asset_tag} from {$asset->assignedTo->name}");
+                    $this->line("  [dry-run] Would check in asset {$asset->asset_tag} from {$asset->assignedTo->name}");
+                    $this->reportLines[] = "Would check in asset {$asset->asset_tag} (assigned to {$asset->assignedTo->name})";
                 } else {
                     $target = $asset->assignedTo;
                     $checkinAt = now()->format('Y-m-d H:i:s');
@@ -361,6 +442,7 @@ class BulkDelete extends Command
                         $asset->logCheckin($target, self::CHECKIN_NOTE, $checkinAt, $originalValues);
                     }
 
+                    $this->reportLines[] = "Checked in asset {$asset->asset_tag} from {$target->name}";
                     $asset->licenseseats()->update(['assigned_to' => null]);
 
                     CheckoutAcceptance::where('checkoutable_type', Asset::class)
@@ -418,6 +500,10 @@ class BulkDelete extends Command
                     default => null,
                 };
 
+                if ($deleteType !== 'none') {
+                    $this->reportLines[] = ucfirst($deleteType)."-deleted asset {$asset->asset_tag}";
+                }
+
                 if ($clearLogs) {
                     $asset->assetlog()->forceDelete();
                 }
@@ -434,7 +520,8 @@ class BulkDelete extends Command
                     }
                 }
             } elseif ($deleteType !== 'none') {
-                $this->line("\n  [dry-run] Would {$deleteType}-delete asset {$asset->asset_tag}");
+                $this->line("  [dry-run] Would {$deleteType}-delete asset {$asset->asset_tag}");
+                $this->reportLines[] = "Would {$deleteType}-delete asset {$asset->asset_tag}";
             }
 
             $bar->advance();
@@ -465,11 +552,14 @@ class BulkDelete extends Command
                 $target = $seat->assigned_to ? $seat->user : $seat->asset;
 
                 if ($dryRun) {
-                    $this->line("\n  [dry-run] Would check in license seat for {$license->name} from ".($target?->name ?? $target?->asset_tag ?? 'unknown'));
+                    $this->line("  [dry-run] Would check in license seat for {$license->name} from ".($target?->name ?? $target?->asset_tag ?? 'unknown'));
+                    $this->reportLines[] = "Would check in license seat for {$license->name} from ".($target?->name ?? $target?->asset_tag ?? 'unknown');
                 } else {
                     $seat->assigned_to = null;
                     $seat->asset_id = null;
                     $seat->save();
+
+                    $this->reportLines[] = "Checked in license seat for {$license->name} from ".($target?->name ?? $target?->asset_tag ?? 'unknown');
 
                     if ($target) {
                         if ($sendNotifications) {
@@ -492,7 +582,9 @@ class BulkDelete extends Command
                     : [];
 
                 if ($deleteType === 'soft') {
+                    $license->licenseseats()->delete();
                     $license->delete();
+                    $this->reportLines[] = "Soft-deleted license {$license->name}";
                 } elseif ($deleteType === 'hard') {
                     $seatIds = $license->licenseseats()->pluck('id');
                     if ($deleteFiles) {
@@ -507,6 +599,7 @@ class BulkDelete extends Command
                     $license->licenseseats()->forceDelete();
                     DB::table('kits_licenses')->where('license_id', $license->id)->delete();
                     $license->forceDelete();
+                    $this->reportLines[] = "Hard-deleted license {$license->name}";
                 }
 
                 if ($clearLogs) {
@@ -519,7 +612,8 @@ class BulkDelete extends Command
                     }
                 }
             } elseif ($deleteType !== 'none') {
-                $this->line("\n  [dry-run] Would {$deleteType}-delete license {$license->name}");
+                $this->line("  [dry-run] Would {$deleteType}-delete license {$license->name}");
+                $this->reportLines[] = "Would {$deleteType}-delete license {$license->name}";
             }
 
             $bar->advance();
@@ -548,10 +642,13 @@ class BulkDelete extends Command
                 $target = $checkout->assignedTo;
 
                 if ($dryRun) {
-                    $this->line("\n  [dry-run] Would check in accessory {$accessory->name} from ".($target?->name ?? 'unknown'));
+                    $this->line("  [dry-run] Would check in accessory {$accessory->name} from ".($target?->name ?? 'unknown'));
+                    $this->reportLines[] = "Would check in accessory {$accessory->name} from ".($target?->name ?? 'unknown');
                 } else {
                     $checkinAt = now()->format('Y-m-d H:i:s');
                     $checkout->delete();
+
+                    $this->reportLines[] = "Checked in accessory {$accessory->name} from ".($target?->name ?? 'unknown');
 
                     if ($target) {
                         if ($sendNotifications) {
@@ -587,6 +684,10 @@ class BulkDelete extends Command
                     default => null,
                 };
 
+                if ($deleteType !== 'none') {
+                    $this->reportLines[] = ucfirst($deleteType)."-deleted accessory {$accessory->name}";
+                }
+
                 if ($deleteFiles) {
                     if ($accessory->image) {
                         $this->deleteStorageFile('public', app('accessories_upload_path').$accessory->image);
@@ -596,7 +697,8 @@ class BulkDelete extends Command
                     }
                 }
             } elseif ($deleteType !== 'none') {
-                $this->line("\n  [dry-run] Would {$deleteType}-delete accessory {$accessory->name}");
+                $this->line("  [dry-run] Would {$deleteType}-delete accessory {$accessory->name}");
+                $this->reportLines[] = "Would {$deleteType}-delete accessory {$accessory->name}";
             }
 
             $bar->advance();
@@ -627,10 +729,13 @@ class BulkDelete extends Command
                 $asset = Asset::find($assignment->asset_id);
 
                 if ($dryRun) {
-                    $this->line("\n  [dry-run] Would check in component {$component->name} from asset ".($asset?->asset_tag ?? 'unknown'));
+                    $this->line("  [dry-run] Would check in component {$component->name} from asset ".($asset?->asset_tag ?? 'unknown'));
+                    $this->reportLines[] = "Would check in component {$component->name} from asset ".($asset?->asset_tag ?? 'unknown');
                 } else {
                     $checkinAt = now()->format('Y-m-d H:i:s');
                     DB::table('components_assets')->where('id', $assignment->id)->delete();
+
+                    $this->reportLines[] = "Checked in component {$component->name} from asset ".($asset?->asset_tag ?? 'unknown');
 
                     if ($asset) {
                         if ($sendNotifications) {
@@ -662,6 +767,10 @@ class BulkDelete extends Command
                     default => null,
                 };
 
+                if ($deleteType !== 'none') {
+                    $this->reportLines[] = ucfirst($deleteType)."-deleted component {$component->name}";
+                }
+
                 if ($deleteFiles) {
                     if ($component->image) {
                         $this->deleteStorageFile('public', app('components_upload_path').$component->image);
@@ -671,7 +780,8 @@ class BulkDelete extends Command
                     }
                 }
             } elseif ($deleteType !== 'none') {
-                $this->line("\n  [dry-run] Would {$deleteType}-delete component {$component->name}");
+                $this->line("  [dry-run] Would {$deleteType}-delete component {$component->name}");
+                $this->reportLines[] = "Would {$deleteType}-delete component {$component->name}";
             }
 
             $bar->advance();
@@ -716,6 +826,10 @@ class BulkDelete extends Command
                     default => null,
                 };
 
+                if ($deleteType !== 'none') {
+                    $this->reportLines[] = ucfirst($deleteType)."-deleted consumable {$consumable->name}";
+                }
+
                 if ($deleteFiles) {
                     if ($consumable->image) {
                         $this->deleteStorageFile('public', app('consumables_upload_path').$consumable->image);
@@ -725,7 +839,8 @@ class BulkDelete extends Command
                     }
                 }
             } elseif ($deleteType !== 'none') {
-                $this->line("\n  [dry-run] Would {$deleteType}-delete consumable {$consumable->name}");
+                $this->line("  [dry-run] Would {$deleteType}-delete consumable {$consumable->name}");
+                $this->reportLines[] = "Would {$deleteType}-delete consumable {$consumable->name}";
             }
 
             $bar->advance();
@@ -751,6 +866,34 @@ class BulkDelete extends Command
             }
 
             $bar->setMessage("Users: {$user->username}");
+
+            // If real companies were selected, check whether this user also belongs to
+            // companies outside the selected scope. If so, only remove the selected-company
+            // associations and skip full deletion to avoid orphaning them from their other companies.
+            if (! empty($companyIds)) {
+                $allUserCompanyIds = array_unique(array_filter(array_merge(
+                    $user->companies()->pluck('companies.id')->toArray(),
+                    $user->company_id ? [$user->company_id] : [],
+                )));
+                $outsideCompanyIds = array_values(array_diff($allUserCompanyIds, $companyIds));
+
+                if (! empty($outsideCompanyIds)) {
+                    $outsideNames = Company::whereIn('id', $outsideCompanyIds)->pluck('name')->implode(', ');
+
+                    if ($dryRun) {
+                        $this->line("  [dry-run] Would partially disassociate user {$user->username} (also belongs to: {$outsideNames})");
+                        $this->reportLines[] = "Would partially disassociate user {$user->username} — also belongs to: {$outsideNames}";
+                    } else {
+                        $user->companies()->detach($companyIds);
+                        warning("  Skipped full deletion of {$user->username}: they also belong to {$outsideNames}. Removed selected company associations only.");
+                        $this->reportLines[] = "Partially disassociated user {$user->username} — also belongs to: {$outsideNames}. Full deletion skipped.";
+                    }
+
+                    $bar->advance();
+
+                    continue;
+                }
+            }
 
             if (! $dryRun) {
                 // Collect file paths and acceptance records before deleting pivot data
@@ -788,6 +931,10 @@ class BulkDelete extends Command
                     default => null,
                 };
 
+                if ($deleteType !== 'none') {
+                    $this->reportLines[] = ucfirst($deleteType)."-deleted user {$user->username}";
+                }
+
                 if ($deleteFiles) {
                     if ($user->avatar) {
                         $this->deleteStorageFile('public', app('users_upload_path').$user->avatar);
@@ -798,7 +945,8 @@ class BulkDelete extends Command
                     }
                 }
             } elseif ($deleteType !== 'none') {
-                $this->line("\n  [dry-run] Would {$deleteType}-delete user {$user->username}");
+                $this->line("  [dry-run] Would {$deleteType}-delete user {$user->username}");
+                $this->reportLines[] = "Would {$deleteType}-delete user {$user->username}";
             }
 
             $bar->advance();
@@ -811,7 +959,9 @@ class BulkDelete extends Command
             return;
         }
         try {
-            $storage = Storage::disk($disk);
+            $storage = $disk === 'public'
+                ? Storage::disk('public')
+                : Storage::disk(config('filesystems.default'));
             if ($storage->exists($path)) {
                 $storage->delete($path);
             }
