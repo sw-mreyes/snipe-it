@@ -924,6 +924,9 @@ class BulkDelete extends Command
                     ->delete();
                 DB::table('consumables_users')->where('assigned_to', $user->id)->delete();
                 CheckoutAcceptance::where('assigned_to_id', $user->id)->forceDelete();
+                if ($deleteType === 'hard') {
+                    DB::table('company_user')->where('user_id', $user->id)->delete();
+                }
 
                 if ($clearLogs) {
                     $user->userlog()->forceDelete();

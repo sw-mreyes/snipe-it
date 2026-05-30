@@ -721,6 +721,22 @@ class BulkDeleteTest extends TestCase
         $this->assertSoftDeleted($user);
     }
 
+    public function test_user_hard_delete_removes_company_user_pivot_entries(): void
+    {
+        $admin = User::factory()->superuser()->create();
+        $company = Company::factory()->create();
+        $user = User::factory()->create(['company_id' => $company->id, 'activated' => 1]);
+        $user->companies()->syncWithoutDetaching([$company->id]);
+
+        $this->assertDatabaseHas('company_user', ['user_id' => $user->id, 'company_id' => $company->id]);
+
+        $this->runCommand($admin, [$company->id], ['users'], deleteType: 'hard')
+            ->assertExitCode(0);
+
+        $this->assertDatabaseMissing('users', ['id' => $user->id]);
+        $this->assertDatabaseMissing('company_user', ['user_id' => $user->id]);
+    }
+
     // ---------------------------------------------------------------------------
     // Email report
     // ---------------------------------------------------------------------------
