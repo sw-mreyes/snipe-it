@@ -340,6 +340,12 @@ body {
   z-index: 0 !important;
 }
 
+// Clip the absolutely-positioned fixed-column overlays so they cannot
+// bleed past the container's bottom edge into the pagination area.
+.bootstrap-table .fixed-table-container {
+  overflow: hidden;
+}
+
 @media print {
 
   @page {

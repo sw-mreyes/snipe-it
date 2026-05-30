@@ -2526,23 +2526,34 @@
 
                 // Function to add original value to elements
                 function addValue($element) {
-                    // Get original value of the element
-                    var originalValue = $element.text().trim();
+                    var originalHtml = $element.html().trim();
+                    var originalText = $element.text().trim();
+                    var hasHtmlContent = originalHtml !== '' && originalHtml !== originalText;
 
-                    // Show asterisks only for not empty values
-                    if (originalValue !== '') {
-                        // This is necessary to avoid loop because value is generated dynamically
-                        if (originalValue !== '' && originalValue !== asterisks) $element.attr('value', originalValue);
+                    // Show asterisks only for non-empty values
+                    if (originalText !== '') {
+                        var asterisks = '*'.repeat(11);
+                        // Avoid reprocessing already-asterisked elements
+                        if (originalText !== asterisks) {
+                            if (hasHtmlContent) {
+                                $element.data('encrypted-html', originalHtml);
+                            }
+                            $element.attr('value', originalText);
+                        }
 
                         // Hide the original value and show a fixed-length asterisk placeholder
-                        var asterisks = '*'.repeat(11);
                         $element.text(asterisks);
 
-                        // Add click event to show original text
+                        // Add click event to show original value
                         $element.click(function() {
                             var $this = $(this);
                             if ($this.text().trim() === asterisks) {
-                                $this.text($this.attr('value'));
+                                var savedHtml = $this.data('encrypted-html');
+                                if (savedHtml) {
+                                    $this.html(savedHtml);
+                                } else {
+                                    $this.text($this.attr('value'));
+                                }
                             } else {
                                 $this.text(asterisks);
                             }

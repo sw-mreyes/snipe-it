@@ -349,6 +349,9 @@ body {
 .bootstrap-table .fixed-table-container .fixed-table-body .fixed-table-loading {
   z-index: 0 !important;
 }
+.bootstrap-table .fixed-table-container {
+  overflow: hidden;
+}
 @media print {
   @page {
     size: A4;
