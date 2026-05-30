@@ -329,6 +329,9 @@ class BulkDelete extends Command
                     } else {
                         $company->forceDelete();
                     }
+                    // Remove any remaining pivot associations (e.g. the admin user who was
+                    // skipped during user processing but is still a member of this company)
+                    DB::table('company_user')->where('company_id', $company->id)->delete();
                     $this->reportLines[] = ucfirst($deleteCompanyType)."-deleted company {$company->name}";
                 }
             }
