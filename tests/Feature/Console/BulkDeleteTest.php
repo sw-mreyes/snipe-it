@@ -3,6 +3,7 @@
 namespace Tests\Feature\Console;
 
 use App\Events\CheckoutableCheckedIn;
+use App\Mail\BulkDeleteReportMail;
 use App\Models\Accessory;
 use App\Models\Asset;
 use App\Models\CheckoutAcceptance;
@@ -15,6 +16,7 @@ use App\Models\Maintenance;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Testing\PendingCommand;
 use Tests\TestCase;
 
@@ -42,6 +44,8 @@ class BulkDeleteTest extends TestCase
         bool $deleteFiles = false,
         bool $doBackup = false,
         bool $confirm = true,
+        bool $sendEmailReport = false,
+        string $deleteCompanyType = 'keep',
     ): PendingCommand {
         $hasNotifiableTypes = ! empty(array_intersect($types, ['assets', 'licenses', 'accessories', 'components']));
 
@@ -57,7 +61,8 @@ class BulkDeleteTest extends TestCase
             // Using expectsQuestion for both to avoid triggering choices validation
             ->expectsQuestion($searchLabel, $admin->username)
             ->expectsQuestion($searchLabel, (string) $admin->id)
-            // Step 3: multiselect for companies
+            // Step 3: multisearch for companies — ask() for search term, then multiselectFallback()
+            ->expectsQuestion($companiesLabel, '')
             ->expectsQuestion($companiesLabel, $companyIds)
             // Step 4: multiselect for item types
             ->expectsQuestion($typesLabel, $types)
@@ -69,7 +74,7 @@ class BulkDeleteTest extends TestCase
             $cmd->expectsConfirmation('Should we send checkin notifications?', $sendNotifications ? 'yes' : 'no');
         }
 
-        // Steps 7–10 and final confirm
+        // Steps 7–11 and final confirm
         $cmd->expectsConfirmation('Should we clear related action logs?', $clearLogs ? 'yes' : 'no');
 
         // Step 8: file deletion prompt — only shown when deleteType !== 'none'
@@ -77,11 +82,21 @@ class BulkDeleteTest extends TestCase
             $cmd->expectsConfirmation('Should we also delete associated image and upload files?', $deleteFiles ? 'yes' : 'no');
         }
 
-        $cmd->expectsConfirmation('Should we run a backup before proceeding?', $doBackup ? 'yes' : 'no')
-            ->expectsConfirmation(
-                $dryRun ? 'Proceed with dry run?' : 'Are you sure you want to proceed? This cannot be undone.',
-                $confirm ? 'yes' : 'no',
-            );
+        // Step 9: company deletion — only shown when real companies (not just __null__) were selected
+        if (! empty($companyIds)) {
+            $cmd->expectsQuestion('Should the selected companies also be deleted?', $deleteCompanyType);
+        }
+
+        $cmd->expectsConfirmation('Should we run a backup before proceeding?', $doBackup ? 'yes' : 'no');
+
+        // Email report prompt — only shown when admin has an email address
+        if ($admin->email) {
+            $cmd->expectsConfirmation("Send an email report to {$admin->email}?", $sendEmailReport ? 'yes' : 'no');
+        }
+
+        if (! $dryRun) {
+            $cmd->expectsConfirmation('Are you sure you want to proceed? This cannot be undone.', $confirm ? 'yes' : 'no');
+        }
 
         return $cmd;
     }
@@ -249,6 +264,20 @@ class BulkDeleteTest extends TestCase
             'checkoutable_type' => LicenseSeat::class,
             'checkoutable_id' => $seat->id,
         ]);
+    }
+
+    public function test_license_soft_delete_also_soft_deletes_seats(): void
+    {
+        $admin = User::factory()->superuser()->create();
+        $company = Company::factory()->create();
+        $license = License::factory()->for($company)->create();
+        $seat = LicenseSeat::factory()->for($license)->create();
+
+        $this->runCommand($admin, [$company->id], ['licenses'])
+            ->assertExitCode(0);
+
+        $this->assertSoftDeleted($license);
+        $this->assertSoftDeleted($seat);
     }
 
     public function test_license_scoped_to_correct_company(): void
@@ -615,5 +644,112 @@ class BulkDeleteTest extends TestCase
 
         $this->assertNotSoftDeleted($asset);
         $this->assertNull($asset->fresh()->assigned_to);
+    }
+
+    // ---------------------------------------------------------------------------
+    // Company deletion
+    // ---------------------------------------------------------------------------
+
+    public function test_company_is_soft_deleted_when_requested(): void
+    {
+        $admin = User::factory()->superuser()->create();
+        $company = Company::factory()->create();
+        Asset::factory()->for($company)->create();
+
+        $this->runCommand($admin, [$company->id], ['assets'], deleteCompanyType: 'soft')
+            ->assertExitCode(0);
+
+        $this->assertSoftDeleted($company);
+    }
+
+    public function test_company_is_hard_deleted_when_requested(): void
+    {
+        $admin = User::factory()->superuser()->create();
+        $company = Company::factory()->create();
+        Asset::factory()->for($company)->create();
+
+        $this->runCommand($admin, [$company->id], ['assets'], deleteCompanyType: 'hard')
+            ->assertExitCode(0);
+
+        $this->assertDatabaseMissing('companies', ['id' => $company->id]);
+    }
+
+    public function test_company_is_kept_when_not_requested(): void
+    {
+        $admin = User::factory()->superuser()->create();
+        $company = Company::factory()->create();
+        Asset::factory()->for($company)->create();
+
+        $this->runCommand($admin, [$company->id], ['assets'], deleteCompanyType: 'keep')
+            ->assertExitCode(0);
+
+        $this->assertDatabaseHas('companies', ['id' => $company->id, 'deleted_at' => null]);
+    }
+
+    // ---------------------------------------------------------------------------
+    // Multi-company user handling
+    // ---------------------------------------------------------------------------
+
+    public function test_user_in_multiple_companies_is_partially_disassociated(): void
+    {
+        $admin = User::factory()->superuser()->create();
+        [$companyA, $companyB] = Company::factory()->count(2)->create();
+        $user = User::factory()->create(['company_id' => $companyA->id, 'activated' => 1]);
+        $user->companies()->syncWithoutDetaching([$companyA->id, $companyB->id]);
+
+        $this->runCommand($admin, [$companyA->id], ['users'])
+            ->assertExitCode(0);
+
+        // User should NOT have been deleted
+        $this->assertDatabaseHas('users', ['id' => $user->id, 'deleted_at' => null]);
+        // companyA pivot entry should be removed
+        $this->assertDatabaseMissing('company_user', ['user_id' => $user->id, 'company_id' => $companyA->id]);
+        // companyB pivot entry should remain
+        $this->assertDatabaseHas('company_user', ['user_id' => $user->id, 'company_id' => $companyB->id]);
+    }
+
+    public function test_user_in_only_selected_company_is_fully_deleted(): void
+    {
+        $admin = User::factory()->superuser()->create();
+        $company = Company::factory()->create();
+        $user = User::factory()->create(['company_id' => $company->id, 'activated' => 1]);
+        $user->companies()->syncWithoutDetaching([$company->id]);
+
+        $this->runCommand($admin, [$company->id], ['users'])
+            ->assertExitCode(0);
+
+        $this->assertSoftDeleted($user);
+    }
+
+    // ---------------------------------------------------------------------------
+    // Email report
+    // ---------------------------------------------------------------------------
+
+    public function test_email_report_is_sent_when_requested(): void
+    {
+        Mail::fake();
+
+        $admin = User::factory()->superuser()->create();
+        $company = Company::factory()->create();
+        Asset::factory()->for($company)->create();
+
+        $this->runCommand($admin, [$company->id], ['assets'], sendEmailReport: true)
+            ->assertExitCode(0);
+
+        Mail::assertSent(BulkDeleteReportMail::class, fn ($mail) => $mail->hasTo($admin->email));
+    }
+
+    public function test_email_report_is_not_sent_when_declined(): void
+    {
+        Mail::fake();
+
+        $admin = User::factory()->superuser()->create();
+        $company = Company::factory()->create();
+        Asset::factory()->for($company)->create();
+
+        $this->runCommand($admin, [$company->id], ['assets'], sendEmailReport: false)
+            ->assertExitCode(0);
+
+        Mail::assertNothingSent();
     }
 }
