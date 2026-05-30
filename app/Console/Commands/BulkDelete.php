@@ -49,7 +49,7 @@ class BulkDelete extends Command
             label: 'Is this a dry run?',
             default: true,
             yes: 'Yes — preview only, no changes will be made',
-            no: 'No — actions will be performed',
+            no: 'No — LIVE RUN, changes WILL be made',
         );
 
         // Step 2: Who are you?
@@ -206,7 +206,7 @@ class BulkDelete extends Command
         if ($deleteType !== 'none') {
             $deleteFiles = confirm(
                 label: 'Should we also delete associated image and upload files?',
-                default: false,
+                default: $deleteType === 'hard',
                 hint: 'Permanently removes images, avatars, signatures, EULAs, and action log uploads from disk.',
             );
         }
