@@ -144,7 +144,7 @@ class AssetsTransformer
 
                     $fields_array[$field->name] = [
                         'field' => e($field->db_column),
-                        'value' => e($value),
+                        'value' => ($field->element == 'markdown-textarea' && Gate::allows('assets.view.encrypted_custom_fields')) ? Helper::renderMarkdown($value) : e($value),
                         'field_format' => $field->format,
                         'element' => $field->element,
                     ];
@@ -158,7 +158,7 @@ class AssetsTransformer
 
                     $fields_array[$field->name] = [
                         'field' => e($field->db_column),
-                        'value' => e($value),
+                        'value' => ($field->element == 'markdown-textarea') ? Helper::renderMarkdown($value) : e($value),
                         'field_format' => $field->format,
                         'element' => $field->element,
                     ];
@@ -274,7 +274,7 @@ class AssetsTransformer
                         $value = Helper::getFormattedDateObject($value, 'date', false);
                     }
 
-                    $fields_array[$field->db_column] = e($value);
+                    $fields_array[$field->db_column] = ($field->element == 'markdown-textarea') ? Helper::renderMarkdown($value) : e($value);
                 }
 
                 $array['custom_fields'] = $fields_array;

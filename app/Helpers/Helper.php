@@ -1856,4 +1856,42 @@ class Helper
         return 'App\\Models\\'.ucwords($model);
 
     }
+
+    /**
+     * Render a markdown-textarea value as HTML.
+     *
+     * Soft line breaks (single newlines) are rendered as <br> so that line
+     * breaks typed in the textarea are preserved in the output.
+     *
+     * When $inline is true, block-level elements are suppressed and hard
+     * breaks are pre-processed manually — used for the encrypted reveal span
+     * where block HTML cannot be placed inside a font-size-toggled <span>.
+     */
+    public static function renderMarkdown(?string $text, bool $inline = false): string
+    {
+        if (empty($text)) {
+            return '';
+        }
+
+        if ($inline) {
+            // Convert newlines to CommonMark hard breaks for inline rendering
+            $text = preg_replace('/(?<! {2})\n/', "  \n", $text);
+
+            return Str::inlineMarkdown($text, ['html_input' => 'escape']);
+        }
+
+        $html = trim(Str::markdown($text, [
+            'html_input' => 'escape',
+            'renderer' => ['soft_break' => "<br>\n"],
+        ]));
+
+        // If the entire output is a single <p> block, unwrap it so the content
+        // renders inline-ish without the <p> adding unwanted top spacing in the
+        // compact detail-view layout.
+        if (str_starts_with($html, '<p>') && str_ends_with($html, '</p>') && substr_count($html, '<p>') === 1) {
+            return substr($html, 3, -4);
+        }
+
+        return $html;
+    }
 }

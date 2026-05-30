@@ -496,7 +496,9 @@
                 if (cell.is('th')) {
                     return cell.find('.th-inner').text()
                 }
-                return htmlData
+                // Convert <br> tags to newlines so that line breaks in notes and
+                // textarea fields survive HTML-stripping during export
+                return htmlData.replace(/<br\s*\/?>/gi, '\n');
             }
 
             // This allows us to override the table defaults set below using the data-dash attributes
@@ -1993,6 +1995,13 @@
                         return '<a href="mailto:' + row.custom_fields[field_column_plain].value + '" style="white-space: nowrap" data-tooltip="true" title="{{ trans('general.send_email') }}"><x-icon type="email" /> ' + row.custom_fields[field_column_plain].value + '</a>';
                     }
                 }
+                // Convert newlines to <br> for textarea fields so they render in
+                // the table; export will convert <br> back to \n via onCellHtmlData
+                if (row.custom_fields[field_column_plain].element === 'textarea') {
+                    var val = row.custom_fields[field_column_plain].value;
+                    return val ? val.replace(/(?:\r\n|\r|\n)/g, '<br>') : '';
+                }
+
                 return row.custom_fields[field_column_plain].value;
 
             }
