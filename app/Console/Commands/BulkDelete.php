@@ -63,6 +63,7 @@ class BulkDelete extends Command
 
                 return User::where('activated', 1)
                     ->whereNull('deleted_at')
+                    ->onlySuperAdmins()
                     ->where(function ($query) use ($value) {
                         $query->where('username', 'like', "%{$value}%")
                             ->orWhere('first_name', 'like', "%{$value}%")
