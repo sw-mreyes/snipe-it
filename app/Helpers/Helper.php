@@ -1268,6 +1268,7 @@ class Helper
         $allowedExtensionMap = [
             // Images
             'jpg' => 'far fa-image',
+            'jfif' => 'far fa-image',
             'jpeg' => 'far fa-image',
             'gif' => 'far fa-image',
             'png' => 'far fa-image',
