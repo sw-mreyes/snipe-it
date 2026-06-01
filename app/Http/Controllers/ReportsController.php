@@ -105,36 +105,46 @@ class ReportsController extends Controller
      * @see ManufacturersController::getDatatable() method that generates the JSON response
      * @since [v1.0]
      */
-    public function exportAccessoryReport(): Response
+    public function exportAccessoryReport(): StreamedResponse
     {
         $this->authorize('reports.view');
-        $accessories = Accessory::orderBy('created_at', 'DESC')->get();
 
-        $rows = [];
-        $header = [
-            trans('admin/accessories/table.title'),
-            trans('admin/accessories/general.accessory_category'),
-            trans('admin/accessories/general.total'),
-            trans('admin/accessories/general.remaining'),
-        ];
-        $header = array_map('trim', $header);
-        $rows[] = implode(', ', $header);
+        $response = new StreamedResponse(function () {
+            $handle = fopen('php://output', 'w');
 
-        // Row per accessory
-        foreach ($accessories as $accessory) {
-            $row = [];
-            $row[] = e($accessory->accessory_name);
-            $row[] = e($accessory->accessory_category);
-            $row[] = e($accessory->total);
-            $row[] = e($accessory->remaining);
+            $header = [
+                trans('admin/accessories/table.title'),
+                trans('admin/accessories/general.accessory_category'),
+                trans('admin/accessories/general.total'),
+                trans('admin/accessories/general.remaining'),
+            ];
+            fputcsv($handle, $header);
 
-            $rows[] = implode(',', $row);
-        }
+            $formatter = new EscapeFormula('`');
 
-        $csv = implode("\n", $rows);
-        $response = response()->make($csv, 200);
-        $response->header('Content-Type', 'text/csv');
-        $response->header('Content-disposition', 'attachment;filename=report.csv');
+            Accessory::with('category')->orderBy('created_at', 'DESC')
+                ->chunk(500, function ($accessories) use ($handle, $formatter) {
+                    foreach ($accessories as $accessory) {
+                        $row = [
+                            $accessory->name,
+                            $accessory->category?->name,
+                            $accessory->qty,
+                            $accessory->numRemaining(),
+                        ];
+
+                        if (config('app.escape_formulas') === false) {
+                            fputcsv($handle, $row);
+                        } else {
+                            fputcsv($handle, $formatter->escapeRecord($row));
+                        }
+                    }
+                });
+
+            fclose($handle);
+        }, 200, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="accessories-report-'.date('Y-m-d-his').'.csv"',
+        ]);
 
         return $response;
     }
