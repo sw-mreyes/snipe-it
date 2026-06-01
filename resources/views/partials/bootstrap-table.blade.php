@@ -622,7 +622,7 @@
                 },
                 locale: '{{ app()->getLocale() }}',
                 exportOptions: export_options,
-                exportTypes: ['xlsx', 'excel', 'csv', 'pdf', 'json', 'xml', 'txt', 'sql', 'doc'],
+                exportTypes: ['xlsx', 'csv', 'pdf', 'json', 'xml', 'txt', 'sql', 'doc'],
                 onLoadSuccess: function () { // possible 'fixme'? this might be for contents, not for headers?
                     $('[data-tooltip="true"]').tooltip(); // Needed to attach tooltips after ajax call
                 },
