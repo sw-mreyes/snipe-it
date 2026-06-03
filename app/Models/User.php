@@ -626,30 +626,26 @@ class User extends SnipeModel implements AuthenticatableContract, AuthorizableCo
     }
 
     /**
-     * Returns whether an FMCS company check should block this user from receiving
+     * Returns whether an FMCS company check should allow this user to receive
      * an asset that belongs to the given company.
      *
      * - If the user has no company associations at all: returns true (no restriction).
      * - If the user has associations: returns true only when $companyId is among them.
-     *
-     * Checks both the primary company_id column and the many-to-many pivot table so
-     * that users assigned to multiple companies can receive assets from any of them.
      */
     public function canReceiveFromCompany(int $companyId): bool
     {
-        // Primary company matches
-        if (! is_null($this->company_id) && (int) $this->company_id === $companyId) {
+        // Query the pivot directly to avoid the Company model's FMCS global scope,
+        // which would restrict results to the current actor's visible companies.
+        $userCompanyIds = DB::table('company_user')
+            ->where('user_id', $this->id)
+            ->pluck('company_id');
+
+        if ($userCompanyIds->contains($companyId)) {
             return true;
         }
 
-        // Pivot company matches
-        if ($this->companies()->where('companies.id', $companyId)->exists()) {
-            return true;
-        }
-
-        // User has no company associations — don't enforce (mirrors legacy behaviour
-        // where a null company_id on the user skipped the FMCS check entirely).
-        if (is_null($this->company_id) && ! $this->companies()->exists()) {
+        // User has no company associations — don't enforce.
+        if ($userCompanyIds->isEmpty()) {
             return true;
         }
 
@@ -663,7 +659,7 @@ class User extends SnipeModel implements AuthenticatableContract, AuthorizableCo
      */
     public function allCompanies(): Collection
     {
-        return $this->companies->push($this->company)->filter()->unique('id')->values();
+        return $this->companies->unique('id')->values();
     }
 
     /**

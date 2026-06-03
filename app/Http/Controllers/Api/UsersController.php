@@ -626,12 +626,16 @@ class UsersController extends Controller
                 $user->groups()->sync($request->input('groups'));
             }
 
-            // Sync company memberships when company_ids[] or company_id is provided
-            if ($request->has('company_ids') || $request->filled('company_id')) {
-                $companyIds = array_filter(
-                    (array) ($request->input('company_ids') ?? ($request->filled('company_id') ? [$request->input('company_id')] : []))
-                );
-                $user->syncCompaniesWithLogging(Company::getIdsForCurrentUser(array_map('intval', $companyIds)));
+            // company_ids (new format) = full replacement sync.
+            // Legacy company_id = add without removing other associations.
+            if ($request->has('company_ids')) {
+                $companyIds = array_filter(array_map('intval', (array) $request->input('company_ids')));
+                $user->syncCompaniesWithLogging(Company::getIdsForCurrentUser($companyIds));
+            } elseif ($request->filled('company_id')) {
+                $filtered = Company::getIdsForCurrentUser([(int) $request->input('company_id')]);
+                if (! empty($filtered)) {
+                    $user->companies()->syncWithoutDetaching($filtered);
+                }
             }
 
             return response()->json(Helper::formatStandardApiResponse('success', (new UsersTransformer)->transformUser($user), trans('admin/users/message.success.update')));
