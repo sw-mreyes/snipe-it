@@ -500,6 +500,20 @@
                 // textarea fields survive HTML-stripping during export
                 return htmlData.replace(/<br\s*\/?>/gi, '\n');
             }
+            // Escape double quotes in hyperlink href and display text so that
+            // Excel HYPERLINK formulas are not corrupted when values contain "
+            export_options['mso'] = {
+                xlsx: {
+                    onHyperlink: function (cell, row, col, href, cellText, formula) {
+                        var escapedHref = href.replace(/"/g, '""');
+                        var escapedText = cellText.replace(/"/g, '""');
+                        if (escapedText.length) {
+                            return '=HYPERLINK("' + escapedHref + '","' + escapedText + '")';
+                        }
+                        return '=HYPERLINK("' + escapedHref + '")';
+                    }
+                }
+            };
 
             // This allows us to override the table defaults set below using the data-dash attributes
             var table = this;
