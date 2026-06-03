@@ -175,7 +175,15 @@ class BulkUsersController extends Controller
             ->conditionallyAddItem('start_date')
             ->conditionallyAddItem('end_date')
             ->conditionallyAddItem('city')
-            ->conditionallyAddItem('autoassign_licenses');
+            ->conditionallyAddItem('autoassign_licenses')
+            ->conditionallyAddItem('phone')
+            ->conditionallyAddItem('jobtitle')
+            ->conditionallyAddItem('address')
+            ->conditionallyAddItem('state')
+            ->conditionallyAddItem('country')
+            ->conditionallyAddItem('zip')
+            ->conditionallyAddItem('website')
+            ->conditionallyAddItem('notes');
 
         // If the manager_id is one of the users being updated, generate a warning.
         if (array_search($request->input('manager_id'), $user_raw_array)) {
@@ -220,6 +228,46 @@ class BulkUsersController extends Controller
             $this->update_array['display_name'] = null;
         }
 
+        if ($request->input('null_city') == '1') {
+            $this->update_array['city'] = null;
+        }
+
+        if ($request->input('null_phone') == '1') {
+            $this->update_array['phone'] = null;
+        }
+
+        if ($request->input('null_jobtitle') == '1') {
+            $this->update_array['jobtitle'] = null;
+        }
+
+        if ($request->input('null_employee_num') == '1') {
+            $this->update_array['employee_num'] = null;
+        }
+
+        if ($request->input('null_address') == '1') {
+            $this->update_array['address'] = null;
+        }
+
+        if ($request->input('null_state') == '1') {
+            $this->update_array['state'] = null;
+        }
+
+        if ($request->input('null_country') == '1') {
+            $this->update_array['country'] = null;
+        }
+
+        if ($request->input('null_zip') == '1') {
+            $this->update_array['zip'] = null;
+        }
+
+        if ($request->input('null_website') == '1') {
+            $this->update_array['website'] = null;
+        }
+
+        if ($request->input('null_notes') == '1') {
+            $this->update_array['notes'] = null;
+        }
+
         if (! $manager_conflict) {
             $this->conditionallyAddItem('manager_id');
         }
@@ -245,7 +293,15 @@ class BulkUsersController extends Controller
             User::whereIn('id', $user_raw_array)->where('id', '!=', auth()->id())
                 ->update(['company_id' => $scalarCompanyId]);
             foreach ($users as $user) {
-                $user->companies()->sync($allowedIds);
+                if ($clearCompanies && ! auth()->user()->isSuperUser() && Company::isFullMultipleCompanySupportEnabled()) {
+                    // Non-superusers can only detach companies they belong to; sync([]) would
+                    // also wipe memberships for companies outside their scope.
+                    $user->companies()->detach(Company::getIdsForCurrentUser(
+                        $user->companies()->pluck('companies.id')->toArray()
+                    ));
+                } else {
+                    $user->companies()->sync($allowedIds);
+                }
             }
         }
 
@@ -259,6 +315,11 @@ class BulkUsersController extends Controller
                 }
                 if ($request->filled('ldap_import')) {
                     $authFieldUpdate['ldap_import'] = $request->input('ldap_import');
+                }
+                if ($request->filled('email')) {
+                    $authFieldUpdate['email'] = $request->input('email');
+                } elseif ($request->input('null_email') == '1') {
+                    $authFieldUpdate['email'] = null;
                 }
                 if (! empty($authFieldUpdate)) {
                     $user->update($authFieldUpdate);
