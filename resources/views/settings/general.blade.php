@@ -304,7 +304,7 @@
                        </fieldset>
 
 
-                       <fieldset name="checkin-preferences"">
+                       <fieldset name="checkin-preferences">
                            <x-form.legend>
                                {{ trans('admin/settings/general.legends.checkin') }}
                            </x-form.legend>
@@ -381,7 +381,7 @@
                                        @endif
                                        <p class="help-block">
                                            {{ trans('admin/settings/general.dashboard_message_help') }}
-                                           <i class="fab fa-markdown" aria-hidden="true"> {!!  trans('general.github_markdown') !!}
+                                           <i class="fab fa-markdown" aria-hidden="true"></i> {!!  trans('general.github_markdown') !!}
                                        </p>
                                    </div>
                                </div>
