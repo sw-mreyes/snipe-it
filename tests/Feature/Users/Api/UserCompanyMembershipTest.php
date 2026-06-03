@@ -214,6 +214,58 @@ class UserCompanyMembershipTest extends TestCase
         $this->assertTrue($user->companies->contains($company));
     }
 
+    public function test_legacy_company_id_on_update_adds_without_removing_other_associations()
+    {
+        // An older integration that hasn't been updated still sends company_id (scalar).
+        // If the user already belongs to multiple companies via the pivot, the legacy
+        // company_id should be added (if not already present) without stripping others.
+        [$companyA, $companyB, $companyC] = Company::factory()->count(3)->create();
+
+        $user = User::factory()->create();
+        $user->companies()->sync([$companyA->id, $companyB->id]);
+
+        $actor = User::factory()->superuser()->create();
+
+        $this->actingAsForApi($actor)
+            ->patchJson(route('api.users.update', $user), [
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
+                'username' => $user->username,
+                'company_id' => $companyC->id,
+            ])
+            ->assertOk()
+            ->assertStatusMessageIs('success');
+
+        $user->refresh();
+        $this->assertCount(3, $user->companies, 'All three companies should be present after legacy company_id update');
+        $this->assertTrue($user->companies->contains($companyA), 'companyA should not have been stripped');
+        $this->assertTrue($user->companies->contains($companyB), 'companyB should not have been stripped');
+        $this->assertTrue($user->companies->contains($companyC), 'companyC should have been added');
+    }
+
+    public function test_legacy_company_id_on_update_is_idempotent_when_already_a_member()
+    {
+        [$companyA, $companyB] = Company::factory()->count(2)->create();
+
+        $user = User::factory()->create();
+        $user->companies()->sync([$companyA->id, $companyB->id]);
+
+        $actor = User::factory()->superuser()->create();
+
+        $this->actingAsForApi($actor)
+            ->patchJson(route('api.users.update', $user), [
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
+                'username' => $user->username,
+                'company_id' => $companyA->id,
+            ])
+            ->assertOk()
+            ->assertStatusMessageIs('success');
+
+        $user->refresh();
+        $this->assertCount(2, $user->companies, 'Company count should not change when company_id already in pivot');
+    }
+
     public function test_post_with_invalid_company_ids_returns_error()
     {
         $actor = User::factory()->superuser()->create();
