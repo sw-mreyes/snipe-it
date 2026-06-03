@@ -153,4 +153,83 @@ class UserCompanyMembershipTest extends TestCase
         $this->assertTrue($ids->contains($unassignedUser->id), 'Should see user with no company');
         $this->assertTrue($ids->contains($actor->id), 'Should see self');
     }
+
+    public function test_patch_with_invalid_company_id_returns_error()
+    {
+        $company = Company::factory()->create();
+        $user = User::factory()->create(['company_id' => $company->id]);
+        $user->companies()->sync([$company->id]);
+
+        $actor = User::factory()->superuser()->create();
+
+        $this->actingAsForApi($actor)
+            ->patchJson(route('api.users.update', $user), [
+                'company_id' => 99999999,
+            ])
+            ->assertStatus(200)
+            ->assertStatusMessageIs('error');
+
+        $user->refresh();
+        $this->assertEquals($company->id, $user->company_id, 'company_id should not be changed on invalid input');
+    }
+
+    public function test_put_with_invalid_company_id_returns_error()
+    {
+        $company = Company::factory()->create();
+        $user = User::factory()->create(['company_id' => $company->id]);
+
+        $actor = User::factory()->superuser()->create();
+
+        $this->actingAsForApi($actor)
+            ->putJson(route('api.users.update', $user), [
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
+                'username' => $user->username,
+                'company_id' => 99999999,
+            ])
+            ->assertStatus(200)
+            ->assertStatusMessageIs('error');
+
+        $user->refresh();
+        $this->assertEquals($company->id, $user->company_id, 'company_id should not be changed on invalid input');
+    }
+
+    public function test_patch_with_invalid_company_ids_returns_error()
+    {
+        $company = Company::factory()->create();
+        $user = User::factory()->create(['company_id' => $company->id]);
+        $user->companies()->sync([$company->id]);
+
+        $actor = User::factory()->superuser()->create();
+
+        $this->actingAsForApi($actor)
+            ->patchJson(route('api.users.update', $user), [
+                'company_ids' => [99999999, 88888888],
+            ])
+            ->assertStatus(200)
+            ->assertStatusMessageIs('error');
+
+        $user->refresh();
+        $this->assertCount(1, $user->companies, 'Company pivot should not be changed on invalid input');
+        $this->assertTrue($user->companies->contains($company));
+    }
+
+    public function test_post_with_invalid_company_ids_returns_error()
+    {
+        $actor = User::factory()->superuser()->create();
+
+        $this->actingAsForApi($actor)
+            ->postJson(route('api.users.store'), [
+                'first_name' => 'Test',
+                'last_name' => 'User',
+                'username' => 'testuser_invalid_companies',
+                'password' => 'secret123456',
+                'password_confirmation' => 'secret123456',
+                'company_ids' => [99999999],
+            ])
+            ->assertStatus(200)
+            ->assertStatusMessageIs('error');
+
+        $this->assertNull(User::where('username', 'testuser_invalid_companies')->first());
+    }
 }
