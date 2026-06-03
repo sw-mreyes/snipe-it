@@ -11,11 +11,17 @@
 // This is used by the mysql dump options in spatie backup
 $dump_options = [
     'dump_binary_path' => env('DB_DUMP_PATH', '/usr/local/bin'),  // only the path, so without 'mysqldump'
-    'use_single_transaction' => false,
     'timeout' => 60 * 5, // 5 minute timeout
     // 'exclude_tables' => ['table1', 'table2'],
     // 'add_extra_option' => '--optionname=optionvalue',
 ];
+
+// spatie/laravel-backup 9.x treats false and null identically in callMethodOnDumper,
+// so the only way to disable single-transaction mode is to omit the key entirely.
+// Set DB_DUMP_SINGLE_TRANSACTION=true to opt in (required for non-RDS MySQL).
+if (env('DB_DUMP_SINGLE_TRANSACTION') == 'true') {
+    $dump_options['use_single_transaction'] = true;
+}
 
 // For modern versions of mysqldump, use --ssl-mode=DISABLED
 if (env('DB_DUMP_SKIP_SSL') == 'true') {
