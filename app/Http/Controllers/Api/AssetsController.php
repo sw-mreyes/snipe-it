@@ -1140,7 +1140,9 @@ class AssetsController extends Controller
         $asset->assignedTo()->disassociate($asset);
         $asset->accepted = null;
 
-        if ($request->has('name')) {
+        if ($request->input('clear_name') == '1') {
+            $asset->name = null;
+        } elseif ($request->has('name')) {
             $asset->name = $request->input('name');
         }
 
@@ -1282,6 +1284,10 @@ class AssetsController extends Controller
             }
 
             $asset->last_audit_date = date('Y-m-d H:i:s');
+
+            if ($request->input('clear_name') == '1') {
+                $asset->name = null;
+            }
 
             // Set up the payload for re-display in the API response
             $payload = [
