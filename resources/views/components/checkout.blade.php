@@ -25,18 +25,13 @@
 
             @include ('partials.forms.edit.asset-select', ['translated_name' => trans('general.select_asset'), 'fieldname' => 'asset_id', 'company_id' => $snipe_component->company_id, 'required' => 'true', 'value' => old('asset_id')])
 
-            <!-- Qty -->
-            <div class="form-group {{ $errors->has('assigned_qty') ? 'has-error' : '' }}">
-                <label for="assigned_qty" class="col-md-3 control-label">{{ trans('general.qty') }}</label>
-                <div class="col-md-2 col-sm-5 col-xs-5">
-                    <input class="form-control" type="number" name="assigned_qty" id="assigned_qty" value="1" min="1" max="{{ old('assigned_qty') ?? $snipe_component->numRemaining() }}" aria-label="{{ trans('general.qty') }}" maxlength="999999" />
-                </div>
-                @if ($errors->first('assigned_qty'))
-                    <div class="col-md-9 col-md-offset-3">
-                        {!! $errors->first('assigned_qty', '<span class="alert-msg" aria-hidden="true"><i class="fas fa-times" aria-hidden="true"></i> :message</span>') !!}
-                    </div>
-                @endif
-            </div>
+            <x-input.quantity
+                name="assigned_qty"
+                :value="1"
+                :min="1"
+                :max="$snipe_component->numRemaining()"
+                :label="trans('general.qty')"
+            />
 
             @if ($snipe_component->requireAcceptance() || $snipe_component->getEula() || ($snipeSettings->webhook_endpoint != ''))
                 <div class="form-group notification-callout">

@@ -22,7 +22,7 @@
                 value="{{ old('min_amt', $item->min_amt ?? '') }}"
                 min="0"
                 maxlength="5"
-                @required(Helper::checkIfRequired($item, 'min_amt'))
+                @required($item && Helper::checkIfRequired($item, 'min_amt'))
             />
         </div>
         <div class="col-md-7" style="margin-left: -15px">
