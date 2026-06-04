@@ -223,6 +223,19 @@ class BreadcrumbsServiceProvider extends ServiceProvider
             ->push(trans('general.update'))
         );
 
+        Breadcrumbs::for('consumables.checkout.show', function (Trail $trail, $consumablesID) {
+            $consumable = Consumable::find($consumablesID);
+            $trail->parent('consumables.index');
+            if ($consumable) {
+                $trail->push($consumable->name, route('consumables.show', $consumable));
+            }
+            $trail->push(trans('general.checkout'));
+        });
+
+        Breadcrumbs::for('consumables.clone.create', fn (Trail $trail, Consumable $consumable) => $trail->parent('consumables.show', $consumable)
+            ->push(trans('general.clone'))
+        );
+
         /**
          * Custom fields Breadcrumbs
          */
