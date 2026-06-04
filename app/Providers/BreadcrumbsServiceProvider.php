@@ -116,7 +116,7 @@ class BreadcrumbsServiceProvider extends ServiceProvider
         );
 
         Breadcrumbs::for('accessories.edit', fn (Trail $trail, Accessory $accessory) => $trail->parent('accessories.index', route('accessories.index'))
-            ->push($accessory->name, route('accessories.show', $accessory))
+            ->push($accessory->display_name, route('accessories.show', $accessory))
             ->push(trans('general.update'))
         );
 
