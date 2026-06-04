@@ -5,6 +5,9 @@
     'name' => 'qty',
     'label' => null,
     'min' => 0,
+    'max' => null,
+    'value' => null,
+    'help_text' => null,
 ])
 
 <div
@@ -24,14 +27,18 @@
                 name="{{ $name }}"
                 id="{{ $name }}"
                 aria-label="{{ $label ?? trans('general.quantity') }}"
-                value="{{ old($name, $item->{$name} ?? '') }}"
+                value="{{ old($name, $value ?? $item?->{$name} ?? '') }}"
                 min="{{ $min }}"
+                @if ($max) max="{{ $max }}" @endif
                 maxlength="5"
-                @required(Helper::checkIfRequired($item, $name))
+                @required($item && Helper::checkIfRequired($item, $name))
             />
         </div>
         <div class="col-md-12" style="padding-left: 0">
             {!! $errors->first($name, '<span class="alert-msg" aria-hidden="true"><i class="fas fa-times" aria-hidden="true"></i> :message</span>') !!}
+            @if ($help_text)
+                <p class="help-block">{{ $help_text }}</p>
+            @endif
         </div>
     </div>
 </div>

@@ -23,6 +23,7 @@ use App\Models\PredefinedKit;
 use App\Models\Statuslabel;
 use App\Models\Supplier;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
 use Tabuna\Breadcrumbs\Breadcrumbs;
 use Tabuna\Breadcrumbs\Trail;
@@ -202,6 +203,25 @@ class BreadcrumbsServiceProvider extends ServiceProvider
             ->push($component->display_name, route('components.show', $component))
             ->push(trans('general.clone'), route('components.create'))
         );
+
+        Breadcrumbs::for('components.checkout.show', function (Trail $trail, int $componentID) {
+            $component = Component::find($componentID);
+            $trail->parent('components.index');
+            if ($component) {
+                $trail->push($component->name, route('components.show', $component));
+            }
+            $trail->push(trans('general.checkout'));
+        });
+
+        Breadcrumbs::for('components.checkin.show', function (Trail $trail, int $componentAssetId) {
+            $componentAsset = DB::table('components_assets')->find($componentAssetId);
+            $component = $componentAsset ? Component::find($componentAsset->component_id) : null;
+            $trail->parent('components.index');
+            if ($component) {
+                $trail->push($component->name, route('components.show', $component));
+            }
+            $trail->push(trans('general.checkin'));
+        });
 
         /**
          * Consumables Breadcrumbs
