@@ -166,6 +166,39 @@ class SnipeMutableCollection extends MutableCollection
     }
 }
 
+class MappedTable extends Attribute
+{
+    public function __construct(
+        private string $scim_attribute_name,
+        private string $relationship_name,
+        private string $relationship_class,
+        private string $relationship_id_field,
+        private string $relationship_field
+    ) {
+        parent::__construct($this->scim_attribute_name);
+    }
+
+    protected function doRead(&$object, $attributes = [])
+    {
+        return $object->{$this->relationship_name}?->{$this->relationship_field};
+    }
+
+    public function add($value, Model &$object)
+    {
+        $object->{$this->relationship_id_field} = $value ? $this->relationship_class::firstOrCreate([$this->relationship_field => $value])->id : null;
+    }
+
+    public function replace($value, Model &$object, $path = null, $removeIfNotSet = false)
+    {
+        $object->{$this->relationship_id_field} = $value ? $this->relationship_class::firstOrCreate([$this->relationship_field => $value])->id : null;
+    }
+
+    public function patch($operation, $value, Model &$object, ?Path $path = null, $removeIfNotSet = false)
+    {
+        $object->{$this->relationship_id_field} = $value ? $this->relationship_class::firstOrCreate([$this->relationship_field => $value])->id : null;
+    }
+}
+
 // Company is stored only in the company_user pivot, not company_id. Read from the pivot
 // and sync it on write. For new users (not yet saved) defer the sync via a saved() callback.
 class SCIMCompanyAttribute extends MappedTable
@@ -207,39 +240,6 @@ class EloquentWithRemove extends Eloquent
     public function remove($value, Model &$object, ?Path $path = null)
     {
         $object->{$this->attribute} = null;
-    }
-}
-
-class MappedTable extends Attribute
-{
-    public function __construct(
-        private string $scim_attribute_name,
-        private string $relationship_name,
-        private string $relationship_class,
-        private string $relationship_id_field,
-        private string $relationship_field)
-    {
-        parent::__construct($this->scim_attribute_name);
-    }
-
-    protected function doRead(&$object, $attributes = [])
-    {
-        return $object->{$this->relationship_name}?->{$this->relationship_field};
-    }
-
-    public function add($value, Model &$object)
-    {
-        $object->{$this->relationship_id_field} = $value ? $this->relationship_class::firstOrCreate([$this->relationship_field => $value])->id : null;
-    }
-
-    public function replace($value, Model &$object, $path = null, $removeIfNotSet = false)
-    {
-        $object->{$this->relationship_id_field} = $value ? $this->relationship_class::firstOrCreate([$this->relationship_field => $value])->id : null;
-    }
-
-    public function patch($operation, $value, Model &$object, ?Path $path = null, $removeIfNotSet = false)
-    {
-        $object->{$this->relationship_id_field} = $value ? $this->relationship_class::firstOrCreate([$this->relationship_field => $value])->id : null;
     }
 }
 
