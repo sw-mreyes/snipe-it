@@ -19,51 +19,21 @@
 
         <x-box header="{{ $accessory->name }}">
 
-            <!-- Accessory name (read-only) -->
             @if ($accessory->name)
-                <div class="form-group">
-                    <label class="col-sm-3 control-label">{{ trans('admin/accessories/general.accessory_name') }}</label>
-                    <div class="col-md-6">
-                        <p class="form-control-static">{{ $accessory->name }}</p>
-                    </div>
-                </div>
+                <x-form.static :label="trans('admin/accessories/general.accessory_name')">{{ $accessory->name }}</x-form.static>
             @endif
 
-            <!-- Company (read-only) -->
             @if ($accessory->company)
-                <div class="form-group">
-                    <label class="col-sm-3 control-label">{{ trans('general.company') }}</label>
-                    <div class="col-md-6">
-                        <p class="form-control-static">{!! $accessory->company->present()->formattedNameLink !!}</p>
-                    </div>
-                </div>
+                <x-form.static :label="trans('general.company')">{!! $accessory->company->present()->formattedNameLink !!}</x-form.static>
             @endif
 
-            <!-- Category (read-only) -->
             @if ($accessory->category)
-                <div class="form-group">
-                    <label class="col-sm-3 control-label">{{ trans('general.category') }}</label>
-                    <div class="col-md-6">
-                        <p class="form-control-static">{!! $accessory->category->present()->formattedNameLink !!}</p>
-                    </div>
-                </div>
+                <x-form.static :label="trans('general.category')">{!! $accessory->category->present()->formattedNameLink !!}</x-form.static>
             @endif
 
-            <!-- Total qty (read-only) -->
-            <div class="form-group">
-                <label class="col-sm-3 control-label">{{ trans('admin/components/general.total') }}</label>
-                <div class="col-md-6">
-                    <p class="form-control-static">{{ $accessory->qty }}</p>
-                </div>
-            </div>
+            <x-form.static :label="trans('admin/components/general.total')">{{ $accessory->qty }}</x-form.static>
 
-            <!-- Remaining qty (read-only) -->
-            <div class="form-group">
-                <label class="col-sm-3 control-label">{{ trans('admin/components/general.remaining') }}</label>
-                <div class="col-md-6">
-                    <p class="form-control-static">{{ $accessory->numRemaining() }}</p>
-                </div>
-            </div>
+            <x-form.static :label="trans('admin/components/general.remaining')">{{ $accessory->numRemaining() }}</x-form.static>
 
             @include ('partials.forms.checkout-selector', ['user_select' => 'true', 'asset_select' => 'true', 'location_select' => 'true'])
             @include ('partials.forms.edit.user-select', ['translated_name' => trans('general.user'), 'company_id' => $accessory->company_id, 'fieldname' => 'assigned_user', 'style' => (session('checkout_to_type') ?: 'user') == 'user' ? '' : 'display: none;'])

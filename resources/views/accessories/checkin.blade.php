@@ -19,14 +19,8 @@
 
         <x-box header="{{ $accessory->name }}">
 
-            <!-- Accessory name (read-only) -->
             @if ($accessory->name)
-                <div class="form-group">
-                    <label class="col-sm-3 control-label">{{ trans('admin/hardware/form.name') }}</label>
-                    <div class="col-md-6">
-                        <p class="form-control-static">{{ $accessory->name }}</p>
-                    </div>
-                </div>
+                <x-form.static :label="trans('admin/hardware/form.name')">{{ $accessory->name }}</x-form.static>
             @endif
 
             <x-form.row
