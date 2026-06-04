@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\Accessory;
+use App\Models\AccessoryCheckout;
 use App\Models\Asset;
 use App\Models\AssetModel;
 use App\Models\Category;
@@ -115,8 +116,26 @@ class BreadcrumbsServiceProvider extends ServiceProvider
         );
 
         Breadcrumbs::for('accessories.edit', fn (Trail $trail, Accessory $accessory) => $trail->parent('accessories.index', route('accessories.index'))
-            ->push($accessory->display_name, route('accessories.show', $accessory))
+            ->push($accessory->name, route('accessories.show', $accessory))
             ->push(trans('general.update'))
+        );
+
+        Breadcrumbs::for('accessories.checkout.show', fn (Trail $trail, Accessory $accessory) => $trail->parent('accessories.show', $accessory)
+            ->push(trans('general.checkout'))
+        );
+
+        Breadcrumbs::for('accessories.checkin.show', function (Trail $trail, int $accessoryID) {
+            $checkout = AccessoryCheckout::find($accessoryID);
+            $accessory = $checkout ? Accessory::find($checkout->accessory_id) : null;
+            $trail->parent('accessories.index');
+            if ($accessory) {
+                $trail->push($accessory->name, route('accessories.show', $accessory));
+            }
+            $trail->push(trans('general.checkin'));
+        });
+
+        Breadcrumbs::for('clone/accessories', fn (Trail $trail, Accessory $accessory) => $trail->parent('accessories.show', $accessory)
+            ->push(trans('general.clone'))
         );
 
         /**
