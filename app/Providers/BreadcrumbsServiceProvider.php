@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\Accessory;
+use App\Models\AccessoryCheckout;
 use App\Models\Asset;
 use App\Models\AssetModel;
 use App\Models\Category;
@@ -119,6 +120,24 @@ class BreadcrumbsServiceProvider extends ServiceProvider
             ->push(trans('general.update'))
         );
 
+        Breadcrumbs::for('accessories.checkout.show', fn (Trail $trail, Accessory $accessory) => $trail->parent('accessories.show', $accessory)
+            ->push(trans('general.checkout'))
+        );
+
+        Breadcrumbs::for('accessories.checkin.show', function (Trail $trail, int $accessoryID) {
+            $checkout = AccessoryCheckout::find($accessoryID);
+            $accessory = $checkout ? Accessory::find($checkout->accessory_id) : null;
+            $trail->parent('accessories.index');
+            if ($accessory) {
+                $trail->push($accessory->name, route('accessories.show', $accessory));
+            }
+            $trail->push(trans('general.checkin'));
+        });
+
+        Breadcrumbs::for('clone/accessories', fn (Trail $trail, Accessory $accessory) => $trail->parent('accessories.show', $accessory)
+            ->push(trans('general.clone'))
+        );
+
         /**
          * Categories Breadcrumbs
          */
@@ -202,6 +221,19 @@ class BreadcrumbsServiceProvider extends ServiceProvider
         Breadcrumbs::for('consumables.edit', fn (Trail $trail, Consumable $consumable) => $trail->parent('consumables.index', route('consumables.index'))
             ->push($consumable->display_name, route('consumables.show', $consumable))
             ->push(trans('general.update'))
+        );
+
+        Breadcrumbs::for('consumables.checkout.show', function (Trail $trail, $consumablesID) {
+            $consumable = Consumable::find($consumablesID);
+            $trail->parent('consumables.index');
+            if ($consumable) {
+                $trail->push($consumable->name, route('consumables.show', $consumable));
+            }
+            $trail->push(trans('general.checkout'));
+        });
+
+        Breadcrumbs::for('consumables.clone.create', fn (Trail $trail, Consumable $consumable) => $trail->parent('consumables.show', $consumable)
+            ->push(trans('general.clone'))
         );
 
         /**

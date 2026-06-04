@@ -16,12 +16,10 @@ $dump_options = [
     // 'add_extra_option' => '--optionname=optionvalue',
 ];
 
-// spatie/laravel-backup 9.x treats false and null identically in callMethodOnDumper,
-// so the only way to disable single-transaction mode is to omit the key entirely.
-// Set DB_DUMP_SINGLE_TRANSACTION=true to opt in (required for non-RDS MySQL).
-if (env('DB_DUMP_SINGLE_TRANSACTION') == 'true') {
-    $dump_options['use_single_transaction'] = true;
-}
+// Default to false (preserves original behavior for non-RDS installs).
+// Set DB_DUMP_SINGLE_TRANSACTION=true in .env for RDS or other environments
+// that require --single-transaction (e.g. no LOCK TABLES privilege).
+$dump_options['use_single_transaction'] = (env('DB_DUMP_SINGLE_TRANSACTION', 'false') === 'true');
 
 // For modern versions of mysqldump, use --ssl-mode=DISABLED
 if (env('DB_DUMP_SKIP_SSL') == 'true') {
