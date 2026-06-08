@@ -10,6 +10,7 @@ use App\Models\Asset;
 use App\Models\CheckoutAcceptance;
 use App\Models\License;
 use App\Models\LicenseSeat;
+use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\View\View;
@@ -240,19 +241,28 @@ class LicenseCheckoutController extends Controller
 
         Log::debug('Checking out '.$licenseId.' via bulk');
         $license = License::findOrFail($licenseId);
-        $this->authorize('checkin', $license);
-        $avail_count = $license->getAvailSeatsCountAttribute();
+        $this->authorize('checkout', $license);
 
-        $users = User::whereNull('deleted_at')->where('autoassign_licenses', '=', 1)->with('licenses')->get();
-        Log::debug($avail_count.' will be assigned');
-
-        if ($users->count() > $avail_count) {
-            Log::debug('You do not have enough free seats to complete this task, so we will check out as many as we can. ');
+        if ($license->isInactive()) {
+            return redirect()->back()->with('error', trans('admin/licenses/message.checkout.license_is_inactive'));
         }
 
         // If the license is valid, check that there is an available seat
         if ($license->availCount()->count() < 1) {
             return redirect()->back()->with('error', trans('admin/licenses/general.bulk.checkout_all.error_no_seats'));
+        }
+
+        $avail_count = $license->getAvailSeatsCountAttribute();
+
+        $usersQuery = User::whereNull('deleted_at')->where('autoassign_licenses', '=', 1)->with('licenses');
+        if (Setting::getSettings()->full_multiple_companies_support && $license->company_id) {
+            $usersQuery->where('company_id', '=', $license->company_id);
+        }
+        $users = $usersQuery->get();
+        Log::debug($avail_count.' will be assigned');
+
+        if ($users->count() > $avail_count) {
+            Log::debug('You do not have enough free seats to complete this task, so we will check out as many as we can. ');
         }
 
         $assigned_count = 0;
