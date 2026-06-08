@@ -1883,11 +1883,12 @@ class Helper
             // Convert newlines to CommonMark hard breaks for inline rendering
             $text = preg_replace('/(?<! {2})\n/', "  \n", $text);
 
-            return Str::inlineMarkdown($text, ['html_input' => 'escape']);
+            return Str::inlineMarkdown($text, ['html_input' => 'escape', 'allow_unsafe_links' => false]);
         }
 
         $html = trim(Str::markdown($text, [
             'html_input' => 'escape',
+            'allow_unsafe_links' => false,
             'renderer' => ['soft_break' => "<br>\n"],
         ]));
 
