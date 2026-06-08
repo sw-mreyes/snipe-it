@@ -328,6 +328,7 @@
                         </x-slot:bulkactions>
                         @endcan
 
+                        @can('view', \App\Models\License::class)
                         <table
                             data-cookie-id-table="userLicenseTable"
                             data-id-table="userLicenseTable"
@@ -391,6 +392,7 @@
                                 @endforeach
                             </tbody>
                         </table>
+                        @endcan
 
                     </x-tabs.pane>
 
@@ -403,6 +405,7 @@
                             {{ trans('general.accessories_assigned') }}
                         </x-slot:table_header>
 
+                        @can('view', \App\Models\Accessory::class)
                         <table
                             data-cookie-id-table="userAccessoryTable"
                             data-id-table="userAccessoryTable"
@@ -444,10 +447,12 @@
                                 @endforeach
                             </tbody>
                         </table>
+                        @endcan
 
                     </x-tabs.pane>
 
                     <x-tabs.pane name="consumables" :count="$user->consumables()->count()">
+                        @can('view', \App\Models\Consumable::class)
                         <table
                             data-cookie-id-table="userConsumableTable"
                             data-id-table="userConsumableTable"
@@ -482,6 +487,7 @@
                                 @endforeach
                             </tbody>
                         </table>
+                        @endcan
 
                     </x-tabs.pane>
 
