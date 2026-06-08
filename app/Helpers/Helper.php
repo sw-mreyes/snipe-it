@@ -1599,6 +1599,16 @@ class Helper
         $other_redirect = session('other_redirect');
         $backUrl = str_replace(["\r", "\n"], '', session()->pull('url.intended', 'home'));
 
+        // Reject any stored back-URL that points off-site. redirect()->intended() performs
+        // no host validation, and url.intended can be written from the SAML RelayState POST
+        // parameter (SamlController), which an attacker-controlled IdP could set to an
+        // off-site URL.
+        $backHost = parse_url($backUrl, PHP_URL_HOST);
+        $appHost = parse_url(config('app.url'), PHP_URL_HOST);
+        if ($backHost && $backHost !== $appHost) {
+            $backUrl = route('home');
+        }
+
         // return to previous page
         if ($redirect_option == 'back') {
             return redirect()->intended($backUrl);
