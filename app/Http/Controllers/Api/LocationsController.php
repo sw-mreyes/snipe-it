@@ -216,7 +216,7 @@ class LocationsController extends Controller
             $location->company_id = Company::getIdForCurrentUser($request->input('company_id'));
             // check if parent is set and has a different company
             if ($location->parent_id && Location::find($location->parent_id)->company_id != $location->company_id) {
-                response()->json(Helper::formatStandardApiResponse('error', null, 'different company than parent'));
+                return response()->json(Helper::formatStandardApiResponse('error', null, 'different company than parent'));
             }
         }
 
@@ -309,6 +309,10 @@ class LocationsController extends Controller
                 // check if there are related objects with different company
                 if (Helper::test_locations_fmcs(false, $id, $location->company_id)) {
                     return response()->json(Helper::formatStandardApiResponse('error', null, 'error scoped locations'));
+                }
+                // check if parent is set and has a different company
+                if ($location->parent_id && Location::find($location->parent_id)->company_id != $location->company_id) {
+                    return response()->json(Helper::formatStandardApiResponse('error', null, 'different company than parent'));
                 }
             } else {
                 $location->company_id = $request->input('company_id');
