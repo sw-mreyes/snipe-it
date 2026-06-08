@@ -123,10 +123,6 @@ Route::group(
             return redirect()->route('hardware.show', $assetId);
         });
 
-        Route::get('{asset}/qr_code',
-            [AssetsController::class, 'getQrCode']
-        )->name('qr_code/hardware')->withTrashed();
-
         Route::get('{asset}/barcode',
             [AssetsController::class, 'getBarCode']
         )->name('barcode/hardware')->withTrashed();

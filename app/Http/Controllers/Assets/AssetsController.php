@@ -358,7 +358,7 @@ class AssetsController extends Controller
 
             $qr_code = (object) [
                 'display' => $settings->qr_code == '1',
-                'url' => route('qr_code/hardware', $asset),
+                'url' => route('qr_code/common', ['object_type' => 'hardware', 'id' => $asset->id]),
             ];
 
             $total_maintenance_cost = $asset->maintenances?->sum('cost');
