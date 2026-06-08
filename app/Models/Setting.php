@@ -216,6 +216,11 @@ class Setting extends Model
         return $custom_css;
     }
 
+    public function isQrEnabled(): bool
+    {
+        return $this->qr_code == '1' || $this->label2_2d_type !== 'none';
+    }
+
     /**
      * Converts bytes into human readable file size.
      *
