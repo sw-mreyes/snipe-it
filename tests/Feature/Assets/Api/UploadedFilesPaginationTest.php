@@ -10,6 +10,7 @@ use Tests\TestCase;
 class UploadedFilesPaginationTest extends TestCase
 {
     private User $user;
+
     private Asset $asset;
 
     protected function setUp(): void
@@ -21,7 +22,7 @@ class UploadedFilesPaginationTest extends TestCase
 
     private function createUploadLog(string $filename): void
     {
-        $log = new Actionlog();
+        $log = new Actionlog;
         $log->item_id = $this->asset->id;
         $log->item_type = Asset::class;
         $log->action_type = 'uploaded';
