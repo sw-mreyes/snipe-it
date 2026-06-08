@@ -395,6 +395,32 @@ class BulkUsersController extends Controller
             return redirect()->route('users.index')->with('error', 'No status selected');
         }
 
+        // Enforce per-item checkin permissions before touching anything (catches FMCS company scoping).
+        foreach ($assets as $asset) {
+            if (auth()->user()->cannot('checkin', $asset)) {
+                return redirect()->route('users.index')->with('error', trans('general.insufficient_permissions'));
+            }
+        }
+
+        $licenseModels = License::whereIn('id', $licenses->pluck('license_id')->unique())->get();
+        foreach ($licenseModels as $license) {
+            if (auth()->user()->cannot('checkin', $license)) {
+                return redirect()->route('users.index')->with('error', trans('general.insufficient_permissions'));
+            }
+        }
+
+        $accessoryModels = Accessory::whereIn('id', $accessoryUserRows->pluck('accessory_id')->unique())->get();
+        foreach ($accessoryModels as $accessory) {
+            if (auth()->user()->cannot('checkin', $accessory)) {
+                return redirect()->route('users.index')->with('error', trans('general.insufficient_permissions'));
+            }
+        }
+
+        // Require delete permission before allowing user deletion.
+        if ($request->input('delete_user') == '1' && auth()->user()->cannot('delete', User::class)) {
+            return redirect()->route('users.index')->with('error', trans('general.insufficient_permissions'));
+        }
+
         $this->logItemCheckinAndDelete($assets, Asset::class);
         $this->logAccessoriesCheckin($accessoryUserRows);
         $this->logItemCheckinAndDelete($licenses, License::class);
