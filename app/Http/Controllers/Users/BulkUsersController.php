@@ -416,8 +416,7 @@ class BulkUsersController extends Controller
             }
         }
 
-        // Require delete permission before allowing user deletion.
-        if ($request->input('delete_user') == '1' && auth()->user()->cannot('delete', User::class)) {
+        if ($request->input('delete_user') == '1' && $users->isNotEmpty() && auth()->user()->cannot('delete', User::class)) {
             return redirect()->route('users.index')->with('error', trans('general.insufficient_permissions'));
         }
 
