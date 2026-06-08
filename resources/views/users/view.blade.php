@@ -303,6 +303,11 @@
 
                             @endif
 
+                                @if ($snipeSettings->isQrEnabled())
+                                    <div class="col-md-12 text-center user-qr-img" style="padding-top: 15px;">
+                                        <img src="{{ route('qr_code/common', ['object_type' => 'users', 'id' => $user->id]) }}" class="img-thumbnail" style="height: 150px; width: 150px; margin-right: 10px;" alt="QR code for {{ $user->display_name }}">
+                                    </div>
+                                @endif
 
                         </x-page-column>
                         <!-- end side stats well column-->

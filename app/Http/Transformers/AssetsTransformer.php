@@ -98,6 +98,7 @@ class AssetsTransformer
                 'tag_color' => ($asset->defaultLoc->tag_color) ? e($asset->defaultLoc->tag_color) : null,
             ] : null,
             'image' => ($asset->getImageUrl()) ? $asset->getImageUrl() : null,
+            'qr_code_url' => route('qr_code/common', ['object_type' => 'hardware', 'id' => $asset->id]),
             'qr' => ($setting->qr_code == '1') ? Storage::disk('public')->url('barcodes/qr-'.str_slug($asset->asset_tag).'-'.str_slug($asset->id).'.png') : null,
             'alt_barcode' => ($setting->alt_barcode_enabled == '1') ? Storage::disk('public')->url('barcodes/'.str_slug($setting->alt_barcode).'-'.str_slug($asset->asset_tag).'.png') : null,
             'assigned_to' => $this->transformAssignedTo($asset),
