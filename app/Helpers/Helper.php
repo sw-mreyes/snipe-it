@@ -1724,6 +1724,11 @@ class Helper
                 foreach ($keywords as $keyword) {
                     if ($relation == 'many') {
                         $items = $location->{$keyword}->all();
+                        // assignedAccessories returns AccessoryCheckout records (no company_id);
+                        // resolve each to its parent Accessory so the comparison is valid.
+                        if ($keyword === 'assignedAccessories') {
+                            $items = collect($items)->map(fn ($checkout) => $checkout->accessory)->filter()->values()->all();
+                        }
                     } else {
                         $items = collect([])->push($location->$keyword);
                     }
