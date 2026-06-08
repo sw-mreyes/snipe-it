@@ -3,13 +3,13 @@
 namespace Tests\Feature\Accessories\Api;
 
 use App\Models\Accessory;
+use App\Models\Actionlog;
 use App\Models\Category;
 use App\Models\Company;
 use App\Models\Location;
 use App\Models\Manufacturer;
 use App\Models\Supplier;
 use App\Models\User;
-use App\Models\Actionlog;
 use Tests\Concerns\TestsFullMultipleCompaniesSupport;
 use Tests\Concerns\TestsPermissionsRequirement;
 use Tests\TestCase;

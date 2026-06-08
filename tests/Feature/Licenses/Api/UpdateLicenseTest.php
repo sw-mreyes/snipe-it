@@ -3,7 +3,6 @@
 namespace Tests\Feature\Licenses\Api;
 
 use App\Models\Actionlog;
-use App\Models\Category;
 use App\Models\License;
 use App\Models\User;
 use Tests\TestCase;
