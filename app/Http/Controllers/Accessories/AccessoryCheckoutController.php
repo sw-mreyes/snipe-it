@@ -10,6 +10,7 @@ use App\Http\Traits\CheckInOutTrait;
 use App\Models\Accessory;
 use App\Models\AccessoryCheckout;
 use App\Models\CheckoutAcceptance;
+use App\Models\Setting;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
@@ -65,6 +66,10 @@ class AccessoryCheckoutController extends Controller
 
         $target = $this->determineCheckoutTarget();
         session()->put(['checkout_to_type' => $target]);
+
+        if ((Setting::getSettings()->full_multiple_companies_support == '1') && (! $target->companies()->where('companies.id', $accessory->company_id)->exists())) {
+            return redirect()->back()->with('error', trans('general.error_user_company'));
+        }
 
         $accessory->checkout_qty = $request->input('checkout_qty', 1);
 

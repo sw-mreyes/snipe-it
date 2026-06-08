@@ -96,6 +96,20 @@ class LicenseCheckoutController extends Controller
             return redirect()->route('licenses.index')->with('error', trans('admin/licenses/message.checkout.license_is_inactive'));
         }
 
+        if (Setting::getSettings()->full_multiple_companies_support == '1') {
+            if ($request->filled('asset_id')) {
+                $fmcsTarget = Asset::find($request->input('asset_id'));
+                if ($fmcsTarget && $license->company_id && $license->company_id !== $fmcsTarget->company_id) {
+                    return redirect()->route('licenses.index')->with('error', trans('general.error_user_company'));
+                }
+            } elseif ($request->filled('assigned_to')) {
+                $fmcsTarget = User::find($request->input('assigned_to'));
+                if ($fmcsTarget && ! $fmcsTarget->companies()->where('companies.id', $license->company_id)->exists()) {
+                    return redirect()->route('licenses.index')->with('error', trans('general.error_user_company'));
+                }
+            }
+        }
+
         $licenseSeat = null;
         $checkoutTarget = null;
 
