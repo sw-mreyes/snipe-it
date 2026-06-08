@@ -430,6 +430,11 @@ class UserFactory extends Factory
         return $this->appendPermission(['kits.delete' => '1']);
     }
 
+    public function editPredefinedKits()
+    {
+        return $this->appendPermission(['kits.edit' => '1']);
+    }
+
     public function viewPredefinedKits()
     {
         return $this->appendPermission(['kits.view' => '1']);
