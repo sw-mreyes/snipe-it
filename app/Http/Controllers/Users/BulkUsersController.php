@@ -501,6 +501,10 @@ class BulkUsersController extends Controller
         $users_to_merge = User::whereIn('id', $user_ids_to_merge)->with('assets', 'manager', 'userlog', 'licenses', 'consumables', 'accessories', 'managedLocations', 'uploads', 'acceptances')->get();
         $admin = User::find(auth()->id());
 
+        if (! auth()->user()->can('canEditAuthFields', $merge_into_user) || ! auth()->user()->can('editableOnDemo')) {
+            return redirect()->route('users.index')->with('error', trans('general.insufficient_permissions'));
+        }
+
         // Walk users
         foreach ($users_to_merge as $user_to_merge) {
 
