@@ -68,7 +68,7 @@ class UpdateAccessoryTest extends TestCase implements TestsFullMultipleCompanies
             ->patchJson(route('api.accessories.update', $accessory), [
                 'company_id' => $companyB->id,
             ])
-            ->assertStatusMessageIs('success');
+            ->assertStatusMessageIs('error');
 
         $this->assertSame($companyA->id, $accessory->fresh()->company_id);
     }
