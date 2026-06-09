@@ -97,7 +97,11 @@ class ConsumableCheckoutController extends Controller
             return redirect()->route('consumables.checkout.show', $consumable)->with('error', trans('admin/consumables/message.checkout.user_does_not_exist'))->withInput();
         }
 
-        if ((Setting::getSettings()->full_multiple_companies_support == '1') && (! $user->companies()->where('companies.id', $consumable->company_id)->exists())) {
+        if (
+            Setting::getSettings()->full_multiple_companies_support == '1'
+            && $consumable->company_id
+            && ! $user->canReceiveFromCompany($consumable->company_id)
+        ) {
             return redirect()->back()->with('error', trans('general.error_user_company'));
         }
 

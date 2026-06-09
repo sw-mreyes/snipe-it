@@ -67,7 +67,12 @@ class AccessoryCheckoutController extends Controller
         $target = $this->determineCheckoutTarget();
         session()->put(['checkout_to_type' => $target]);
 
-        if ((Setting::getSettings()->full_multiple_companies_support == '1') && (! $target->companies()->where('companies.id', $accessory->company_id)->exists())) {
+        if (
+            Setting::getSettings()->full_multiple_companies_support == '1'
+            && $accessory->company_id
+            && $target instanceof User
+            && ! $target->canReceiveFromCompany($accessory->company_id)
+        ) {
             return redirect()->back()->with('error', trans('general.error_user_company'));
         }
 
