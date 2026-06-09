@@ -104,7 +104,7 @@ class LicenseCheckoutController extends Controller
                 }
             } elseif ($request->filled('assigned_to')) {
                 $fmcsTarget = User::find($request->input('assigned_to'));
-                if ($fmcsTarget && ! $fmcsTarget->companies()->where('companies.id', $license->company_id)->exists()) {
+                if ($fmcsTarget && $license->company_id && ! $fmcsTarget->canReceiveFromCompany($license->company_id)) {
                     return redirect()->route('licenses.index')->with('error', trans('general.error_user_company'));
                 }
             }
