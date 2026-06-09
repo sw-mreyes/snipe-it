@@ -1522,28 +1522,38 @@ class User extends SnipeModel implements AuthenticatableContract, AuthorizableCo
 
     }
 
-    public function scopeWithInventoryRelations($query, int $id)
+    public function scopeWithInventoryRelations($query, int $id, bool $withLicenses = true, bool $withAccessories = true, bool $withConsumables = true)
     {
-        return $query->where('id', $id)
-            ->with([
-                'assets.log' => fn ($query) => $query->withTrashed()
-                    ->where('target_type', User::class)
-                    ->where('target_id', $id)
-                    ->where('action_type', 'accepted'),
-                'assets.defaultLoc',
-                'assets.location',
-                'assets.model.category',
-                'assets.assignedAssets.log' => fn ($query) => $query->withTrashed()
-                    ->where('target_type', User::class)
-                    ->where('target_id', $id)
-                    ->where('action_type', 'accepted'),
-                'assets.assignedAssets.assignedTo',
-                'assets.assignedAssets.defaultLoc',
-                'assets.assignedAssets.location',
-                'assets.assignedAssets.model.category',
-                'assets.components.category',
+        $with = [
+            'assets.log' => fn ($query) => $query->withTrashed()
+                ->where('target_type', User::class)
+                ->where('target_id', $id)
+                ->where('action_type', 'accepted'),
+            'assets.defaultLoc',
+            'assets.location',
+            'assets.model.category',
+            'assets.assignedAssets.log' => fn ($query) => $query->withTrashed()
+                ->where('target_type', User::class)
+                ->where('target_id', $id)
+                ->where('action_type', 'accepted'),
+            'assets.assignedAssets.assignedTo',
+            'assets.assignedAssets.defaultLoc',
+            'assets.assignedAssets.location',
+            'assets.assignedAssets.model.category',
+            'assets.components.category',
+        ];
+
+        if ($withLicenses) {
+            $with = array_merge($with, [
                 'assets.licenses',
                 'assets.licenses.category',
+                'directLicenses.category',
+                'licenses.category',
+            ]);
+        }
+
+        if ($withAccessories) {
+            $with = array_merge($with, [
                 'assets.assignedAccessories',
                 'assets.assignedAccessories.accessory.category',
                 'accessories.log' => fn ($query) => $query->withTrashed()
@@ -1552,16 +1562,21 @@ class User extends SnipeModel implements AuthenticatableContract, AuthorizableCo
                     ->where('action_type', 'accepted'),
                 'accessories.category',
                 'accessories.manufacturer',
+            ]);
+        }
+
+        if ($withConsumables) {
+            $with = array_merge($with, [
                 'consumables.log' => fn ($query) => $query->withTrashed()
                     ->where('target_type', User::class)
                     ->where('target_id', $id)
                     ->where('action_type', 'accepted'),
                 'consumables.category',
                 'consumables.manufacturer',
-                'directLicenses.category',
-                'licenses.category',
-            ])
-            ->withTrashed();
+            ]);
+        }
+
+        return $query->where('id', $id)->with($with)->withTrashed();
     }
 
     /**
