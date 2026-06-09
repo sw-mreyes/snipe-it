@@ -37,7 +37,7 @@ class FieldOption
                 return $assigned->getRawOriginal('display_name') ?? $assigned->display_name;
             }
 
-            return $assigned->display_name;
+            return $assigned->full_name;
         }
 
         // Handle Laravel's stupid Carbon datetime casting
