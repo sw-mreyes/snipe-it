@@ -155,11 +155,20 @@ final class Company extends SnipeModel
             if ($current_user->isSuperUser()) {
                 return self::getIdFromInput($unescaped_input);
             } else {
-                if ($current_user->company_id != null) {
-                    return $current_user->company_id;
-                } else {
-                    return null;
+                $userCompanyIds = self::getCurrentUserCompanyIds();
+                $submittedId = (int) self::getIdFromInput($unescaped_input);
+
+                // Company membership is now determined entirely by the pivot (company_user table).
+                // If the submitted value is a company the user actually belongs to, honour it —
+                // this is the normal case and also fixes pivot-only users (scalar company_id = null).
+                if ($submittedId && in_array($submittedId, $userCompanyIds)) {
+                    return $submittedId;
                 }
+
+                // The submitted value was not in the user's pivot.  When the user belongs to exactly
+                // one company the choice is unambiguous: fall back to that company.  When they belong
+                // to multiple companies we cannot safely pick one, so return null.
+                return count($userCompanyIds) === 1 ? $userCompanyIds[0] : null;
             }
         }
     }

@@ -26,6 +26,8 @@ trait ProvidesDataForFullMultipleCompanySupportTesting
                     'actor' => $luke,
                     'company_attempting_to_associate' => $sith,
                     'assertions' => function ($model) use ($jedi) {
+                        // Sith is not in Luke's pivot (he belongs only to Jedi), so the
+                        // submitted company is rejected and his single pivot company is used.
                         self::assertEquals($jedi->id, $model->company_id);
                     },
                 ];
