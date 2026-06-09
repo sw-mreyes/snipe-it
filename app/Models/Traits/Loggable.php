@@ -476,7 +476,16 @@ trait Loggable
                 ]);
             }
         } else {
-            Setting::getSettings()->notify(new AuditNotification($params));
+            try {
+                Setting::getSettings()->notify(new AuditNotification($params));
+            } catch (Throwable $e) {
+                Log::error('Audit webhook notification failed', [
+                    'endpoint' => Setting::getSettings()->webhook_endpoint,
+                    'channel' => Setting::getSettings()->webhook_selected,
+                    'exception' => get_class($e),
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
 
         return $log;
