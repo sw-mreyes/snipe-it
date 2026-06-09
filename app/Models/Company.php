@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\ValidationException;
 use Watson\Validating\ValidatingTrait;
 
 /**
@@ -159,15 +160,22 @@ final class Company extends SnipeModel
                 $submittedId = (int) self::getIdFromInput($unescaped_input);
 
                 // Company membership is now determined entirely by the pivot (company_user table).
-                // If the submitted value is a company the user actually belongs to, honour it —
-                // this is the normal case and also fixes pivot-only users (scalar company_id = null).
+                // If the submitted value is a company the user actually belongs to, honour it.
                 if ($submittedId && in_array($submittedId, $userCompanyIds)) {
                     return $submittedId;
                 }
 
-                // The submitted value was not in the user's pivot.  When the user belongs to exactly
-                // one company the choice is unambiguous: fall back to that company.  When they belong
-                // to multiple companies we cannot safely pick one, so return null.
+                // A user with pivot memberships who submits a company they don't belong to is
+                // attempting cross-tenant assignment — reject outright rather than silently
+                // overriding or storing null.
+                if ($submittedId && ! empty($userCompanyIds)) {
+                    throw ValidationException::withMessages([
+                        'company_id' => [trans('validation.in', ['attribute' => 'company_id'])],
+                    ]);
+                }
+
+                // No company submitted (or user has no pivot memberships) — fall back to the
+                // user's single company if unambiguous, otherwise null.
                 return count($userCompanyIds) === 1 ? $userCompanyIds[0] : null;
             }
         }
