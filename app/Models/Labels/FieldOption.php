@@ -3,6 +3,7 @@
 namespace App\Models\Labels;
 
 use App\Models\Asset;
+use App\Models\User;
 
 class FieldOption
 {
@@ -36,8 +37,10 @@ class FieldOption
             if ($dataPath[0] === 'displayName') {
                 return $assigned->getRawOriginal('display_name') ?? $assigned->display_name;
             }
-
-            return $assigned->full_name;
+            if ($assigned instanceof User) {
+                return $assigned->full_name;
+            }
+            return $assigned->name ?? $assigned->display_name ?? null;
         }
 
         // Handle Laravel's stupid Carbon datetime casting
