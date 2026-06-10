@@ -449,7 +449,7 @@ trait Loggable
 
             } catch (ServerException $e) {
 
-                Log::error('Teams webhook server error', [
+                Log::warning('Teams webhook server error', [
                     'endpoint' => $endpoint,
                     'status' => $e->getResponse()?->getStatusCode(),
                     'error' => $e->getMessage(),
@@ -464,12 +464,12 @@ trait Loggable
                 ]);
             } catch (RequestException $e) {
 
-                Log::error('Teams webhook request failure', [
+                Log::warning('Teams webhook request failure', [
                     'endpoint' => $endpoint,
                     'error' => $e->getMessage(),
                 ]);
             } catch (Throwable $e) {
-                Log::error('Teams webhook failed unexpectedly', [
+                Log::warning('Teams webhook failed unexpectedly', [
                     'endpoint' => $endpoint,
                     'exception' => get_class($e),
                     'error' => $e->getMessage(),
@@ -479,7 +479,7 @@ trait Loggable
             try {
                 Setting::getSettings()->notify(new AuditNotification($params));
             } catch (Throwable $e) {
-                Log::error('Audit webhook notification failed', [
+                Log::warning('Audit webhook notification failed', [
                     'endpoint' => Setting::getSettings()->webhook_endpoint,
                     'channel' => Setting::getSettings()->webhook_selected,
                     'exception' => get_class($e),
