@@ -114,6 +114,56 @@ class CheckoutAccessoryTest extends TestCase
         ]);
     }
 
+    public function test_checkout_to_null_company_user_blocked_in_strict_mode()
+    {
+        [$companyA] = Company::factory()->count(1)->create();
+        $accessory = Accessory::factory()->for($companyA)->create(['qty' => 5]);
+        $nullCompanyUser = User::factory()->create(['company_id' => null]);
+
+        $this->settings->enableMultipleFullCompanySupport();
+
+        $actor = User::factory()->superuser()->create();
+
+        $this->actingAs($actor)
+            ->post(route('accessories.checkout.store', $accessory), [
+                'checkout_to_type' => 'user',
+                'assigned_user' => $nullCompanyUser->id,
+                'checkout_qty' => 1,
+                'redirect_option' => 'index',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseMissing('accessories_checkout', [
+            'accessory_id' => $accessory->id,
+            'assigned_to' => $nullCompanyUser->id,
+        ]);
+    }
+
+    public function test_checkout_to_null_company_user_succeeds_in_floater_mode()
+    {
+        [$companyA] = Company::factory()->count(1)->create();
+        $accessory = Accessory::factory()->for($companyA)->create(['qty' => 5]);
+        $nullCompanyUser = User::factory()->create(['company_id' => null]);
+
+        $this->settings->enableFloaterMode();
+
+        $actor = User::factory()->superuser()->create();
+
+        $this->actingAs($actor)
+            ->post(route('accessories.checkout.store', $accessory), [
+                'checkout_to_type' => 'user',
+                'assigned_user' => $nullCompanyUser->id,
+                'checkout_qty' => 1,
+                'redirect_option' => 'index',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('accessories_checkout', [
+            'accessory_id' => $accessory->id,
+            'assigned_to' => $nullCompanyUser->id,
+        ]);
+    }
+
     public function test_checkout_to_location_does_not_throw_when_fmcs_enabled()
     {
         [$companyA] = Company::factory()->count(1)->create();

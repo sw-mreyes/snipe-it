@@ -335,8 +335,8 @@ class AssetCheckoutTest extends TestCase
 
     public function test_asset_can_be_checked_out_to_user_with_no_company_when_fmcs_enabled()
     {
-        // Users with no company associations should not be blocked — they're unrestricted.
-        $this->settings->enableMultipleFullCompanySupport();
+        // In floater mode, users with no company associations can receive items from any company.
+        $this->settings->enableFloaterMode();
 
         $company = Company::factory()->create();
         // Actor is in the same company as the asset.
