@@ -1701,6 +1701,8 @@ class Helper
             return [];
         }
 
+        $floater = (bool) Setting::getSettings()->null_company_is_floater;
+
         foreach ($locations as $location) {
             // in case of an update of a single location, use the newly requested company_id
             if ($new_company_id) {
@@ -1756,8 +1758,12 @@ class Helper
                         // the correct mismatch signal.
                         if ($item instanceof User) {
                             $isMismatch = ! $item->canReceiveFromCompany((int) $location_company);
+                        } elseif ($item->company_id == $location_company) {
+                            $isMismatch = false;
+                        } elseif (is_null($item->company_id) || is_null($location_company)) {
+                            $isMismatch = ! $floater;
                         } else {
-                            $isMismatch = ($item->company_id != $location_company);
+                            $isMismatch = true;
                         }
 
                         if ($isMismatch) {
