@@ -699,7 +699,9 @@ class BulkAssetsController extends Controller
                     $mismatch = $company_ids->count() > 1
                         || ($target instanceof User
                             ? ! $target->canReceiveFromCompany($assetCompanyId)
-                            : (! is_null($target->company_id) && (int) $target->company_id !== $assetCompanyId));
+                            : (is_null($target->company_id)
+                                ? ! Setting::getSettings()->null_company_is_floater
+                                : (int) $target->company_id !== $assetCompanyId));
 
                     if ($mismatch) {
                         $request->session()->flashInput(['selected_assets' => $asset_ids]);

@@ -126,7 +126,9 @@ class AssetCheckoutController extends Controller
             if ($settings->full_multiple_companies_support && ! is_null($asset->company_id)) {
                 $mismatch = $target instanceof User
                     ? ! $target->canReceiveFromCompany((int) $asset->company_id)
-                    : (! is_null($target->company_id) && (int) $target->company_id !== (int) $asset->company_id);
+                    : (is_null($target->company_id)
+                        ? ! $settings->null_company_is_floater
+                        : (int) $target->company_id !== (int) $asset->company_id);
 
                 if ($mismatch) {
                     return redirect()->route('hardware.checkout.create', $asset)->with('error', trans('general.error_user_company'));

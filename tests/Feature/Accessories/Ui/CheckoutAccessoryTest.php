@@ -170,7 +170,7 @@ class CheckoutAccessoryTest extends TestCase
         $accessory = Accessory::factory()->for($companyA)->create(['qty' => 5]);
         $location = Location::factory()->create();
 
-        $this->settings->enableMultipleFullCompanySupport();
+        $this->settings->enableFloaterMode();
 
         $actor = User::factory()->superuser()->create();
 
