@@ -14,6 +14,7 @@ use App\Models\License;
 use App\Models\Location;
 use App\Models\Setting;
 use App\Models\Statuslabel;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Http\RedirectResponse;
@@ -1745,20 +1746,36 @@ class Helper
 
                     $count = 0;
                     foreach ($items as $item) {
+                        if (! $item) {
+                            continue;
+                        }
 
-                        if ($item && $item->company_id != $location_company) {
+                        // Users belong to companies via the many-to-many pivot (company_user).
+                        // canReceiveFromCompany() returns true only when the user's pivot
+                        // contains the location's company, so !canReceiveFromCompany() is
+                        // the correct mismatch signal.
+                        if ($item instanceof User) {
+                            $isMismatch = ! $item->canReceiveFromCompany((int) $location_company);
+                        } else {
+                            $isMismatch = ($item->company_id != $location_company);
+                        }
+
+                        if ($isMismatch) {
+                            if ($item instanceof User) {
+                                $itemCompanyIds = $item->companies->pluck('id')->implode(', ');
+                                $itemCompanyNames = $item->companies->pluck('name')->implode(', ');
+                            } else {
+                                $itemCompanyIds = $item->company_id ?? null;
+                                $itemCompanyNames = $item->company->name ?? null;
+                            }
 
                             $mismatched[] = [
                                 class_basename(get_class($item)),
                                 $item->id,
                                 $item->name ?? $item->asset_tag ?? $item->serial ?? $item->username,
                                 $item->assigned_type ? str_replace('App\\Models\\', '', $item->assigned_type) : null,
-                                $item->company_id ?? null,
-                                $item->company->name ?? null,
-                                //                                    $item->defaultLoc->id ?? null,
-                                //                                    $item->defaultLoc->name ?? null,
-                                //                                    $item->defaultLoc->company->id ?? null,
-                                //                                    $item->defaultLoc->company->name ?? null,
+                                $itemCompanyIds,
+                                $itemCompanyNames,
                                 $item->location->name ?? null,
                                 $item->location->company->name ?? null,
                                 $location_company ?? null,
