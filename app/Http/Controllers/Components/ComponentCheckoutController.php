@@ -105,7 +105,11 @@ class ComponentCheckoutController extends Controller
         $asset = Asset::find($request->input('asset_id'));
 
         if ((Setting::getSettings()->full_multiple_companies_support) && $component->company_id !== $asset->company_id) {
-            return redirect()->route('components.checkout.show', $componentId)->with('error', trans('general.error_user_company'));
+            return redirect()->route('components.checkout.show', $componentId)->with('error', trans('general.error_checkout_company_mismatch', [
+                'item' => trans('general.component').' "'.$component->name.'"',
+                'item_company' => $component->company?->name ?? trans('general.unassigned'),
+                'target' => trans('general.asset').' "'.($asset->name ?? $asset->asset_tag).'"',
+            ]));
         }
 
         $component->checkout_qty = $request->input('assigned_qty');

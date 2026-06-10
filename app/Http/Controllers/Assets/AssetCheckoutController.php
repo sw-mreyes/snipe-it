@@ -131,7 +131,17 @@ class AssetCheckoutController extends Controller
                         : (int) $target->company_id !== (int) $asset->company_id);
 
                 if ($mismatch) {
-                    return redirect()->route('hardware.checkout.create', $asset)->with('error', trans('general.error_user_company'));
+                    $targetType = match (class_basename($target)) {
+                        'User' => trans('general.user'),
+                        'Location' => trans('general.location'),
+                        default => trans('general.asset'),
+                    };
+
+                    return redirect()->route('hardware.checkout.create', $asset)->with('error', trans('general.error_checkout_company_mismatch', [
+                        'item' => trans('general.asset').' "'.($asset->name ?? $asset->asset_tag).'"',
+                        'item_company' => $asset->company?->name ?? trans('general.unassigned'),
+                        'target' => $targetType.' "'.($target->name ?? $target->username ?? $target->id).'"',
+                    ]));
                 }
             }
 

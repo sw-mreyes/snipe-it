@@ -77,7 +77,17 @@ class AccessoryCheckoutController extends Controller
             }
 
             if ($mismatch) {
-                return redirect()->back()->with('error', trans('general.error_user_company'));
+                $targetType = match (class_basename($target)) {
+                    'User' => trans('general.user'),
+                    'Location' => trans('general.location'),
+                    default => trans('general.asset'),
+                };
+
+                return redirect()->back()->with('error', trans('general.error_checkout_company_mismatch', [
+                    'item' => trans('general.accessory').' "'.$accessory->name.'"',
+                    'item_company' => $accessory->company?->name ?? trans('general.unassigned'),
+                    'target' => $targetType.' "'.($target->name ?? $target->username ?? $target->id).'"',
+                ]));
             }
         }
 

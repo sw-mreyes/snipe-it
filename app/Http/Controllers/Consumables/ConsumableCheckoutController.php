@@ -102,7 +102,11 @@ class ConsumableCheckoutController extends Controller
             && $consumable->company_id
             && ! $user->canReceiveFromCompany($consumable->company_id)
         ) {
-            return redirect()->back()->with('error', trans('general.error_user_company'));
+            return redirect()->back()->with('error', trans('general.error_checkout_company_mismatch', [
+                'item' => trans('general.consumable').' "'.$consumable->name.'"',
+                'item_company' => $consumable->company?->name ?? trans('general.unassigned'),
+                'target' => trans('general.user').' "'.$user->username.'"',
+            ]));
         }
 
         // Update the consumable data

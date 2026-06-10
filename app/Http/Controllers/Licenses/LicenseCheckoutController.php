@@ -104,13 +104,21 @@ class LicenseCheckoutController extends Controller
                         ? ! Setting::getSettings()->null_company_is_floater
                         : ($license->company_id !== $fmcsTarget->company_id);
                     if ($mismatch) {
-                        return redirect()->route('licenses.index')->with('error', trans('general.error_user_company'));
+                        return redirect()->route('licenses.index')->with('error', trans('general.error_checkout_company_mismatch', [
+                            'item' => trans('general.license').' "'.$license->name.'"',
+                            'item_company' => $license->company?->name ?? trans('general.unassigned'),
+                            'target' => trans('general.asset').' "'.($fmcsTarget->name ?? $fmcsTarget->asset_tag).'"',
+                        ]));
                     }
                 }
             } elseif ($request->filled('assigned_to')) {
                 $fmcsTarget = User::find($request->input('assigned_to'));
                 if ($fmcsTarget && $license->company_id && ! $fmcsTarget->canReceiveFromCompany($license->company_id)) {
-                    return redirect()->route('licenses.index')->with('error', trans('general.error_user_company'));
+                    return redirect()->route('licenses.index')->with('error', trans('general.error_checkout_company_mismatch', [
+                        'item' => trans('general.license').' "'.$license->name.'"',
+                        'item_company' => $license->company?->name ?? trans('general.unassigned'),
+                        'target' => trans('general.user').' "'.$fmcsTarget->username.'"',
+                    ]));
                 }
             }
         }
