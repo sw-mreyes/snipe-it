@@ -211,10 +211,12 @@ class LocationsController extends Controller
         $location->fill($request->all());
         $location = $request->handleImages($location);
 
-        // Only scope location if the setting is enabled
         if (Setting::getSettings()->scope_locations_fmcs) {
             $location->company_id = Company::getIdForCurrentUser($request->input('company_id'));
-            // check if parent is set and has a different company
+        }
+
+        // Parent company check applies whenever FMCS is on, independent of scope_locations_fmcs.
+        if (Setting::getSettings()->full_multiple_companies_support) {
             $parent = $location->parent_id ? Location::find($location->parent_id) : null;
             if ($parent && $parent->company_id != $location->company_id) {
                 return response()->json(Helper::formatStandardApiResponse('error', null, trans('general.error_location_parent_company', [
@@ -308,7 +310,6 @@ class LocationsController extends Controller
         $location = $request->handleImages($location);
 
         if ($request->filled('company_id')) {
-            // Only scope location if the setting is enabled
             if (Setting::getSettings()->scope_locations_fmcs) {
                 $location->company_id = Company::getIdForCurrentUser($request->input('company_id'));
                 // check if there are related objects with different company
@@ -321,17 +322,21 @@ class LocationsController extends Controller
                         'item_company' => $first[5] ?? trans('general.unassigned'),
                     ])));
                 }
-                // check if parent is set and has a different company
-                $parent = $location->parent_id ? Location::find($location->parent_id) : null;
-                if ($parent && $parent->company_id != $location->company_id) {
-                    return response()->json(Helper::formatStandardApiResponse('error', null, trans('general.error_location_parent_company', [
-                        'parent' => $parent->name,
-                        'parent_company' => $parent->company?->name ?? trans('general.unassigned'),
-                        'location_company' => $location->company?->name ?? trans('general.unassigned'),
-                    ])));
-                }
             } else {
                 $location->company_id = $request->input('company_id');
+            }
+        }
+
+        // Parent company check applies whenever FMCS is on, independent of scope_locations_fmcs.
+        // Runs outside the company_id gate so a parent_id-only update is also validated.
+        if (Setting::getSettings()->full_multiple_companies_support) {
+            $parent = $location->parent_id ? Location::find($location->parent_id) : null;
+            if ($parent && $parent->company_id != $location->company_id) {
+                return response()->json(Helper::formatStandardApiResponse('error', null, trans('general.error_location_parent_company', [
+                    'parent' => $parent->name,
+                    'parent_company' => $parent->company?->name ?? trans('general.unassigned'),
+                    'location_company' => $location->company?->name ?? trans('general.unassigned'),
+                ])));
             }
         }
 
