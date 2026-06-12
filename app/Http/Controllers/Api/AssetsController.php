@@ -927,9 +927,13 @@ class AssetsController extends Controller
             return null;
         }
 
-        $nonUserMismatch = is_null($target->company_id)
-            ? ! Setting::getSettings()->null_company_is_floater
-            : (int) $asset->company_id !== (int) $target->company_id;
+        if (is_null($target->company_id)) {
+            // Target has no company — only a mismatch when floater mode is off.
+            $nonUserMismatch = ! Setting::getSettings()->null_company_is_floater;
+        } else {
+            // Both sides have a company; require an exact match.
+            $nonUserMismatch = (int) $asset->company_id !== (int) $target->company_id;
+        }
 
         if ($nonUserMismatch) {
             return response()->json(Helper::formatStandardApiResponse('error', null, trans('general.error_user_company')));

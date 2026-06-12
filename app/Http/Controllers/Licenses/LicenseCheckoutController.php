@@ -100,9 +100,13 @@ class LicenseCheckoutController extends Controller
             if ($request->filled('asset_id')) {
                 $fmcsTarget = Asset::find($request->input('asset_id'));
                 if ($fmcsTarget && $license->company_id) {
-                    $mismatch = is_null($fmcsTarget->company_id)
-                        ? ! Setting::getSettings()->null_company_is_floater
-                        : ($license->company_id !== $fmcsTarget->company_id);
+                    if (is_null($fmcsTarget->company_id)) {
+                        // Target asset has no company — only a mismatch when floater mode is off.
+                        $mismatch = ! Setting::getSettings()->null_company_is_floater;
+                    } else {
+                        // Both sides have a company; require an exact match.
+                        $mismatch = $license->company_id !== $fmcsTarget->company_id;
+                    }
                     if ($mismatch) {
                         return redirect()->route('licenses.index')->with('error', trans('general.error_checkout_company_mismatch', [
                             'item' => trans('general.license').' "'.$license->name.'"',

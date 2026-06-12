@@ -124,11 +124,16 @@ class AssetCheckoutController extends Controller
             // Locations have no company, so we only enforce FMCS when both sides have a company_id.
             // For users with multiple companies, check all their associated companies via the pivot.
             if ($settings->full_multiple_companies_support && ! is_null($asset->company_id)) {
-                $mismatch = $target instanceof User
-                    ? ! $target->canReceiveFromCompany((int) $asset->company_id)
-                    : (is_null($target->company_id)
-                        ? ! $settings->null_company_is_floater
-                        : (int) $target->company_id !== (int) $asset->company_id);
+                if ($target instanceof User) {
+                    // Users may belong to multiple companies; canReceiveFromCompany() checks the pivot.
+                    $mismatch = ! $target->canReceiveFromCompany((int) $asset->company_id);
+                } elseif (is_null($target->company_id)) {
+                    // Target has no company — only a mismatch when floater mode is off.
+                    $mismatch = ! $settings->null_company_is_floater;
+                } else {
+                    // Both sides have a company; require an exact match.
+                    $mismatch = (int) $target->company_id !== (int) $asset->company_id;
+                }
 
                 if ($mismatch) {
                     $targetType = match (class_basename($target)) {
@@ -138,7 +143,7 @@ class AssetCheckoutController extends Controller
                     };
 
                     return redirect()->route('hardware.checkout.create', $asset)->with('error', trans('general.error_checkout_company_mismatch', [
-                        'item' => trans('general.asset').' "'.($asset->name ?? $asset->asset_tag).'"',
+                        'item' => trans('general.asset').' "'.$asset->display_name.'"',
                         'item_company' => $asset->company?->name ?? trans('general.unassigned'),
                         'target' => $targetType.' "'.($target->name ?? $target->username ?? $target->id).'"',
                     ]));

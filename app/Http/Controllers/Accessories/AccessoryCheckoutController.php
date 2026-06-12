@@ -69,11 +69,14 @@ class AccessoryCheckoutController extends Controller
 
         if (Setting::getSettings()->full_multiple_companies_support == '1' && $accessory->company_id) {
             if ($target instanceof User) {
+                // Users may belong to multiple companies; canReceiveFromCompany() checks the pivot.
                 $mismatch = ! $target->canReceiveFromCompany($accessory->company_id);
+            } elseif (is_null($target->company_id)) {
+                // Target has no company — only a mismatch when floater mode is off.
+                $mismatch = ! Setting::getSettings()->null_company_is_floater;
             } else {
-                $mismatch = is_null($target->company_id)
-                    ? ! Setting::getSettings()->null_company_is_floater
-                    : (int) $target->company_id !== (int) $accessory->company_id;
+                // Both sides have a company; require an exact match.
+                $mismatch = (int) $target->company_id !== (int) $accessory->company_id;
             }
 
             if ($mismatch) {

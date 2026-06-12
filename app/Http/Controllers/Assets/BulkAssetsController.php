@@ -696,12 +696,19 @@ class BulkAssetsController extends Controller
                 if ($company_ids->isNotEmpty()) {
                     $assetCompanyId = (int) $company_ids->first();
 
-                    $mismatch = $company_ids->count() > 1
-                        || ($target instanceof User
-                            ? ! $target->canReceiveFromCompany($assetCompanyId)
-                            : (is_null($target->company_id)
-                                ? ! Setting::getSettings()->null_company_is_floater
-                                : (int) $target->company_id !== $assetCompanyId));
+                    if ($company_ids->count() > 1) {
+                        // Selected assets span multiple companies; bulk checkout can't satisfy all of them.
+                        $mismatch = true;
+                    } elseif ($target instanceof User) {
+                        // Users may belong to multiple companies; canReceiveFromCompany() checks the pivot.
+                        $mismatch = ! $target->canReceiveFromCompany($assetCompanyId);
+                    } elseif (is_null($target->company_id)) {
+                        // Target has no company — only a mismatch when floater mode is off.
+                        $mismatch = ! Setting::getSettings()->null_company_is_floater;
+                    } else {
+                        // Both sides have a company; require an exact match.
+                        $mismatch = (int) $target->company_id !== $assetCompanyId;
+                    }
 
                     if ($mismatch) {
                         $request->session()->flashInput(['selected_assets' => $asset_ids]);

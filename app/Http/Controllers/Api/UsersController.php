@@ -404,16 +404,7 @@ class UsersController extends Controller
         if ((Setting::getSettings()->full_multiple_companies_support == '1') && $request->filled('companyId')) {
             $companyIds = array_values(array_filter(array_map('intval', explode(',', $request->input('companyId')))));
             if (! empty($companyIds)) {
-                if (Setting::getSettings()->null_company_is_floater) {
-                    // Floater mode: users with no company associations can receive items from
-                    // any company, so include them alongside exact-company matches.
-                    $users->where(function ($q) use ($companyIds) {
-                        $q->whereHas('companies', fn ($q2) => $q2->whereIn('companies.id', $companyIds))
-                            ->orWhereDoesntHave('companies');
-                    });
-                } else {
-                    $users->whereHas('companies', fn ($q) => $q->whereIn('companies.id', $companyIds));
-                }
+                $users = Company::scopeUsersByCompanyIds($users, $companyIds);
             }
         }
 

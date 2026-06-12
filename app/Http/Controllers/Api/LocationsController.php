@@ -215,7 +215,8 @@ class LocationsController extends Controller
         if (Setting::getSettings()->scope_locations_fmcs) {
             $location->company_id = Company::getIdForCurrentUser($request->input('company_id'));
             // check if parent is set and has a different company
-            if ($location->parent_id && ($parent = Location::find($location->parent_id)) && $parent->company_id != $location->company_id) {
+            $parent = $location->parent_id ? Location::find($location->parent_id) : null;
+            if ($parent && $parent->company_id != $location->company_id) {
                 return response()->json(Helper::formatStandardApiResponse('error', null, trans('general.error_location_parent_company', [
                     'parent' => $parent->name,
                     'parent_company' => $parent->company?->name ?? trans('general.unassigned'),
@@ -321,7 +322,8 @@ class LocationsController extends Controller
                     ])));
                 }
                 // check if parent is set and has a different company
-                if ($location->parent_id && ($parent = Location::find($location->parent_id)) && $parent->company_id != $location->company_id) {
+                $parent = $location->parent_id ? Location::find($location->parent_id) : null;
+                if ($parent && $parent->company_id != $location->company_id) {
                     return response()->json(Helper::formatStandardApiResponse('error', null, trans('general.error_location_parent_company', [
                         'parent' => $parent->name,
                         'parent_company' => $parent->company?->name ?? trans('general.unassigned'),

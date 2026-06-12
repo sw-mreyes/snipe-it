@@ -416,14 +416,12 @@ final class Company extends SnipeModel
                 });
             }
 
-            // Floater: also include users with no company associations (they float).
+            // Floater: also include users with no company associations (they float). They all float down here, Georgie.).
             if ($floater) {
                 return $query->where(function ($q) use ($companyIds) {
                     $q->whereIn('users.id', function ($sub) use ($companyIds) {
                         $sub->select('user_id')->from('company_user')->whereIn('company_id', $companyIds);
-                    })->orWhereNotIn('users.id', function ($sub) {
-                        $sub->select('user_id')->from('company_user');
-                    });
+                    })->orWhereDoesntHave('companies');
                 });
             }
 
@@ -465,6 +463,24 @@ final class Company extends SnipeModel
 
             return $query->whereIn($table.$column, $companyIds);
         }
+    }
+
+    /**
+     * Scope a users query to those belonging to the given company IDs, respecting floater mode.
+     *
+     * Extracted from controller-level inline logic so the same rule is enforced consistently
+     * everywhere users are filtered by a specific set of company IDs (e.g. select2 dropdowns).
+     */
+    public static function scopeUsersByCompanyIds($query, array $companyIds): mixed
+    {
+        if (Setting::getSettings()->null_company_is_floater) {
+            return $query->where(function ($q) use ($companyIds) {
+                $q->whereHas('companies', fn($q2) => $q2->whereIn('companies.id', $companyIds))
+                    ->orWhereDoesntHave('companies');
+            });
+        }
+
+        return $query->whereHas('companies', fn($q) => $q->whereIn('companies.id', $companyIds));
     }
 
     /**
