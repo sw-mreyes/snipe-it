@@ -475,12 +475,12 @@ final class Company extends SnipeModel
     {
         if (Setting::getSettings()->null_company_is_floater) {
             return $query->where(function ($q) use ($companyIds) {
-                $q->whereHas('companies', fn($q2) => $q2->whereIn('companies.id', $companyIds))
+                $q->whereHas('companies', fn ($q2) => $q2->whereIn('companies.id', $companyIds))
                     ->orWhereDoesntHave('companies');
             });
         }
 
-        return $query->whereHas('companies', fn($q) => $q->whereIn('companies.id', $companyIds));
+        return $query->whereHas('companies', fn ($q) => $q->whereIn('companies.id', $companyIds));
     }
 
     /**
