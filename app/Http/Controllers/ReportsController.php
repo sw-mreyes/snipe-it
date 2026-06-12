@@ -803,7 +803,7 @@ class ReportsController extends Controller
                     ->where('item_type', '=', Asset::class)
                     ->whereBetween('action_date', [$checkout_start, $checkout_end]); // we are *not* doing ->get()...
 
-                $assets->whereIn('id', $actionlogassets); //...because this _should_ act as a 'subquery'
+                $assets->whereIn('id', $actionlogassets); // ...because this _should_ act as a 'subquery'
             }
 
             if (($request->filled('checkin_date_start'))) {
@@ -1324,6 +1324,11 @@ class ReportsController extends Controller
             // Redirect to the unaccepted items report page with error
             return redirect()->route('reports/unaccepted_assets')->with('error', trans('general.bad_data'));
         }
+
+        if (! $this->currentUserCanAccessAcceptance($acceptance)) {
+            return redirect()->route('reports/unaccepted_assets')->with('error', trans('general.insufficient_permissions'));
+        }
+
         $item = $acceptance->checkoutable;
         $assignee = $acceptance->assignedTo ?? $item->assignedTo ?? null;
         $email = $assignee?->email;
@@ -1358,6 +1363,33 @@ class ReportsController extends Controller
         return redirect()->route('reports/unaccepted_assets')->with('success', trans('admin/reports/general.reminder_sent'));
     }
 
+    private function currentUserCanAccessAcceptance(CheckoutAcceptance $acceptance): bool
+    {
+        if (Setting::getSettings()->full_multiple_companies_support != '1') {
+            return true;
+        }
+
+        $user = auth()->user();
+
+        if (! $user->company_id || $user->isSuperUser()) {
+            return true;
+        }
+
+        // Bypass Eloquent global scopes so cross-company items are still found
+        $checkoutableType = $acceptance->checkoutable_type;
+        $checkoutable = $checkoutableType::withoutGlobalScopes()->find($acceptance->checkoutable_id);
+
+        if ($checkoutable instanceof LicenseSeat) {
+            $itemCompanyId = License::withoutGlobalScopes()
+                ->where('id', $checkoutable->license_id)
+                ->value('company_id');
+        } else {
+            $itemCompanyId = $checkoutable?->company_id;
+        }
+
+        return $itemCompanyId === null || (int) $itemCompanyId === (int) $user->company_id;
+    }
+
     private function getCheckoutMailType(CheckoutAcceptance $acceptance, $logItem): Mailable
     {
         $lookup = [
@@ -1390,9 +1422,19 @@ class ReportsController extends Controller
     {
         $this->authorize('reports.view');
 
-        if (! $acceptance = CheckoutAcceptance::pending()->find($acceptanceId)) {
+        $acceptance = CheckoutAcceptance::pending()
+            ->with(['checkoutable' => function (MorphTo $morphTo) {
+                $morphTo->morphWith([LicenseSeat::class => ['license']]);
+            }])
+            ->find($acceptanceId);
+
+        if (! $acceptance) {
             // Redirect to the unaccepted assets report page with error
             return redirect()->route('reports/unaccepted_assets')->with('error', trans('general.bad_data'));
+        }
+
+        if (! $this->currentUserCanAccessAcceptance($acceptance)) {
+            return redirect()->route('reports/unaccepted_assets')->with('error', trans('general.insufficient_permissions'));
         }
 
         if ($acceptance->delete()) {
