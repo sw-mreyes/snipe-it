@@ -398,14 +398,30 @@ final class Company extends SnipeModel
             return $query->whereIn('companies.id', $companyIds);
         }
 
+        $floater = Setting::getSettings()->null_company_is_floater;
+
         // Users are scoped by pivot membership (company_user), not by company_id column,
         // since a user may belong to multiple companies and company_id alone is insufficient.
         if ($query->getModel()->getTable() == 'users') {
             if (empty($companyIds)) {
+                // Floater: actor has no company and is unrestricted — see everyone.
+                if ($floater) {
+                    return $query;
+                }
+
                 // No pivot memberships: mirror old null-company behavior — show only users
                 // who are also not in any company via the pivot.
                 return $query->whereNotIn('users.id', function ($sub) {
                     $sub->select('user_id')->from('company_user');
+                });
+            }
+
+            // Floater: also include users with no company associations (they float). They all float down here, Georgie.).
+            if ($floater) {
+                return $query->where(function ($q) use ($companyIds) {
+                    $q->whereIn('users.id', function ($sub) use ($companyIds) {
+                        $sub->select('user_id')->from('company_user')->whereIn('company_id', $companyIds);
+                    })->orWhereDoesntHave('companies');
                 });
             }
 
@@ -419,6 +435,11 @@ final class Company extends SnipeModel
             $table = ($table_name) ? $table_name.'.' : $query->getModel()->getTable().'.';
 
             if (empty($companyIds)) {
+                // Floater: actor has no company and is unrestricted — see everything.
+                if ($floater) {
+                    return $query;
+                }
+
                 return $query->whereNull($table.$column);
             }
 
@@ -432,8 +453,34 @@ final class Company extends SnipeModel
                 });
             }
 
+            // Floater: null-company items are visible to users from any company.
+            if ($floater) {
+                return $query->where(function ($q) use ($table, $column, $companyIds) {
+                    $q->whereIn($table.$column, $companyIds)
+                        ->orWhereNull($table.$column);
+                });
+            }
+
             return $query->whereIn($table.$column, $companyIds);
         }
+    }
+
+    /**
+     * Scope a users query to those belonging to the given company IDs, respecting floater mode.
+     *
+     * Extracted from controller-level inline logic so the same rule is enforced consistently
+     * everywhere users are filtered by a specific set of company IDs (e.g. select2 dropdowns).
+     */
+    public static function scopeUsersByCompanyIds($query, array $companyIds): mixed
+    {
+        if (Setting::getSettings()->null_company_is_floater) {
+            return $query->where(function ($q) use ($companyIds) {
+                $q->whereHas('companies', fn ($q2) => $q2->whereIn('companies.id', $companyIds))
+                    ->orWhereDoesntHave('companies');
+            });
+        }
+
+        return $query->whereHas('companies', fn ($q) => $q->whereIn('companies.id', $companyIds));
     }
 
     /**

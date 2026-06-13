@@ -349,6 +349,20 @@ class ValidationServiceProvider extends ServiceProvider
             return in_array($value, $options);
         });
 
+        Validator::replacer('fmcs_location', function ($message, $attribute, $rule, $parameters, $validator) {
+            $locationId = $validator->getData()[$attribute] ?? null;
+            $location = $locationId ? Location::find($locationId) : null;
+
+            return str_replace(
+                [':location', ':location_company'],
+                [
+                    $location?->name ?? '?',
+                    $location?->company?->name ?? trans('general.unassigned'),
+                ],
+                $message
+            );
+        });
+
         // Validates that the company of the validated object matches the company of the location in case of scoped locations
         Validator::extend('fmcs_location', function ($attribute, $value, $parameters, $validator) {
             $settings = Setting::getSettings();
