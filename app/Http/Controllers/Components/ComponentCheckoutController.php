@@ -7,7 +7,6 @@ use App\Helpers\Helper;
 use App\Http\Controllers\Controller;
 use App\Models\Asset;
 use App\Models\Component;
-use App\Models\Setting;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -104,11 +103,11 @@ class ComponentCheckoutController extends Controller
         // Check if the asset exists
         $asset = Asset::find($request->input('asset_id'));
 
-        if ((Setting::getSettings()->full_multiple_companies_support) && $component->company_id !== $asset->company_id) {
+        if (! $component->canCheckoutTo($asset)) {
             return redirect()->route('components.checkout.show', $componentId)->with('error', trans('general.error_checkout_company_mismatch', [
                 'item' => trans('general.component').' "'.$component->name.'"',
                 'item_company' => $component->company?->name ?? trans('general.unassigned'),
-                'target' => trans('general.asset').' "'.($asset->name ?? $asset->asset_tag).'"',
+                'target' => trans('general.asset').' "'.$asset->display_name.'"',
             ]));
         }
 
