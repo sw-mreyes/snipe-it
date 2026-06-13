@@ -41,7 +41,11 @@ trait CompanyableTrait
         }
 
         if (! $this->company_id) {
-            return true;
+            if (is_null($target->company_id)) {
+                return true;
+            }
+
+            return (bool) $settings->null_company_is_floater;
         }
 
         if ($target instanceof User) {

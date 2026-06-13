@@ -913,29 +913,7 @@ class AssetsController extends Controller
 
     private function checkoutCompanyMismatchResponse(Asset $asset, User|Asset|Location $target): ?JsonResponse
     {
-        if (Setting::getSettings()->full_multiple_companies_support != '1' || is_null($asset->company_id)) {
-            return null;
-        }
-
-        // For users with multiple companies, check all their associated companies,
-        // not just the primary company_id column.
-        if ($target instanceof User) {
-            if (! $target->canReceiveFromCompany((int) $asset->company_id)) {
-                return response()->json(Helper::formatStandardApiResponse('error', null, trans('general.error_user_company')));
-            }
-
-            return null;
-        }
-
-        if (is_null($target->company_id)) {
-            // Target has no company — only a mismatch when floater mode is off.
-            $nonUserMismatch = ! Setting::getSettings()->null_company_is_floater;
-        } else {
-            // Both sides have a company; require an exact match.
-            $nonUserMismatch = (int) $asset->company_id !== (int) $target->company_id;
-        }
-
-        if ($nonUserMismatch) {
+        if (! $asset->canCheckoutTo($target)) {
             return response()->json(Helper::formatStandardApiResponse('error', null, trans('general.error_user_company')));
         }
 
