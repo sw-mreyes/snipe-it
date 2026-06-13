@@ -9,7 +9,6 @@ use App\Http\Requests\AssetCheckoutRequest;
 use App\Http\Traits\CheckInOutTrait;
 use App\Models\Asset;
 use App\Models\CheckoutAcceptance;
-use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -119,35 +118,18 @@ class AssetCheckoutController extends Controller
             // Add any custom fields that should be included in the checkout
             $asset->customFieldsForCheckinCheckout('display_checkout');
 
-            $settings = Setting::getSettings();
+            if (! $asset->canCheckoutTo($target)) {
+                $targetType = match (class_basename($target)) {
+                    'User' => trans('general.user'),
+                    'Location' => trans('general.location'),
+                    default => trans('general.asset'),
+                };
 
-            // Locations have no company, so we only enforce FMCS when both sides have a company_id.
-            // For users with multiple companies, check all their associated companies via the pivot.
-            if ($settings->full_multiple_companies_support && ! is_null($asset->company_id)) {
-                if ($target instanceof User) {
-                    // Users may belong to multiple companies; canReceiveFromCompany() checks the pivot.
-                    $mismatch = ! $target->canReceiveFromCompany((int) $asset->company_id);
-                } elseif (is_null($target->company_id)) {
-                    // Target has no company — only a mismatch when floater mode is off.
-                    $mismatch = ! $settings->null_company_is_floater;
-                } else {
-                    // Both sides have a company; require an exact match.
-                    $mismatch = (int) $target->company_id !== (int) $asset->company_id;
-                }
-
-                if ($mismatch) {
-                    $targetType = match (class_basename($target)) {
-                        'User' => trans('general.user'),
-                        'Location' => trans('general.location'),
-                        default => trans('general.asset'),
-                    };
-
-                    return redirect()->route('hardware.checkout.create', $asset)->with('error', trans('general.error_checkout_company_mismatch', [
-                        'item' => trans('general.asset').' "'.$asset->display_name.'"',
-                        'item_company' => $asset->company?->name ?? trans('general.unassigned'),
-                        'target' => $targetType.' "'.($target->name ?? $target->username ?? $target->id).'"',
-                    ]));
-                }
+                return redirect()->route('hardware.checkout.create', $asset)->with('error', trans('general.error_checkout_company_mismatch', [
+                    'item' => trans('general.asset').' "'.$asset->display_name.'"',
+                    'item_company' => $asset->company?->name ?? trans('general.unassigned'),
+                    'target' => $targetType.' "'.($target->name ?? $target->username ?? $target->id).'"',
+                ]));
             }
 
             session()->put([
