@@ -689,17 +689,17 @@ class BulkAssetsController extends Controller
             }
 
             // Prevent checking out assets across companies if FMCS enabled.
-            // For users with multiple companies, check all their associated companies via the pivot.
             if (Setting::getSettings()->full_multiple_companies_support) {
                 $company_ids = $assets->pluck('company_id')->filter()->unique();
 
                 if ($company_ids->isNotEmpty()) {
-                    $assetCompanyId = (int) $company_ids->first();
-
-                    $mismatch = $company_ids->count() > 1
-                        || ($target instanceof User
-                            ? ! $target->canReceiveFromCompany($assetCompanyId)
-                            : (! is_null($target->company_id) && (int) $target->company_id !== $assetCompanyId));
+                    if ($company_ids->count() > 1) {
+                        // Selected assets span multiple companies; bulk checkout can't satisfy all of them.
+                        $mismatch = true;
+                    } else {
+                        // All assets share the same company; let the model enforce the checkout rules.
+                        $mismatch = ! $assets->first()->canCheckoutTo($target);
+                    }
 
                     if ($mismatch) {
                         $request->session()->flashInput(['selected_assets' => $asset_ids]);

@@ -404,7 +404,7 @@ class UsersController extends Controller
         if ((Setting::getSettings()->full_multiple_companies_support == '1') && $request->filled('companyId')) {
             $companyIds = array_values(array_filter(array_map('intval', explode(',', $request->input('companyId')))));
             if (! empty($companyIds)) {
-                $users->whereHas('companies', fn ($q) => $q->whereIn('companies.id', $companyIds));
+                $users = Company::scopeUsersByCompanyIds($users, $companyIds);
             }
         }
 

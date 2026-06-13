@@ -180,6 +180,8 @@ return [
     'scope_locations_fmcs_check_button' => 'Check Compatibility',
     'scope_locations_fmcs_test_needed' => 'Please Check Compatibility to enable this',
     'scope_locations_fmcs_support_disabled_text' => 'This option is disabled because you have conflicting locations set for :count or more items.',
+    'null_company_is_floater_text' => 'Treat items and users without company associations as floaters',
+    'null_company_is_floater_help_text' => 'When disabled, items can only be checked out to targets without a company association if the item also has no company - null is treated as its own pseudo-company. When enabled, items from any company can be checked out to targets with no company assignment.',
     'show_in_model_list' => 'Show in Model Dropdowns',
     'optional' => 'optional',
     'per_page' => 'Results Per Page',

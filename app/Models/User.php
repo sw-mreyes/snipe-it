@@ -634,22 +634,22 @@ class User extends SnipeModel implements AuthenticatableContract, AuthorizableCo
      */
     public function canReceiveFromCompany(int $companyId): bool
     {
+        // Items with no company association are unrestricted — anyone can receive them.
+        if (! $companyId) {
+            return true;
+        }
+
         // Query the pivot directly to avoid the Company model's FMCS global scope,
         // which would restrict results to the current actor's visible companies.
         $userCompanyIds = DB::table('company_user')
             ->where('user_id', $this->id)
             ->pluck('company_id');
 
-        if ($userCompanyIds->contains($companyId)) {
-            return true;
-        }
-
-        // User has no company associations — don't enforce.
         if ($userCompanyIds->isEmpty()) {
-            return true;
+            return (bool) Setting::getSettings()->null_company_is_floater;
         }
 
-        return false;
+        return $userCompanyIds->contains($companyId);
     }
 
     /**
