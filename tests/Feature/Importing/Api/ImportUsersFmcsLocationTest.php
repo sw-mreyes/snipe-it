@@ -31,15 +31,15 @@ class ImportUsersFmcsLocationTest extends ImportDataTestCase
     {
         $this->settings->enableScopedLocationsWithFullMultipleCompanySupport();
 
-        $company  = Company::factory()->create();
+        $company = Company::factory()->create();
         $location = Location::factory()->create(['company_id' => $company->id]);
 
         $importFileBuilder = ImportFileBuilder::new([
             'companyName' => $company->name,
-            'location'    => $location->name,
+            'location' => $location->name,
         ]);
 
-        $row    = $importFileBuilder->firstRow();
+        $row = $importFileBuilder->firstRow();
         $import = Import::factory()->users()->create(['file_path' => $importFileBuilder->saveToImportsDirectory()]);
 
         $this->actingAsForApi(User::factory()->superuser()->create());
@@ -57,10 +57,10 @@ class ImportUsersFmcsLocationTest extends ImportDataTestCase
 
         $importFileBuilder = ImportFileBuilder::new([
             'companyName' => $companyA->name,
-            'location'    => $location->name,
+            'location' => $location->name,
         ]);
 
-        $row    = $importFileBuilder->firstRow();
+        $row = $importFileBuilder->firstRow();
         $import = Import::factory()->users()->create(['file_path' => $importFileBuilder->saveToImportsDirectory()]);
 
         $this->actingAsForApi(User::factory()->superuser()->create());
@@ -74,15 +74,15 @@ class ImportUsersFmcsLocationTest extends ImportDataTestCase
         $this->settings->enableScopedLocationsWithFullMultipleCompanySupport();
         $this->settings->enableFloaterMode();
 
-        $company  = Company::factory()->create();
+        $company = Company::factory()->create();
         $location = Location::factory()->create(['company_id' => null]);
 
         $importFileBuilder = ImportFileBuilder::new([
             'companyName' => $company->name,
-            'location'    => $location->name,
+            'location' => $location->name,
         ]);
 
-        $row    = $importFileBuilder->firstRow();
+        $row = $importFileBuilder->firstRow();
         $import = Import::factory()->users()->create(['file_path' => $importFileBuilder->saveToImportsDirectory()]);
 
         $this->actingAsForApi(User::factory()->superuser()->create());
@@ -96,15 +96,15 @@ class ImportUsersFmcsLocationTest extends ImportDataTestCase
         $this->settings->enableScopedLocationsWithFullMultipleCompanySupport();
         $this->settings->disableFloaterMode();
 
-        $company  = Company::factory()->create();
+        $company = Company::factory()->create();
         $location = Location::factory()->create(['company_id' => null]);
 
         $importFileBuilder = ImportFileBuilder::new([
             'companyName' => $company->name,
-            'location'    => $location->name,
+            'location' => $location->name,
         ]);
 
-        $row    = $importFileBuilder->firstRow();
+        $row = $importFileBuilder->firstRow();
         $import = Import::factory()->users()->create(['file_path' => $importFileBuilder->saveToImportsDirectory()]);
 
         $this->actingAsForApi(User::factory()->superuser()->create());

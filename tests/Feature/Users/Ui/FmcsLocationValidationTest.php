@@ -23,10 +23,10 @@ class FmcsLocationValidationTest extends TestCase
     private function basePayload(array $overrides = []): array
     {
         return array_merge([
-            'first_name'            => 'Test',
-            'last_name'             => 'User',
-            'username'              => 'fmcs-test-'.uniqid(),
-            'password'              => 'testpassword1235!!',
+            'first_name' => 'Test',
+            'last_name' => 'User',
+            'username' => 'fmcs-test-'.uniqid(),
+            'password' => 'testpassword1235!!',
             'password_confirmation' => 'testpassword1235!!',
         ], $overrides);
     }
@@ -35,7 +35,7 @@ class FmcsLocationValidationTest extends TestCase
     {
         $this->settings->enableScopedLocationsWithFullMultipleCompanySupport();
 
-        $company  = Company::factory()->create();
+        $company = Company::factory()->create();
         $location = Location::factory()->create(['company_id' => $company->id]);
 
         $this->actingAs(User::factory()->superuser()->create())
@@ -67,7 +67,7 @@ class FmcsLocationValidationTest extends TestCase
         $this->settings->enableScopedLocationsWithFullMultipleCompanySupport();
         $this->settings->enableFloaterMode();
 
-        $company  = Company::factory()->create();
+        $company = Company::factory()->create();
         $location = Location::factory()->create(['company_id' => null]);
 
         $this->actingAs(User::factory()->superuser()->create())
@@ -84,7 +84,7 @@ class FmcsLocationValidationTest extends TestCase
         $this->settings->enableScopedLocationsWithFullMultipleCompanySupport();
         $this->settings->disableFloaterMode();
 
-        $company  = Company::factory()->create();
+        $company = Company::factory()->create();
         $location = Location::factory()->create(['company_id' => null]);
 
         $this->actingAs(User::factory()->superuser()->create())
@@ -99,7 +99,7 @@ class FmcsLocationValidationTest extends TestCase
     {
         $this->settings->enableScopedLocationsWithFullMultipleCompanySupport();
 
-        $company  = Company::factory()->create();
+        $company = Company::factory()->create();
         $location = Location::factory()->create(['company_id' => $company->id]);
 
         $this->actingAs(User::factory()->superuser()->create())
@@ -114,14 +114,14 @@ class FmcsLocationValidationTest extends TestCase
     {
         $this->settings->enableScopedLocationsWithFullMultipleCompanySupport();
 
-        $company  = Company::factory()->create();
+        $company = Company::factory()->create();
         $location = Location::factory()->create(['company_id' => $company->id]);
-        $user     = User::factory()->create();
+        $user = User::factory()->create();
 
         $this->actingAs(User::factory()->superuser()->create())
             ->put(route('users.update', $user), [
-                'first_name'  => $user->first_name,
-                'username'    => $user->username,
+                'first_name' => $user->first_name,
+                'username' => $user->username,
                 'company_ids' => [$company->id],
                 'location_id' => $location->id,
             ])
@@ -135,12 +135,12 @@ class FmcsLocationValidationTest extends TestCase
 
         [$companyA, $companyB] = Company::factory()->count(2)->create();
         $location = Location::factory()->create(['company_id' => $companyB->id]);
-        $user     = User::factory()->create();
+        $user = User::factory()->create();
 
         $this->actingAs(User::factory()->superuser()->create())
             ->put(route('users.update', $user), [
-                'first_name'  => $user->first_name,
-                'username'    => $user->username,
+                'first_name' => $user->first_name,
+                'username' => $user->username,
                 'company_ids' => [$companyA->id],
                 'location_id' => $location->id,
             ])
