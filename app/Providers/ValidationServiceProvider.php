@@ -354,10 +354,10 @@ class ValidationServiceProvider extends ServiceProvider
             $location = $locationId ? Location::find($locationId) : null;
 
             return str_replace(
-                [':location', ':location_company'],
+                [':location_company', ':location'],
                 [
-                    $location?->name ?? '?',
                     $location?->company?->name ?? trans('general.unassigned'),
+                    $location?->name ?? '?',
                 ],
                 $message
             );
