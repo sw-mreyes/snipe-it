@@ -378,16 +378,11 @@ trait Loggable
 
         $log = new Actionlog;
 
-        if (static::class == Asset::class) {
-            if ($asset = Asset::find($log->item_id)) {
-                // add the custom fields that were changed
-                if ($asset->model->fieldset) {
-                    $fields_array = [];
-                    foreach ($asset->model->fieldset->fields as $field) {
-                        if ($field->display_audit == 1) {
-                            $fields_array[$field->db_column] = $asset->{$field->db_column};
-                        }
-                    }
+        $fields_array = [];
+        if (static::class == Asset::class && $this->model && $this->model->fieldset) {
+            foreach ($this->model->fieldset->fields as $field) {
+                if ($field->display_audit == 1) {
+                    $fields_array[$field->db_column] = $this->{$field->db_column};
                 }
             }
         }
@@ -401,6 +396,10 @@ trait Loggable
                 $changed[$key]['old'] = $value;
                 $changed[$key]['new'] = $this->getAttributes()[$key];
             }
+        }
+
+        if (! empty($fields_array)) {
+            $changed['_audit_snapshot'] = $fields_array;
         }
 
         if (! empty($changed)) {
