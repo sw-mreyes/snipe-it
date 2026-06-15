@@ -893,7 +893,7 @@ class UsersController extends Controller
      */
     public function eulas(User $user, ActionlogsTransformer $transformer)
     {
-        $this->authorize('view', User::class);
+        $this->authorize('view', $user);
 
         $eulas = $user->eulas;
 
