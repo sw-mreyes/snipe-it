@@ -209,6 +209,30 @@ class CompanyScopingTest extends TestCase
         $this->assertCanSee($companyItem);
     }
 
+    public function test_company_scoped_user_cannot_see_null_company_users_in_floater_mode()
+    {
+        $company = Company::factory()->create();
+        $companyUser = $company->users()->save(User::factory()->make());
+        $nullCompanyUser = User::factory()->create(['company_id' => null]);
+
+        $this->settings->enableFloaterMode();
+
+        $this->actingAs($companyUser);
+        $this->assertCannotSee($nullCompanyUser);
+    }
+
+    public function test_company_scoped_user_cannot_see_null_company_users_in_strict_mode()
+    {
+        $company = Company::factory()->create();
+        $companyUser = $company->users()->save(User::factory()->make());
+        $nullCompanyUser = User::factory()->create(['company_id' => null]);
+
+        $this->settings->enableMultipleFullCompanySupport();
+
+        $this->actingAs($companyUser);
+        $this->assertCannotSee($nullCompanyUser);
+    }
+
     private function assertCanSee(Model $model)
     {
         $this->assertTrue(

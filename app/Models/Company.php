@@ -416,15 +416,9 @@ final class Company extends SnipeModel
                 });
             }
 
-            // Floater: also include users with no company associations (they float). They all float down here, Georgie.).
-            if ($floater) {
-                return $query->where(function ($q) use ($companyIds) {
-                    $q->whereIn('users.id', function ($sub) use ($companyIds) {
-                        $sub->select('user_id')->from('company_user')->whereIn('company_id', $companyIds);
-                    })->orWhereDoesntHave('companies');
-                });
-            }
-
+            // Floater mode governs whether null-company users can *receive* items (canReceiveFromCompany),
+            // not whether company-scoped actors can *manage* them. A company-scoped actor must only
+            // ever see users who share at least one company via the pivot, regardless of floater mode.
             return $query->whereIn('users.id', function ($sub) use ($companyIds) {
                 $sub->select('user_id')->from('company_user')->whereIn('company_id', $companyIds);
             });
