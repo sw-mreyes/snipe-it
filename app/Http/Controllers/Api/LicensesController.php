@@ -186,6 +186,7 @@ class LicensesController extends Controller
         $this->authorize('create', License::class);
         $license = new License;
         $license->fill($request->all());
+        $license->created_by = auth()->id();
         $license->company_id = Company::getIdForCurrentUser($request->input('company_id'));
 
         if ($license->save()) {
