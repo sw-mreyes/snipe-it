@@ -373,10 +373,23 @@ class ValidationServiceProvider extends ServiceProvider
                     (array) ($data['company_ids'] ?? []),
                     [$data['company_id'] ?? null]
                 )));
+                // No company context available (e.g. model-level validation before companies are
+                // persisted) — nothing to compare against, so skip the check.
+                if (empty($companyIds)) {
+                    return true;
+                }
+
                 $location = Location::find($value);
 
-                if ($location && ! in_array($location->company_id, $companyIds)) {
-                    return false;
+                if ($location) {
+                    if ($location->company_id === null) {
+                        // Null-company location: accessible to companied users only when floater is on.
+                        return (bool) $settings->null_company_is_floater;
+                    }
+
+                    if (! in_array($location->company_id, $companyIds)) {
+                        return false;
+                    }
                 }
             }
 
