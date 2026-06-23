@@ -467,6 +467,9 @@
                 </x-info-panel>
             </x-box>
 
+            {{-- Reservations for this asset (custom fork feature) --}}
+            @include('partials.asset-reservations', ['asset' => $asset])
+
         </x-page-column>
 
     </x-container>

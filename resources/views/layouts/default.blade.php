@@ -1282,6 +1282,16 @@
                                 </li>
                             @endcan
 
+                            {{-- Reservations (custom fork feature) --}}
+                            @can('view', \App\Models\Asset::class)
+                                <li aria-hidden="true"{!! (request()->is('reservations*') ? ' class="active"' : '') !!}>
+                                    <a href="{{ route('reservations.index') }}" tabindex="-1" data-tooltip="true" data-placement="bottom" data-title="{{ trans('reservations.reservations') }}">
+                                        <x-icon type="calendar" class="fa-fw" />
+                                        <span class="sr-only">{{ trans('reservations.reservations') }}</span>
+                                    </a>
+                                </li>
+                            @endcan
+
                             @can('index', \App\Models\Asset::class)
                                 <li>
                                     <form class="navbar-form navbar-left form-inline" role="search" action="{{ route('findbytag/hardware') }}" method="get">
