@@ -179,6 +179,8 @@ class AssetsTransformer
             'update' => ($asset->deleted_at == '' && Gate::allows('update', Asset::class)) ? true : false,
             'audit' => Gate::allows('audit', Asset::class) ? true : false,
             'delete' => ($asset->deleted_at == '' && $asset->assigned_to == '' && Gate::allows('delete', Asset::class) && ($asset->deleted_at == '')) ? true : false,
+            // Custom (fork): URL to send this asset's label to a network print-server.
+            'network_print' => Gate::allows('view', Asset::class) ? route('network-label.asset', $asset->id) : false,
         ];
 
         if (request('components') == 'true') {

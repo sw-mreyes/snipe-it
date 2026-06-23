@@ -461,6 +461,12 @@
                         <x-button.note :item="$asset" :route="route('clone/hardware', $asset->id)"/>
                         <x-button.audit :item="$asset" :route="route('asset.audit.create', $asset->id)"/>
                         <x-button.label :item="$asset" :route="route('hardware.bulkedit.show')"/>
+                        {{-- Custom (fork): send label to the network print-server --}}
+                        @can('view', $asset)
+                            <a href="{{ route('network-label.asset', $asset->id) }}" class="btn btn-sm btn-default btn-block">
+                                <x-icon type="print" /> {{ trans('label-printer.print_label') }}
+                            </a>
+                        @endcan
                         <x-button.delete :item="$asset"/>
                         <x-button.restore :item="$asset" :route="route('restore/hardware', ['asset' => $asset->id])"/>
                     </x-slot:buttons>

@@ -48,6 +48,7 @@
                                 <th>{{ trans('general.category') }}</th>
                                 <th>{{ trans('general.location') }}</th>
                                 <th>{{ trans('admin/hardware/table.checkoutto') }}</th>
+                                <th class="text-right">{{ trans('table.actions') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -74,6 +75,13 @@
                                             @else
                                                 {{ $model->assignedTo->name }}
                                             @endif
+                                        @endif
+                                    </td>
+                                    <td class="text-right">
+                                        @if ($type === 'asset')
+                                            <a href="{{ route('network-label.asset', $model->id) }}" class="btn btn-sm btn-default" title="{{ trans('label-printer.print_label') }}">
+                                                <x-icon type="print" />
+                                            </a>
                                         @endif
                                     </td>
                                 </tr>
