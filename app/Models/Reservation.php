@@ -118,6 +118,23 @@ class Reservation extends SnipeModel
     }
 
     /**
+     * Scope to reservations that include the given asset.
+     */
+    public function scopeForAsset($query, $assetId)
+    {
+        return $query->whereHas('assets', fn ($q) => $q->where('assets.id', $assetId));
+    }
+
+    /**
+     * Whether the asset has any active or upcoming reservation (end in the
+     * future). Used to warn — not block — at checkout time.
+     */
+    public static function assetHasUpcomingReservation($assetId): bool
+    {
+        return static::forAsset($assetId)->where('end', '>=', now())->exists();
+    }
+
+    /**
      * Whether any of the given assets already have a (non-deleted) reservation
      * whose window overlaps [$start, $end].
      *

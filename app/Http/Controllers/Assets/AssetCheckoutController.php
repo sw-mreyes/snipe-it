@@ -9,6 +9,7 @@ use App\Http\Requests\AssetCheckoutRequest;
 use App\Http\Traits\CheckInOutTrait;
 use App\Models\Asset;
 use App\Models\CheckoutAcceptance;
+use App\Models\Reservation;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -48,6 +49,12 @@ class AssetCheckoutController extends Controller
         }
 
         if ($asset->availableForCheckout()) {
+            // Custom (fork) feature: warn — but do not block — if this asset has an
+            // active or upcoming reservation.
+            if (Reservation::assetHasUpcomingReservation($asset->id)) {
+                session()->now('warning', trans('reservations.checkout_warning'));
+            }
+
             return view('hardware/checkout', compact('asset'))
                 ->with('statusLabel_list', Helper::deployableStatusLabelList())
                 ->with('table_name', 'Assets')
