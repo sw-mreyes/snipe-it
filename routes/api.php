@@ -180,6 +180,13 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api', 'api-throttle:api']], fu
     );
 
     /**
+     * Global cross-entity search API route (custom fork feature)
+     */
+    Route::get('search',
+        [Api\SearchController::class, 'index']
+    )->name('api.search.index');
+
+    /**
      * Categories API routes
      */
     Route::group(['prefix' => 'categories'], function () {
