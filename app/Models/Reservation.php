@@ -116,4 +116,34 @@ class Reservation extends SnipeModel
         return $this->belongsToMany(\App\Models\Asset::class, 'sw_asset_reservation', 'reservation_id', 'asset_id')
             ->withTimestamps();
     }
+
+    /**
+     * Whether any of the given assets already have a (non-deleted) reservation
+     * whose window overlaps [$start, $end].
+     *
+     * Two windows overlap iff start1 <= end2 AND start2 <= end1. Soft-deleted
+     * reservations are excluded automatically by the global scope. Pass
+     * $excludeId to ignore the reservation being updated (so it never conflicts
+     * with itself).
+     *
+     * @param  array  $assetIds
+     * @param  mixed  $start         datetime string or Carbon
+     * @param  mixed  $end           datetime string or Carbon
+     * @param  int|null  $excludeId
+     */
+    public static function conflictsExist(array $assetIds, $start, $end, $excludeId = null): bool
+    {
+        if (empty($assetIds)) {
+            return false;
+        }
+
+        $idColumn = (new static)->getTable().'.id';
+
+        return static::query()
+            ->when($excludeId, fn ($query) => $query->where($idColumn, '!=', $excludeId))
+            ->whereHas('assets', fn ($query) => $query->whereIn('assets.id', $assetIds))
+            ->where('start', '<=', $end)
+            ->where('end', '>=', $start)
+            ->exists();
+    }
 }

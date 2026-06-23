@@ -12,6 +12,7 @@ use App\Models\CustomFieldset;
 use App\Models\Depreciation;
 use App\Models\License;
 use App\Models\Location;
+use App\Models\Reservation;
 use App\Models\Setting;
 use App\Models\Statuslabel;
 use App\Models\User;
@@ -1933,5 +1934,30 @@ class Helper
         }
 
         return $html;
+    }
+
+    /**
+     * Validate a reservation timeframe (custom fork feature).
+     *
+     * Returns true only when the window is well-formed (start strictly before
+     * end) and none of the given assets already have an overlapping reservation.
+     * Pass $excludeReservationId when updating so a reservation is not treated
+     * as conflicting with itself.
+     *
+     * @param  mixed  $start                 datetime string or Carbon
+     * @param  mixed  $end                   datetime string or Carbon
+     * @param  array  $assetIds
+     * @param  int|null  $excludeReservationId
+     */
+    public static function is_valid_timeframe($start, $end, array $assetIds, $excludeReservationId = null): bool
+    {
+        $startTs = $start instanceof \DateTimeInterface ? $start->getTimestamp() : strtotime((string) $start);
+        $endTs = $end instanceof \DateTimeInterface ? $end->getTimestamp() : strtotime((string) $end);
+
+        if ($startTs === false || $endTs === false || $startTs >= $endTs) {
+            return false;
+        }
+
+        return ! Reservation::conflictsExist($assetIds, $start, $end, $excludeReservationId);
     }
 }
