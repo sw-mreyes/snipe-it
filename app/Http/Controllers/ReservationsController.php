@@ -6,6 +6,7 @@ use App\Http\Requests\StoreReservationRequest;
 use App\Http\Requests\UpdateReservationRequest;
 use App\Models\Asset;
 use App\Models\Reservation;
+use App\Services\ReservationNotifier;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -66,7 +67,7 @@ class ReservationsController extends Controller
     /**
      * Persist a new reservation.
      */
-    public function store(StoreReservationRequest $request): RedirectResponse
+    public function store(StoreReservationRequest $request, ReservationNotifier $notifier): RedirectResponse
     {
         $reservation = new Reservation;
         $reservation->name = $request->input('name');
@@ -80,6 +81,8 @@ class ReservationsController extends Controller
         }
 
         $reservation->assets()->sync($request->input('assets'));
+
+        $notifier->notifyPlaced($reservation);
 
         return redirect()->route('reservations.index')
             ->with('success', trans('reservations.placed'));
