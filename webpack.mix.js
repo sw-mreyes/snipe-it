@@ -82,6 +82,17 @@ mix
   ).sourceMaps(true, 'source-map', 'source-map').version();
 
 
+/**
+ * Reservations calendar bundle (custom fork feature)
+ */
+mix
+  .js(
+    "./resources/assets/js/reservations-calendar.js",
+    "./public/js/dist/reservations-calendar.js"
+  )
+  .version();
+
+
 
 /**
  * Combine bootstrap table css

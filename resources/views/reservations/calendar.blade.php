@@ -16,3 +16,7 @@
         </x-box>
     </x-container>
 @stop
+
+@section('moar_scripts')
+    <script nonce="{{ csrf_token() }}" src="{{ url(mix('js/dist/reservations-calendar.js')) }}"></script>
+@stop
