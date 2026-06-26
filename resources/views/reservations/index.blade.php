@@ -16,6 +16,7 @@
                 data-cookie-id-table="reservationsListingTable"
                 data-id-table="reservationsListingTable"
                 data-side-pagination="server"
+                data-advanced-search="false"
                 data-sort-order="asc"
                 data-sort-name="start"
                 id="reservationsListingTable"
