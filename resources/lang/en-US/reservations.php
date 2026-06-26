@@ -25,6 +25,9 @@ return [
     'checkout_warning' => 'Heads up: this asset has an active or upcoming reservation.',
     'next_reservation' => 'Next reservation',
     'reserved_window' => 'Reserved :start &ndash; :end',
+    'conflicts_heading' => 'Existing reservations for the selected assets',
+    'conflicts_overlap' => 'Overlaps the selected timeframe',
+    'conflicts_none' => 'No other reservations for the selected assets.',
 
     'mail' => [
         'placed_subject' => 'Reservation placed: :name',

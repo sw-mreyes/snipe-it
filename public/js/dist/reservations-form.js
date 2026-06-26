@@ -2881,9 +2881,11 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var flatpickr_dist_l10n_de_js__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(flatpickr_dist_l10n_de_js__WEBPACK_IMPORTED_MODULE_1__);
 // Reservation create/edit form (custom fork feature).
 //
-// Upgrades the start/end datetime fields to a flatpickr picker so a time can
-// be selected (not just typed), shown in 24-hour German format. allowInput
-// keeps the fields freely typeable for anyone who prefers the keyboard.
+// 1. Upgrades the start/end datetime fields to a flatpickr picker so a time can
+//    be selected (not just typed), shown in 24-hour German format. allowInput
+//    keeps the fields freely typeable for anyone who prefers the keyboard.
+// 2. Shows the existing reservations for the selected assets and flags any whose
+//    window overlaps the entered start/end (mirrors Reservation::conflictsExist).
 
 
 
@@ -2901,7 +2903,105 @@ document.addEventListener('DOMContentLoaded', function () {
       (0,flatpickr__WEBPACK_IMPORTED_MODULE_0__["default"])(el, options);
     }
   });
+  initConflictChecker();
 });
+function initConflictChecker() {
+  var _document$querySelect;
+  var container = document.getElementById('reservation-conflicts');
+  var assetsSelect = document.getElementById('assets');
+  var startEl = document.getElementById('start');
+  var endEl = document.getElementById('end');
+  if (!container || !assetsSelect) {
+    return;
+  }
+  var template = container.dataset.forassetTemplate;
+  var currentId = container.dataset.reservationId ? parseInt(container.dataset.reservationId, 10) : null;
+  var csrfToken = (_document$querySelect = document.querySelector('meta[name="csrf-token"]')) === null || _document$querySelect === void 0 ? void 0 : _document$querySelect.getAttribute('content');
+
+  // Two windows overlap iff start1 <= end2 && start2 <= end1.
+  function overlaps(aStart, aEnd, bStart, bEnd) {
+    return aStart <= bEnd && bStart <= aEnd;
+  }
+  function selectedAssetIds() {
+    return Array.from(assetsSelect.selectedOptions).map(function (o) {
+      return o.value;
+    });
+  }
+  function render(reservations) {
+    if (!reservations.length) {
+      container.innerHTML = '<p class="text-muted">' + container.dataset.none + '</p>';
+      return;
+    }
+    var enteredStart = startEl && startEl.value ? new Date(startEl.value.replace(' ', 'T')) : null;
+    var enteredEnd = endEl && endEl.value ? new Date(endEl.value.replace(' ', 'T')) : null;
+    var html = '<label class="control-label">' + container.dataset.heading + '</label>';
+    html += '<ul class="list-unstyled" style="margin-top:5px;">';
+    reservations.forEach(function (r) {
+      var flagged = false;
+      if (enteredStart && enteredEnd && r.start_iso && r.end_iso) {
+        flagged = overlaps(enteredStart, enteredEnd, new Date(r.start_iso), new Date(r.end_iso));
+      }
+      var window = (r.start && r.start.formatted ? r.start.formatted : '') + ' – ' + (r.end && r.end.formatted ? r.end.formatted : '');
+      html += '<li class="' + (flagged ? 'text-danger text-bold' : 'text-muted') + '">';
+      if (flagged) {
+        html += '<i class="fas fa-exclamation-triangle" aria-hidden="true"></i> ';
+      }
+      html += escapeHtml(r.name) + ' (' + window + ')';
+      if (flagged) {
+        html += ' — ' + container.dataset.overlap;
+      }
+      html += '</li>';
+    });
+    html += '</ul>';
+    container.innerHTML = html;
+  }
+  function escapeHtml(value) {
+    var div = document.createElement('div');
+    div.textContent = value == null ? '' : value;
+    return div.innerHTML;
+  }
+  function refresh() {
+    var ids = selectedAssetIds();
+    if (!template || !ids.length) {
+      container.innerHTML = '';
+      return;
+    }
+    Promise.all(ids.map(function (id) {
+      return fetch(template.replace('__ASSET_ID__', encodeURIComponent(id)), {
+        headers: {
+          Accept: 'application/json',
+          'X-CSRF-TOKEN': csrfToken
+        },
+        credentials: 'same-origin'
+      }).then(function (res) {
+        return res.json();
+      }).then(function (data) {
+        return data.rows || [];
+      })["catch"](function () {
+        return [];
+      });
+    })).then(function (lists) {
+      // Merge, drop the reservation being edited, and de-duplicate by id.
+      var byId = {};
+      lists.flat().forEach(function (r) {
+        if (currentId && r.id === currentId) {
+          return;
+        }
+        byId[r.id] = r;
+      });
+      render(Object.values(byId));
+    });
+  }
+
+  // select2 fires a native 'change' on the underlying <select>.
+  assetsSelect.addEventListener('change', refresh);
+  [startEl, endEl].forEach(function (el) {
+    if (el) {
+      el.addEventListener('change', refresh);
+    }
+  });
+  refresh();
+}
 })();
 
 /******/ })()

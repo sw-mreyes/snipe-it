@@ -90,6 +90,19 @@
                     type="textarea"
                 />
 
+                {{-- Existing reservations for the selected assets; overlapping ones
+                     are flagged. Populated by reservations-form.js. --}}
+                <div class="form-group">
+                    <div class="col-md-8 col-md-offset-3">
+                        <div id="reservation-conflicts"
+                             data-forasset-template="{{ route('api.reservations.forasset', ['asset_id' => '__ASSET_ID__']) }}"
+                             data-reservation-id="{{ $item->id ?? '' }}"
+                             data-heading="{{ trans('reservations.conflicts_heading') }}"
+                             data-overlap="{{ trans('reservations.conflicts_overlap') }}"
+                             data-none="{{ trans('reservations.conflicts_none') }}"></div>
+                    </div>
+                </div>
+
             </x-box>
 
         </x-form>
