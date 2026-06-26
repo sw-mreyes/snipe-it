@@ -2017,6 +2017,49 @@
         }).join(', ');
     }
 
+    // Global search (custom fork feature): humanize the row's entity type.
+    function searchTypeFormatter(value) {
+        var labels = {
+            'asset': '{{ trans('general.asset') }}',
+            'accessory': '{{ trans('general.accessory') }}',
+            'component': '{{ trans('general.component') }}',
+            'consumable': '{{ trans('general.consumable') }}',
+            'category': '{{ trans('general.category') }}',
+            'assetModel': '{{ trans('general.asset_model') }}',
+        };
+        return (value && labels[value]) ? labels[value] : value;
+    }
+
+    // Global search (custom fork feature): link the name to the item's view page.
+    function searchNameFormatter(value, row) {
+        if (value && row && row.view_url) {
+            return '<a href="' + row.view_url + '">' + value + '</a>';
+        }
+        return value;
+    }
+
+    // Global search (custom fork feature): per-row actions, branching on type.
+    // Checkout for all checkoutable types; checkin + print for assets only.
+    function searchActionsFormatter(value, row) {
+        var actions = '<nobr>';
+        var a = row.available_actions || {};
+
+        if (a.checkout === true && row.checkout_url) {
+            actions += '<a href="' + row.checkout_url + '" class="btn btn-sm btn-primary hidden-print" data-tooltip="true" title="{{ trans('general.checkout') }}"><i class="fas fa-sign-out-alt" aria-hidden="true"></i><span class="sr-only">{{ trans('general.checkout') }}</span></a>&nbsp;';
+        }
+
+        if (a.checkin === true && row.checkin_url) {
+            actions += '<a href="' + row.checkin_url + '" class="btn btn-sm btn-info hidden-print" data-tooltip="true" title="{{ trans('general.checkin') }}"><i class="fas fa-sign-in-alt" aria-hidden="true"></i><span class="sr-only">{{ trans('general.checkin') }}</span></a>&nbsp;';
+        }
+
+        if (a.print === true && row.print_url) {
+            actions += '<a href="' + row.print_url + '" class="btn btn-sm btn-default hidden-print" data-tooltip="true" title="{{ trans('label-printer.print_label') }}"><i class="fas fa-print" aria-hidden="true"></i><span class="sr-only">{{ trans('label-printer.print_label') }}</span></a>&nbsp;';
+        }
+
+        actions += '</nobr>';
+        return actions;
+    }
+
     var child_formatters = [
         ['kits', 'models'],
         ['kits', 'licenses'],

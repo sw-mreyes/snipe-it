@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\Accessory;
 use App\Models\Asset;
+use App\Models\AssetModel;
+use App\Models\Category;
 use App\Models\Component;
 use App\Models\Consumable;
 use Illuminate\Support\Collection;
@@ -64,6 +66,8 @@ class GlobalSearchService
             'accessory' => Accessory::class,
             'component' => Component::class,
             'consumable' => Consumable::class,
+            'category' => Category::class,
+            'assetModel' => AssetModel::class,
         ];
     }
 
@@ -71,6 +75,8 @@ class GlobalSearchService
     {
         return match ($type) {
             'asset' => ['model', 'location', 'assignedTo'],
+            // Categories and asset-models have neither a category nor a location relation.
+            'category', 'assetModel' => [],
             default => ['category', 'location'],
         };
     }
