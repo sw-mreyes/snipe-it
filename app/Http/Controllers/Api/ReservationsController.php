@@ -74,8 +74,10 @@ class ReservationsController extends Controller
 
         if ($request->filled('end_to')) {
             $query->where('end', '<=', $request->input('end_to'));
-        } else {
-            // By default only return reservations that are still relevant.
+        } elseif (! $request->hasAny(['start_from', 'start_to', 'end_from'])) {
+            // With no explicit date range, only return reservations that are
+            // still relevant. A caller that asks for a range (e.g. the calendar
+            // requesting a visible window) gets exactly that range instead.
             $query->where('end', '>=', now()->format('Y-m-d'));
         }
 

@@ -12500,7 +12500,16 @@ document.addEventListener('DOMContentLoaded', function () {
       right: 'dayGridMonth,timeGridWeek'
     },
     events: function events(info, successCallback, failureCallback) {
-      fetch(eventsUrl + '?limit=1000', {
+      // Fetch reservations overlapping the visible window: those that
+      // start before the window ends and end after it begins. Passing an
+      // explicit range also opts out of the API's upcoming-only default,
+      // so past months show their reservations when navigated to.
+      var params = new URLSearchParams({
+        limit: 1000,
+        start_to: info.endStr,
+        end_from: info.startStr
+      });
+      fetch(eventsUrl + '?' + params.toString(), {
         headers: {
           Accept: 'application/json',
           'X-CSRF-TOKEN': csrfToken
