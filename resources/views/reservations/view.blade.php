@@ -48,9 +48,11 @@
             </table>
 
             @can('checkout', \App\Models\Asset::class)
-                <a href="{{ route('reservations.edit', ['reservation' => $reservation->id]) }}" class="btn btn-warning">
-                    <x-icon type="edit" /> {{ trans('general.edit') }}
-                </a>
+                <div style="margin-top: 15px;">
+                    <a href="{{ route('reservations.edit', ['reservation' => $reservation->id]) }}" class="btn btn-warning">
+                        <x-icon type="edit" /> {{ trans('general.edit') }}
+                    </a>
+                </div>
             @endcan
         </x-box>
     </x-container>
