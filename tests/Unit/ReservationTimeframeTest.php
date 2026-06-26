@@ -78,4 +78,24 @@ class ReservationTimeframeTest extends TestCase
 
         $this->assertTrue(Helper::is_valid_timeframe('2030-01-02 09:00:00', '2030-01-04 17:00:00', [$asset->id]));
     }
+
+    public function test_next_reservation_returns_the_soonest_upcoming_reservation()
+    {
+        $asset = Asset::factory()->create();
+        $later = $this->reservationForAsset($asset, '2030-03-01 09:00:00', '2030-03-05 17:00:00');
+        $sooner = $this->reservationForAsset($asset, '2030-02-01 09:00:00', '2030-02-05 17:00:00');
+
+        $next = Reservation::nextReservationFor($asset->id);
+
+        $this->assertNotNull($next);
+        $this->assertSame($sooner->id, $next->id);
+    }
+
+    public function test_next_reservation_ignores_past_reservations()
+    {
+        $asset = Asset::factory()->create();
+        $this->reservationForAsset($asset, '2000-01-01 09:00:00', '2000-01-05 17:00:00');
+
+        $this->assertNull(Reservation::nextReservationFor($asset->id));
+    }
 }
