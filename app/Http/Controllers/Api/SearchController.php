@@ -18,7 +18,12 @@ class SearchController extends Controller
 {
     public function index(Request $request, GlobalSearchService $search)
     {
-        $results = $search->search((string) $request->input('search', ''));
+        // Read the term from `q`, not `search`: the bootstrap-table client always
+        // sends its own (often empty) `search` query param for server-side
+        // pagination, which would otherwise clobber the term baked into the URL.
+        $term = (string) $request->input('q', $request->input('search', ''));
+
+        $results = $search->search($term);
 
         return (new SearchTransformer)->transformSearchResults($results, $results->count());
     }

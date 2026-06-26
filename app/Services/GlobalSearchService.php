@@ -42,7 +42,14 @@ class GlobalSearchService
                 continue;
             }
 
-            $matches = $class::with($this->eagerLoadsFor($type))
+            // Select only the base table's columns: the TextSearch scope joins
+            // related tables, and without this the joined tables' columns bleed
+            // into the model (clobbering id/asset_tag with null/ambiguous values).
+            $table = (new $class)->getTable();
+
+            $matches = $class::query()
+                ->select($table.'.*')
+                ->with($this->eagerLoadsFor($type))
                 ->TextSearch($term)
                 ->take(self::PER_TYPE_LIMIT)
                 ->get()

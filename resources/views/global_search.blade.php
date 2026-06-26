@@ -28,8 +28,9 @@
                     data-id-table="globalSearchTable"
                     data-side-pagination="server"
                     data-search="false"
+                    data-advanced-search="false"
                     id="globalSearchTable"
-                    data-url="{{ route('api.search.index', ['search' => $query]) }}"
+                    data-url="{{ route('api.search.index', ['q' => $query]) }}"
                     class="table table-striped snipe-table">
                     <thead>
                         <tr>
