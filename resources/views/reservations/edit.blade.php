@@ -90,16 +90,6 @@
                     type="textarea"
                 />
 
-                <x-slot:customfooter>
-                    <x-redirect_submit_options
-                        index_route="reservations.index"
-                        :button_label="trans('general.save')"
-                        :options="[
-                            'index' => trans('reservations.reservations'),
-                        ]"
-                    />
-                </x-slot:customfooter>
-
             </x-box>
 
         </x-form>
