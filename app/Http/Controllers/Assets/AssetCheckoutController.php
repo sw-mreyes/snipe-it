@@ -50,14 +50,17 @@ class AssetCheckoutController extends Controller
 
         if ($asset->availableForCheckout()) {
             // Custom (fork) feature: warn — but do not block — if this asset has an
-            // active or upcoming reservation.
-            if (Reservation::assetHasUpcomingReservation($asset->id)) {
+            // active or upcoming reservation. Surface the soonest one so the form
+            // can show who reserved it and when.
+            $nextReservation = Reservation::nextReservationFor($asset->id);
+            if ($nextReservation) {
                 session()->now('warning', trans('reservations.checkout_warning'));
             }
 
             return view('hardware/checkout', compact('asset'))
                 ->with('statusLabel_list', Helper::deployableStatusLabelList())
                 ->with('table_name', 'Assets')
+                ->with('nextReservation', $nextReservation)
                 ->with('item', $asset);
         }
 

@@ -16,6 +16,32 @@
         }
     </style>
 
+    {{-- Custom (fork) feature: warn — but do not block — when the asset has an
+         active or upcoming reservation. Shows who reserved it and when. --}}
+    @if (isset($nextReservation) && $nextReservation)
+        <div class="row">
+            <div class="col-md-12">
+                <div class="callout callout-warning">
+                    <h4><x-icon type="calendar" /> {{ trans('reservations.next_reservation') }}</h4>
+                    <p>
+                        <a href="{{ route('reservations.show', ['reservation' => $nextReservation->id]) }}">
+                            {{ $nextReservation->name }}
+                        </a>
+                        @if ($nextReservation->user)
+                            &mdash; {{ trans('reservations.user') }}:
+                            {{ $nextReservation->user->present()->fullName }}
+                        @endif
+                        <br>
+                        {!! trans('reservations.reserved_window', [
+                            'start' => $nextReservation->start?->format('Y-m-d H:i'),
+                            'end' => $nextReservation->end?->format('Y-m-d H:i'),
+                        ]) !!}
+                    </p>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <div class="row">
         <!-- left column -->
         <div class="col-md-7">

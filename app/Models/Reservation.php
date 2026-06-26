@@ -140,6 +140,19 @@ class Reservation extends SnipeModel
     }
 
     /**
+     * The soonest active or upcoming reservation for the asset (end in the
+     * future), or null. Used to show reservation details on the checkout form.
+     */
+    public static function nextReservationFor($assetId): ?self
+    {
+        return static::with('user')
+            ->forAsset($assetId)
+            ->where('end', '>=', now())
+            ->orderBy('start', 'asc')
+            ->first();
+    }
+
+    /**
      * Whether any of the given assets already have a (non-deleted) reservation
      * whose window overlaps [$start, $end].
      *

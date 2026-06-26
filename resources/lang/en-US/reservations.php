@@ -23,6 +23,8 @@ return [
     'reservation_not_found' => 'Reservation not found.',
     'invalid_timeframe' => 'The selected timeframe is invalid or overlaps an existing reservation for one of the chosen assets.',
     'checkout_warning' => 'Heads up: this asset has an active or upcoming reservation.',
+    'next_reservation' => 'Next reservation',
+    'reserved_window' => 'Reserved :start &ndash; :end',
 
     'mail' => [
         'placed_subject' => 'Reservation placed: :name',
