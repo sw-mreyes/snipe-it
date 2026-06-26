@@ -1985,6 +1985,7 @@
         'maintenances',
         'manufacturers',
         'models',
+        'reservations',
         'statuslabels',
         'suppliers',
         'users',
@@ -1995,6 +1996,25 @@
         window[formatters[i] + 'LinkObjFormatter'] = genericColumnObjLinkFormatter(formatters[i]);
         window[formatters[i] + 'ActionsFormatter'] = genericActionsFormatter(formatters[i]);
         window[formatters[i] + 'InOutFormatter'] = genericCheckinCheckoutFormatter(formatters[i]);
+    }
+
+    // Reservations (custom fork feature): the reserved-for user object {id,name}.
+    function reservationUserFormatter(value) {
+        if (value && value.name) {
+            return '<a href="{{ config('app.url') }}/users/' + value.id + '">' + value.name + '</a>';
+        }
+        return '';
+    }
+
+    // Reservations (custom fork feature): the array of reserved assets.
+    function reservationAssetsFormatter(value) {
+        if (!value || !value.length) {
+            return '';
+        }
+        return value.map(function (asset) {
+            var label = asset.name ? asset.name : asset.asset_tag;
+            return '<a href="{{ config('app.url') }}/hardware/' + asset.id + '">' + label + '</a>';
+        }).join(', ');
     }
 
     var child_formatters = [

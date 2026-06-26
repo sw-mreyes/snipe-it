@@ -12,61 +12,34 @@
         <x-box>
             @include('reservations.partials.toolbar', ['active' => 'list'])
 
-            <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>{{ trans('reservations.name') }}</th>
-                            <th>{{ trans('reservations.user') }}</th>
-                            <th>{{ trans('reservations.assets') }}</th>
-                            <th>{{ trans('reservations.start') }}</th>
-                            <th>{{ trans('reservations.end') }}</th>
-                            <th class="text-right">{{ trans('table.actions') }}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($reservations as $reservation)
-                            <tr>
-                                <td>
-                                    <a href="{{ route('reservations.show', ['reservation' => $reservation->id]) }}">
-                                        {{ $reservation->name }}
-                                    </a>
-                                </td>
-                                <td>
-                                    @if ($reservation->user)
-                                        {{ $reservation->user->first_name }} {{ $reservation->user->last_name }}
-                                    @endif
-                                </td>
-                                <td>
-                                    @foreach ($reservation->assets as $asset)
-                                        <a href="{{ route('hardware.show', ['asset' => $asset->id]) }}">{{ $asset->name ?: $asset->present()->fullName }}</a>@if (! $loop->last), @endif
-                                    @endforeach
-                                </td>
-                                <td>{{ $reservation->start?->format('Y-m-d H:i') }}</td>
-                                <td>{{ $reservation->end?->format('Y-m-d H:i') }}</td>
-                                <td class="text-right">
-                                    @can('checkout', \App\Models\Asset::class)
-                                        <a href="{{ route('reservations.edit', ['reservation' => $reservation->id]) }}" class="btn btn-sm btn-warning">
-                                            <x-icon type="edit" />
-                                        </a>
-                                        <form method="POST" action="{{ route('reservations.destroy', ['reservation' => $reservation->id]) }}" style="display:inline;" onsubmit="return confirm('{{ trans('general.sure_to_delete') }}');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-danger">
-                                                <x-icon type="delete" />
-                                            </button>
-                                        </form>
-                                    @endcan
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="6" class="text-center text-muted">{{ trans('reservations.none') }}</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+            <table
+                data-cookie-id-table="reservationsListingTable"
+                data-id-table="reservationsListingTable"
+                data-side-pagination="server"
+                data-sort-order="asc"
+                data-sort-name="start"
+                id="reservationsListingTable"
+                data-url="{{ route('api.reservations.index') }}"
+                class="table table-striped snipe-table"
+                data-export-options='{
+                    "fileName": "reservations-export-{{ date('Y-m-d') }}",
+                    "ignoreColumn": ["actions"]
+                }'>
+                <thead>
+                    <tr>
+                        <th data-field="name" data-sortable="true" data-formatter="reservationsLinkFormatter">{{ trans('reservations.name') }}</th>
+                        <th data-field="user" data-formatter="reservationUserFormatter">{{ trans('reservations.user') }}</th>
+                        <th data-field="assets" data-formatter="reservationAssetsFormatter">{{ trans('reservations.assets') }}</th>
+                        <th data-field="start" data-sortable="true" data-formatter="dateDisplayFormatter">{{ trans('reservations.start') }}</th>
+                        <th data-field="end" data-sortable="true" data-formatter="dateDisplayFormatter">{{ trans('reservations.end') }}</th>
+                        <th data-field="actions" data-formatter="reservationsActionsFormatter" class="text-right">{{ trans('table.actions') }}</th>
+                    </tr>
+                </thead>
+            </table>
         </x-box>
     </x-container>
+@stop
+
+@section('moar_scripts')
+    @include('partials.bootstrap-table')
 @stop
