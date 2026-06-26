@@ -12484,11 +12484,13 @@ __webpack_require__.r(__webpack_exports__);
 
 
 document.addEventListener('DOMContentLoaded', function () {
+  var _document$querySelect;
   var el = document.getElementById('reservations-calendar');
   if (!el) {
     return;
   }
   var eventsUrl = el.dataset.eventsUrl;
+  var csrfToken = (_document$querySelect = document.querySelector('meta[name="csrf-token"]')) === null || _document$querySelect === void 0 ? void 0 : _document$querySelect.getAttribute('content');
   var calendar = new _fullcalendar_core__WEBPACK_IMPORTED_MODULE_0__.Calendar(el, {
     plugins: [_fullcalendar_daygrid__WEBPACK_IMPORTED_MODULE_1__["default"], _fullcalendar_timegrid__WEBPACK_IMPORTED_MODULE_2__["default"]],
     initialView: 'dayGridMonth',
@@ -12500,7 +12502,8 @@ document.addEventListener('DOMContentLoaded', function () {
     events: function events(info, successCallback, failureCallback) {
       fetch(eventsUrl + '?limit=1000', {
         headers: {
-          Accept: 'application/json'
+          Accept: 'application/json',
+          'X-CSRF-TOKEN': csrfToken
         },
         credentials: 'same-origin'
       }).then(function (response) {

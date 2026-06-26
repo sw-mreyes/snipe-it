@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     const eventsUrl = el.dataset.eventsUrl;
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
     const calendar = new Calendar(el, {
         plugins: [dayGridPlugin, timeGridPlugin],
@@ -26,7 +27,10 @@ document.addEventListener('DOMContentLoaded', function () {
         },
         events: function (info, successCallback, failureCallback) {
             fetch(eventsUrl + '?limit=1000', {
-                headers: { Accept: 'application/json' },
+                headers: {
+                    Accept: 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
                 credentials: 'same-origin',
             })
                 .then((response) => response.json())
