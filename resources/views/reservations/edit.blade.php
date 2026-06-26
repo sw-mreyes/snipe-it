@@ -68,8 +68,8 @@
                 <div class="form-group {{ $errors->has('start') ? 'has-error' : '' }}">
                     <label for="start" class="col-md-3 control-label">{{ trans('reservations.start') }}</label>
                     <div class="col-md-6">
-                        <input type="datetime-local" class="form-control" name="start" id="start"
-                               value="{{ old('start', $item->start?->format('Y-m-d\TH:i')) }}" required>
+                        <input type="text" class="form-control" name="start" id="start"
+                               value="{{ old('start', $item->start?->format('Y-m-d H:i')) }}" required>
                     </div>
                     {!! $errors->first('start', '<div class="col-md-8 col-md-offset-3"><span class="alert-msg"><i class="fas fa-times" aria-hidden="true"></i> :message</span></div>') !!}
                 </div>
@@ -77,8 +77,8 @@
                 <div class="form-group {{ $errors->has('end') ? 'has-error' : '' }}">
                     <label for="end" class="col-md-3 control-label">{{ trans('reservations.end') }}</label>
                     <div class="col-md-6">
-                        <input type="datetime-local" class="form-control" name="end" id="end"
-                               value="{{ old('end', $item->end?->format('Y-m-d\TH:i')) }}" required>
+                        <input type="text" class="form-control" name="end" id="end"
+                               value="{{ old('end', $item->end?->format('Y-m-d H:i')) }}" required>
                     </div>
                     {!! $errors->first('end', '<div class="col-md-8 col-md-offset-3"><span class="alert-msg"><i class="fas fa-times" aria-hidden="true"></i> :message</span></div>') !!}
                 </div>
@@ -106,4 +106,8 @@
 
     </x-container>
 
+@stop
+
+@section('moar_scripts')
+    <script nonce="{{ csrf_token() }}" src="{{ url(mix('js/dist/reservations-form.js')) }}"></script>
 @stop

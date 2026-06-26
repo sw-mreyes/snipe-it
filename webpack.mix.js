@@ -24,6 +24,7 @@ mix
       "./node_modules/blueimp-file-upload/css/jquery.fileupload-ui.css",
       "./node_modules/ekko-lightbox/dist/ekko-lightbox.css",
       "./node_modules/bootstrap-table/dist/bootstrap-table.css",
+      "./node_modules/flatpickr/dist/flatpickr.min.css",
       "./public/css/build/app.css",
       "./node_modules/select2/dist/css/select2.css",
       "./public/css/build/overrides.css",
@@ -89,6 +90,16 @@ mix
   .js(
     "./resources/assets/js/reservations-calendar.js",
     "./public/js/dist/reservations-calendar.js"
+  )
+  .version();
+
+/**
+ * Reservations create/edit form bundle (custom fork feature)
+ */
+mix
+  .js(
+    "./resources/assets/js/reservations-form.js",
+    "./public/js/dist/reservations-form.js"
   )
   .version();
 
