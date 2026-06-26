@@ -239,6 +239,8 @@ class IconHelper
                 return 'fa-solid fa-arrows-down-to-line';
             case 'calendar':
                 return 'fas fa-calendar';
+            case 'list':
+                return 'fas fa-list';
             case 'depreciation-calendar':
             case 'expiration':
             case 'terminates':

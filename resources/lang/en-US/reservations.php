@@ -4,6 +4,7 @@ return [
     'reservations' => 'Reservations',
     'reservation' => 'Reservation',
     'calendar' => 'Calendar',
+    'list' => 'List',
     'create' => 'Create Reservation',
     'update' => 'Update Reservation',
     'name' => 'Name',

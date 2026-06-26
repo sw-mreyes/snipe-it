@@ -10,6 +10,8 @@
 @section('content')
     <x-container>
         <x-box>
+            @include('reservations.partials.toolbar', ['active' => 'calendar'])
+
             {{-- FullCalendar mounts here; initialized in the bundled JS (see task 9).
                  Data is loaded from the reservations API. --}}
             <div id="reservations-calendar" data-events-url="{{ route('api.reservations.index') }}"></div>

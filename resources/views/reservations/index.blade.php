@@ -10,18 +10,7 @@
 @section('content')
     <x-container>
         <x-box>
-            <div class="row" style="margin-bottom: 15px;">
-                <div class="col-md-12 text-right">
-                    <a href="{{ route('reservations.calendar') }}" class="btn btn-default">
-                        <x-icon type="calendar" /> {{ trans('reservations.calendar') }}
-                    </a>
-                    @can('checkout', \App\Models\Asset::class)
-                        <a href="{{ route('reservations.create') }}" class="btn btn-primary">
-                            {{ trans('reservations.create') }}
-                        </a>
-                    @endcan
-                </div>
-            </div>
+            @include('reservations.partials.toolbar', ['active' => 'list'])
 
             <div class="table-responsive">
                 <table class="table table-striped">
