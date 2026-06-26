@@ -36,7 +36,7 @@
                         <td>{{ trans('reservations.assets') }}</td>
                         <td>
                             @foreach ($reservation->assets as $asset)
-                                <a href="{{ route('hardware.show', ['asset' => $asset->id]) }}">{{ $asset->asset_tag }}</a>@if (! $loop->last), @endif
+                                <a href="{{ route('hardware.show', ['asset' => $asset->id]) }}">{{ $asset->name ?: $asset->present()->fullName }}</a>@if (! $loop->last), @endif
                             @endforeach
                         </td>
                     </tr>
