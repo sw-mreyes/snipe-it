@@ -67,6 +67,7 @@
                         <x-button.edit :item="$snipe_component" :route="route('components.edit', $snipe_component->id)"/>
                         <x-button.clone :item="$snipe_component" :route="route('components.clone.create', $snipe_component->id)"/>
                         <x-button.checkout :item="$snipe_component" :route="route('components.checkout.show', $snipe_component->id)" />
+                        <x-button.network-label :item="$snipe_component" :route="route('network-label.component', $snipe_component->id)"/>
                         <x-button.delete :item="$snipe_component" />
                     </x-slot:buttons>
 

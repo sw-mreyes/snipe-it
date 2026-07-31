@@ -78,6 +78,8 @@ class ComponentsTransformer
             'update' => Gate::allows('update', Component::class),
             'clone' => Gate::allows('create', Component::class),
             'delete' => $component->isDeletable(),
+            // Network label printing (custom fork feature): URL, or false when not permitted.
+            'network_print' => Gate::allows('view', $component) ? route('network-label.component', $component->id) : false,
         ];
         $array += $permissions_array;
 

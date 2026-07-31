@@ -82,6 +82,8 @@ class ConsumablesTransformer
             'update' => Gate::allows('update', Consumable::class),
             'delete' => Gate::allows('delete', Consumable::class),
             'clone' => (Gate::allows('create', Consumable::class) && ($consumable->deleted_at == '')),
+            // Network label printing (custom fork feature): URL, or false when not permitted.
+            'network_print' => Gate::allows('view', $consumable) ? route('network-label.consumable', $consumable->id) : false,
         ];
         $array += $permissions_array;
 
