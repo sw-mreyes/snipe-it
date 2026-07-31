@@ -152,6 +152,35 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api', 'api-throttle:api']], fu
     );
 
     /**
+     * Reservations API routes (custom fork feature)
+     */
+    Route::group(['prefix' => 'reservations'], function () {
+        // Declared before the resource so they are not captured by show.
+        Route::get('forasset/{asset_id}',
+            [Api\ReservationsController::class, 'forAsset']
+        )->name('api.reservations.forasset');
+
+        Route::get('{reservation}/assets',
+            [Api\ReservationsController::class, 'getAssets']
+        )->name('api.reservations.assets');
+    });
+
+    Route::resource('reservations',
+        Api\ReservationsController::class,
+        [
+            'names' => [
+                'index' => 'api.reservations.index',
+                'show' => 'api.reservations.show',
+                'store' => 'api.reservations.store',
+                'update' => 'api.reservations.update',
+                'destroy' => 'api.reservations.destroy',
+            ],
+            'except' => ['create', 'edit'],
+            'parameters' => ['reservation' => 'reservation'],
+        ]
+    );
+
+    /**
      * Global cross-entity search API route (custom fork feature)
      */
     Route::get('search',

@@ -1,0 +1,47 @@
+<?php
+
+return [
+    'reservations' => 'Reservations',
+    'reservation' => 'Reservation',
+    'calendar' => 'Calendar',
+    'list' => 'List',
+    'create' => 'Create Reservation',
+    'update' => 'Update Reservation',
+    'name' => 'Name',
+    'user' => 'Reserved for',
+    'assets' => 'Assets',
+    'start' => 'Start',
+    'end' => 'End',
+    'from' => 'From',
+    'to' => 'To',
+    'notes' => 'Notes',
+    'none' => 'There are no reservations.',
+    'none_for_asset' => 'This asset has no upcoming reservations.',
+    'placed' => 'Reservation placed successfully.',
+    'updated' => 'Reservation updated successfully.',
+    'deleted' => 'Reservation deleted successfully.',
+    'delete_confirm' => 'Are you sure you want to delete this reservation?',
+    'invalid_timeframe' => 'The selected timeframe overlaps an existing reservation for one of the chosen assets.',
+    'checkout_warning' => 'Heads up: this asset has a current or upcoming reservation.',
+    'next_reservation' => 'Next reservation',
+    'reserved_window' => 'Reserved :start &ndash; :end',
+    'reserve_this_asset' => 'Reserve this asset',
+    'conflicts_heading' => 'Existing reservations for the selected assets',
+    'conflicts_overlap' => 'Overlaps the selected timeframe',
+    'conflicts_none' => 'No other reservations for the selected assets.',
+    'select_user' => 'Select a user',
+    'select_assets' => 'Select one or more assets',
+
+    'status' => [
+        'active' => 'Active',
+        'upcoming' => 'Upcoming',
+        'past' => 'Past',
+    ],
+
+    'mail' => [
+        'placed_subject' => 'Reservation placed: :name',
+        'placed_greeting' => 'A reservation has been placed.',
+        'expected_checkin_subject' => 'An asset you hold is reserved: :tag',
+        'expected_checkin_greeting' => 'An asset you are currently responsible for has been reserved by someone else.',
+    ],
+];

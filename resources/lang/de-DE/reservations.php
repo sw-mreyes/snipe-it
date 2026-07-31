@@ -1,0 +1,47 @@
+<?php
+
+return [
+    'reservations' => 'Reservierungen',
+    'reservation' => 'Reservierung',
+    'calendar' => 'Kalender',
+    'list' => 'Liste',
+    'create' => 'Reservierung anlegen',
+    'update' => 'Reservierung bearbeiten',
+    'name' => 'Name',
+    'user' => 'Reserviert für',
+    'assets' => 'Assets',
+    'start' => 'Beginn',
+    'end' => 'Ende',
+    'from' => 'Von',
+    'to' => 'Bis',
+    'notes' => 'Notizen',
+    'none' => 'Es sind keine Reservierungen vorhanden.',
+    'none_for_asset' => 'Für dieses Asset gibt es keine anstehenden Reservierungen.',
+    'placed' => 'Reservierung wurde angelegt.',
+    'updated' => 'Reservierung wurde aktualisiert.',
+    'deleted' => 'Reservierung wurde gelöscht.',
+    'delete_confirm' => 'Soll diese Reservierung wirklich gelöscht werden?',
+    'invalid_timeframe' => 'Der gewählte Zeitraum überschneidet sich mit einer bestehenden Reservierung für eines der ausgewählten Assets.',
+    'checkout_warning' => 'Achtung: Für dieses Asset besteht eine laufende oder anstehende Reservierung.',
+    'next_reservation' => 'Nächste Reservierung',
+    'reserved_window' => 'Reserviert :start &ndash; :end',
+    'reserve_this_asset' => 'Dieses Asset reservieren',
+    'conflicts_heading' => 'Bestehende Reservierungen für die ausgewählten Assets',
+    'conflicts_overlap' => 'Überschneidet sich mit dem gewählten Zeitraum',
+    'conflicts_none' => 'Keine weiteren Reservierungen für die ausgewählten Assets.',
+    'select_user' => 'Benutzer auswählen',
+    'select_assets' => 'Ein oder mehrere Assets auswählen',
+
+    'status' => [
+        'active' => 'Laufend',
+        'upcoming' => 'Anstehend',
+        'past' => 'Vergangen',
+    ],
+
+    'mail' => [
+        'placed_subject' => 'Reservierung angelegt: :name',
+        'placed_greeting' => 'Es wurde eine Reservierung angelegt.',
+        'expected_checkin_subject' => 'Ein Asset in Ihrem Besitz wurde reserviert: :tag',
+        'expected_checkin_greeting' => 'Ein Asset, für das Sie derzeit verantwortlich sind, wurde von jemand anderem reserviert.',
+    ],
+];
