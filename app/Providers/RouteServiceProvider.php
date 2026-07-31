@@ -52,6 +52,7 @@ class RouteServiceProvider extends ServiceProvider
             require base_path('routes/web/users.php');
             require base_path('routes/web/kits.php');
             require base_path('routes/web/network-label-printer.php');
+            require base_path('routes/web/search.php');
             require base_path('routes/web.php');
         });
     }

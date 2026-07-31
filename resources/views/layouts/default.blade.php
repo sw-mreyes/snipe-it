@@ -1282,25 +1282,25 @@
                                 </li>
                             @endcan
 
-                            @can('index', \App\Models\Asset::class)
-                                <li>
-                                    <form class="navbar-form navbar-left form-inline" role="search" action="{{ route('findbytag/hardware') }}" method="get">
+                            {{-- Global cross-entity search (custom fork feature). Deliberately
+                                 not gated on the Asset index permission: the search service only
+                                 queries entity types the current user may view, so a user without
+                                 asset rights still gets their accessories, locations and so on. --}}
+                            <li>
+                                <form class="navbar-form navbar-left form-inline" role="search" action="{{ route('search') }}" method="get">
 
-                                                <div class="input-group col-xs-12" style="border: 0 !important;">
-                                                    <label class="sr-only" for="tagSearch">
-                                                        {{ trans('general.lookup_by_tag') }}
-                                                    </label>
-                                                    <input type="text" class="form-control" id="tagSearch" name="assetTag" placeholder="{{ trans('general.lookup_by_tag') }}">
-                                                    <span class="input-group-btn">
-                                                        <button type="submit" id="topSearchButton" class="btn btn-sm btn-theme" style="padding: 7px 10px 7px 10px; "><x-icon type="search" class="fa-fw" /><div class="sr-only">{{ trans('general.search') }}</div></button>
-                                                    </span>
-                                                </div>
+                                            <div class="input-group col-xs-12" style="border: 0 !important;">
+                                                <label class="sr-only" for="globalSearch">
+                                                    {{ trans('global-search.placeholder') }}
+                                                </label>
+                                                <input type="text" class="form-control" id="globalSearch" name="search" placeholder="{{ trans('general.search') }}">
+                                                <span class="input-group-btn">
+                                                    <button type="submit" id="topSearchButton" class="btn btn-sm btn-theme" style="padding: 7px 10px 7px 10px; "><x-icon type="search" class="fa-fw" /><div class="sr-only">{{ trans('general.search') }}</div></button>
+                                                </span>
+                                            </div>
 
-                                        <input type="hidden" name="topsearch" value="true" id="search">
-
-                                    </form>
-                                </li>
-                            @endcan
+                                </form>
+                            </li>
 
                             @can('admin')
                                 <li class="dropdown user-menu" aria-hidden="true">
