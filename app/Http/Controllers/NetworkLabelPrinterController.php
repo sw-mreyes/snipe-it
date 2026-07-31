@@ -7,6 +7,7 @@ use App\Models\Asset;
 use App\Models\Component;
 use App\Models\Consumable;
 use App\Models\Location;
+use App\Services\GlobalSearch\ItemTag;
 use App\Services\NetworkLabelPrinter\PrinterResolver;
 use App\Services\NetworkLabelPrinter\PrintServerClient;
 use Illuminate\Http\RedirectResponse;
@@ -37,7 +38,7 @@ class NetworkLabelPrinterController extends Controller
         return $this->dispatchLabel(
             $request,
             $asset->location,
-            (string) $asset->asset_tag,
+            ItemTag::for($asset),
             (string) $asset->name,
             (string) optional(optional($asset->model)->category)->name,
         );
@@ -50,7 +51,7 @@ class NetworkLabelPrinterController extends Controller
         return $this->dispatchLabel(
             $request,
             $accessory->location,
-            'AC-'.$accessory->id,
+            ItemTag::for($accessory),
             (string) $accessory->name,
             (string) optional($accessory->category)->name,
         );
@@ -63,7 +64,7 @@ class NetworkLabelPrinterController extends Controller
         return $this->dispatchLabel(
             $request,
             $component->location,
-            'CM-'.$component->id,
+            ItemTag::for($component),
             (string) $component->name,
             (string) optional($component->category)->name,
         );
@@ -76,7 +77,7 @@ class NetworkLabelPrinterController extends Controller
         return $this->dispatchLabel(
             $request,
             $consumable->location,
-            'CS-'.$consumable->id,
+            ItemTag::for($consumable),
             (string) $consumable->name,
             (string) optional($consumable->category)->name,
         );
@@ -91,7 +92,7 @@ class NetworkLabelPrinterController extends Controller
         return $this->dispatchLabel(
             $request,
             $location,
-            'BX-'.$location->id,
+            ItemTag::for($location),
             (string) $location->name,
             (string) optional($location->parent)->name,
         );
