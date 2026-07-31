@@ -78,6 +78,7 @@
                         <x-button.edit :item="$accessory" :route="route('accessories.edit', $accessory->id)"/>
                         <x-button.clone :item="$accessory" :route="route('clone/accessories', $accessory->id)"/>
                         <x-button.checkout permission="checkout" :item="$accessory" :route="route('accessories.checkout.show', $accessory->id)" />
+                        <x-button.network-label :item="$accessory" :route="route('network-label.accessory', $accessory->id)"/>
                         @can('update', $accessory)
                             @php $lastOrder = $accessory->lastOrderDefaults(); @endphp
                             <button type="button"

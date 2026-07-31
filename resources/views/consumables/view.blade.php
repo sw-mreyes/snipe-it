@@ -92,6 +92,7 @@
                         @endcan
                         <x-button.delete :item="$consumable"/>
                         <x-button.checkout :item="$consumable" :route="route('consumables.checkout.show', $consumable->id)" />
+                        <x-button.network-label :item="$consumable" :route="route('network-label.consumable', $consumable->id)"/>
                     </x-slot:buttons>
 
                 </x-info-panel>

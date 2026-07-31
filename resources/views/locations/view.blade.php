@@ -223,6 +223,7 @@
                         <x-button.restore :item="$location" :route="route('locations.restore', ['location' => $location->id])" />
                         <x-button.print :count="$location->countAllTheThings()" :tooltip="trans('admin/locations/table.print_inventory')" :item="$location" :route="route('locations.print_assigned', ['locationId' => $location->id])"/>
                         <x-button.print :count="$location->assignedAssets()->AssetsForShow()->count()" :item="$location" :route="route('locations.print_all_assigned', ['locationId' => $location->id])"/>
+                        <x-button.network-label :item="$location" :route="route('network-label.location', $location->id)"/>
                         <x-button.delete :item="$location"/>
                     </x-slot:buttons>
 
