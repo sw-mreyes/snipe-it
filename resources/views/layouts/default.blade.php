@@ -174,6 +174,16 @@
                                 </li>
                             @endcan
 
+                            {{-- Reservations (custom fork feature) --}}
+                            @can('view', \App\Models\Asset::class)
+                                <li aria-hidden="true"{!! (request()->is('reservations*') ? ' class="active"' : '') !!}>
+                                    <a href="{{ route('reservations.index') }}" tabindex="-1" data-tooltip="true" data-placement="bottom" data-title="{{ trans('reservations.reservations') }}">
+                                        <x-icon type="calendar" class="fa-fw" />
+                                        <span class="sr-only">{{ trans('reservations.reservations') }}</span>
+                                    </a>
+                                </li>
+                            @endcan
+
                             {{-- Global cross-entity search (custom fork feature). Deliberately
                                  not gated on the Asset index permission: the search service only
                                  queries entity types the current user may view, so a user without
@@ -849,6 +859,15 @@
                             </li>
                         @endcan
 
+                        {{-- Reservations (custom fork feature) --}}
+                        @can('view', \App\Models\Asset::class)
+                            <li{!! (request()->is('reservations*') ? ' class="active"' : '') !!}>
+                                <a href="{{ route('reservations.index') }}">
+                                    <x-icon type="calendar" class="fa-fw" />
+                                    <span>{{ trans('reservations.reservations') }}</span>
+                                </a>
+                            </li>
+                        @endcan
 
                     </ul>
                 </section>

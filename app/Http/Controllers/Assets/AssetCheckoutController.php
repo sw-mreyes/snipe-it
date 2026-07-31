@@ -70,9 +70,15 @@ class AssetCheckoutController extends Controller
                 $asset->id,
             );
 
+            // Custom (fork) feature: warn — never block — when the asset has a
+            // current or upcoming reservation, and surface the soonest one so
+            // the form can name who reserved it and when.
+            $nextReservation = \App\Models\Reservation::nextReservationFor($asset->id);
+
             return view('hardware/checkout', compact('asset'))
                 ->with('statusLabel_list', Helper::deployableStatusLabelList())
                 ->with('table_name', 'Assets')
+                ->with('nextReservation', $nextReservation)
                 ->with('item', $asset)
                 ->with('checkoutRequest', $context['checkoutRequest'])
                 ->with('otherPendingRequests', $context['otherPendingRequests']);
