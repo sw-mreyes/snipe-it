@@ -3119,7 +3119,7 @@
     // Checkouts need the license ID, checkins need the specific seat ID
 
     function licenseSeatInOutFormatter(value, row) {
-        
+
         var backto = row.checkin_backto ? '/' + row.checkin_backto : '';
         if (row.disabled && (row.assigned_user || row.assigned_asset)) {
             return '<a href="{{ config('app.url') }}/licenses/' + row.id + '/checkin' + backto + '" class="btn btn-sm bg-purple" data-tooltip="true" title="{{ trans('general.checkin_tooltip') }}">{{ trans('general.checkin') }}</a>';
@@ -3492,6 +3492,75 @@
             available: row.remaining,
         }) + '</nobr>';
     };
+
+    /*
+     * Global search (custom fork feature).
+     *
+     * Result rows are heterogeneous, so each column tolerates a null value and
+     * every row carries its own urls + available_actions. Values arrive already
+     * escaped from SearchTransformer, so they are inserted as-is here (escaping
+     * again would render visible entities).
+     */
+    var searchTypeLabels = {
+        'asset': '{{ trans('general.asset') }}',
+        'accessory': '{{ trans('general.accessory') }}',
+        'component': '{{ trans('general.component') }}',
+        'consumable': '{{ trans('general.consumable') }}',
+        'location': '{{ trans('general.location') }}',
+        'category': '{{ trans('general.category') }}',
+        'assetModel': '{{ trans('general.asset_model') }}',
+    };
+
+    var searchTypeIcons = {
+        'asset': '{{ \App\Helpers\IconHelper::icon('asset') }}',
+        'accessory': '{{ \App\Helpers\IconHelper::icon('accessory') }}',
+        'component': '{{ \App\Helpers\IconHelper::icon('component') }}',
+        'consumable': '{{ \App\Helpers\IconHelper::icon('consumable') }}',
+        'location': '{{ \App\Helpers\IconHelper::icon('location') }}',
+        'category': '{{ \App\Helpers\IconHelper::icon('category') }}',
+        'assetModel': '{{ \App\Helpers\IconHelper::icon('model') }}',
+    };
+
+    // Icon + humanized label, so mixed rows are scannable at a glance.
+    function searchTypeFormatter(value) {
+        var label = searchTypeLabels[value] || value;
+        var icon = searchTypeIcons[value];
+
+        if (!icon) {
+            return label;
+        }
+
+        return '<nobr><i class="' + icon + ' fa-fw text-muted" aria-hidden="true"></i> ' + label + '</nobr>';
+    }
+
+    // Links the cell to the row's own view page, whatever type it is.
+    function searchNameFormatter(value, row) {
+        if (value && row && row.view_url) {
+            return '<a href="' + row.view_url + '">' + value + '</a>';
+        }
+
+        return value;
+    }
+
+    // Per-row actions, branching on type via the flags the transformer sets.
+    function searchActionsFormatter(value, row) {
+        var a = (row && row.available_actions) ? row.available_actions : {};
+        var actions = '<nobr>';
+
+        if (a.checkout === true && row.checkout_url) {
+            actions += '<a href="' + row.checkout_url + '" class="btn btn-sm btn-primary hidden-print" data-tooltip="true" title="{{ trans('general.checkout') }}"><i class="fas fa-sign-out-alt" aria-hidden="true"></i><span class="sr-only">{{ trans('general.checkout') }}</span></a>&nbsp;';
+        }
+
+        if (a.checkin === true && row.checkin_url) {
+            actions += '<a href="' + row.checkin_url + '" class="btn btn-sm btn-info hidden-print" data-tooltip="true" title="{{ trans('general.checkin') }}"><i class="fas fa-sign-in-alt" aria-hidden="true"></i><span class="sr-only">{{ trans('general.checkin') }}</span></a>&nbsp;';
+        }
+
+        if (a.print === true && row.print_url) {
+            actions += '<a href="' + row.print_url + '" class="btn btn-sm btn-default hidden-print" data-tooltip="true" title="{{ trans('label-printer.print_label') }}"><i class="fas fa-print" aria-hidden="true"></i><span class="sr-only">{{ trans('label-printer.print_label') }}</span></a>';
+        }
+
+        return actions + '</nobr>';
+    }
 
     var child_formatters = [
         ['kits', 'models'],
