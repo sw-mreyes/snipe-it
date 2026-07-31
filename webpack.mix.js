@@ -135,3 +135,14 @@ mix
         ],
         'public/js/dist/bootstrap-table.js'
  ).version();
+/**
+ * Reservations (custom fork feature)
+ *
+ * Two standalone bundles, loaded only on the reservation pages rather than in
+ * the global app bundle: the calendar pulls in FullCalendar, which is large and
+ * needed on exactly one page.
+ */
+mix
+  .js('./resources/assets/js/reservations-calendar.js', 'public/js/dist')
+  .js('./resources/assets/js/reservations-form.js', 'public/js/dist')
+  .version();

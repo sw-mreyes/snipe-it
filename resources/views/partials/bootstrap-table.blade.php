@@ -2680,6 +2680,7 @@
         'maintenanceTypes',
         'manufacturers',
         'models',
+        'reservations',
         'statuslabels',
         'suppliers',
         'users',
@@ -2721,6 +2722,47 @@
         actions += '</nobr>';
         return actions;
     };
+
+    /*
+     * Reservations (custom fork feature).
+     *
+     * Values arrive already escaped from ReservationsTransformer, so they are
+     * inserted as-is (escaping again would render visible entities).
+     */
+
+    // The reserved-for user object {id, name}.
+    function reservationUserFormatter(value) {
+        if (value && value.name) {
+            return '<a href="{{ config('app.url') }}/users/' + value.id + '">' + value.name + '</a>';
+        }
+
+        return '';
+    }
+
+    // The reserved assets, linked individually.
+    function reservationAssetsFormatter(value) {
+        if (!value || !value.length) {
+            return '';
+        }
+
+        return value.map(function (asset) {
+            // `label` is resolved server-side (name, else tag, else #id).
+            var label = asset.label ? asset.label : asset.asset_tag;
+            return '<a href="{{ config('app.url') }}/hardware/' + asset.id + '">' + label + '</a>';
+        }).join(', ');
+    }
+
+    // active / upcoming / past, badged to match the detail page.
+    function reservationStatusFormatter(value) {
+        var labels = {
+            'active': ['success', '{{ trans('reservations.status.active') }}'],
+            'upcoming': ['info', '{{ trans('reservations.status.upcoming') }}'],
+            'past': ['default', '{{ trans('reservations.status.past') }}'],
+        };
+        var badge = labels[value];
+
+        return badge ? '<span class="label label-' + badge[0] + '">' + badge[1] + '</span>' : '';
+    }
 
     /*
      * Global search (custom fork feature).
