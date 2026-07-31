@@ -468,6 +468,11 @@
                 </x-info-panel>
             </x-box>
 
+            {{-- Reservations for this asset (custom fork feature) --}}
+            @can('view', \App\Models\Asset::class)
+                @include('partials.asset-reservations', ['asset' => $asset])
+            @endcan
+
         </x-page-column>
 
     </x-container>
