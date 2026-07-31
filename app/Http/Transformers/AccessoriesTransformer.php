@@ -118,6 +118,8 @@ class AccessoriesTransformer
             'bulk_selectable' => [
                 'delete' => $accessory->checkouts_count === 0,
             ],
+            // Network label printing (custom fork feature): URL, or false when not permitted.
+            'network_print' => Gate::allows('view', $accessory) ? route('network-label.accessory', $accessory->id) : false,
         ];
 
         $permissions_array['user_can_checkout'] = false;

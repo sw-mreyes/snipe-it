@@ -198,6 +198,8 @@ class AssetsTransformer
                 'labels' => $asset->deleted_at == '',
                 'restore' => ($asset->deleted_at != '' && Gate::allows('create', Asset::class)),
             ],
+            // Network label printing (custom fork feature): URL, or false when not permitted.
+            'network_print' => Gate::allows('view', $asset) ? route('network-label.asset', $asset->id) : false,
         ];
 
         if (request('components') == 'true') {

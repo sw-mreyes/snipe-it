@@ -108,6 +108,8 @@ class ConsumablesTransformer
             'clone' => (Gate::allows('clone', $consumable) && ($consumable->deleted_at == '')),
             'request' => (bool) $consumable->requestable && ! $userHasOpenRequest,
             'cancel' => (bool) $consumable->requestable && $userHasOpenRequest,
+            // Network label printing (custom fork feature): URL, or false when not permitted.
+            'network_print' => Gate::allows('view', $consumable) ? route('network-label.consumable', $consumable->id) : false,
         ];
         $array += $permissions_array;
 

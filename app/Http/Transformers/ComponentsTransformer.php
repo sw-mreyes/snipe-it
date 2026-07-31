@@ -104,6 +104,8 @@ class ComponentsTransformer
             'delete' => $component->isDeletable(),
             'request' => (bool) $component->requestable && ! $userHasOpenRequest,
             'cancel' => (bool) $component->requestable && $userHasOpenRequest,
+            // Network label printing (custom fork feature): URL, or false when not permitted.
+            'network_print' => Gate::allows('view', $component) ? route('network-label.component', $component->id) : false,
         ];
         $array += $permissions_array;
 

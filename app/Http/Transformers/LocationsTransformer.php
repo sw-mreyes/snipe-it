@@ -92,6 +92,8 @@ class LocationsTransformer
                 ],
                 'clone' => (Gate::allows('clone', $location) && ($location->deleted_at == '')),
                 'restore' => (Gate::allows('create', Location::class) && ($location->deleted_at != '')),
+                // Network label printing (custom fork feature): URL, or false when not permitted.
+                'network_print' => Gate::allows('view', $location) ? route('network-label.location', $location->id) : false,
             ];
 
             $array += $permissions_array;

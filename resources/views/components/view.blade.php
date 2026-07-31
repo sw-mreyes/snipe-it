@@ -73,6 +73,7 @@
                         <x-button.edit :item="$snipe_component" :route="route('components.edit', $snipe_component->id)"/>
                         <x-button.clone :item="$snipe_component" :route="route('components.clone.create', $snipe_component->id)"/>
                         <x-button.checkout :item="$snipe_component" :route="route('components.checkout.show', $snipe_component->id)" />
+                        <x-button.network-label :item="$snipe_component" :route="route('network-label.component', $snipe_component->id)"/>
                         @can('update', $snipe_component)
                             @php $lastOrder = $snipe_component->lastOrderDefaults(); @endphp
                             <button type="button"
