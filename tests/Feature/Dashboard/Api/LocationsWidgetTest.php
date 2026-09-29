@@ -67,6 +67,22 @@ class LocationsWidgetTest extends TestCase
         $this->assertFalse($row['available_actions']['view']);
     }
 
+    public function test_stale_sort_column_for_type_the_viewer_cannot_see_falls_back()
+    {
+        // Regression: bs-table persists the last-clicked sort column
+        // in localStorage, which can name a *_count field the current
+        // caller does not have. Before the allowlist tracked the
+        // withCount list, that URL blew up with a 42S22 unknown-column
+        // error mid-render. Falling back to the default (name) keeps
+        // the widget alive.
+        Location::factory()->count(2)->create();
+
+        Passport::actingAs(User::factory()->viewComponents()->create());
+
+        $this->getJson(route('api.dashboard.locations', ['sort' => 'accessories_count', 'order' => 'desc']))
+            ->assertOk();
+    }
+
     public function test_search_and_filter_params_are_ignored()
     {
         Location::factory()->count(3)->create();

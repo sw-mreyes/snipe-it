@@ -54,8 +54,10 @@ class CompaniesWidgetTest extends TestCase
         // widening that leaks past what the widget renders. Extend
         // this list intentionally when adding a widget column, not
         // accidentally by extending the transformer.
-        $allowed = ['id', 'name', 'available_actions', 'accessories_count'];
-        $this->assertSame(sort($allowed) ? $allowed : $allowed, array_values(collect(array_keys($row))->sort()->values()->all()));
+        $allowed = ['id', 'name', 'tag_color', 'available_actions', 'accessories_count'];
+        sort($allowed);
+        $actual = collect(array_keys($row))->sort()->values()->all();
+        $this->assertSame($allowed, $actual);
         $this->assertFalse($row['available_actions']['view']);
     }
 
@@ -70,6 +72,17 @@ class CompaniesWidgetTest extends TestCase
             ->json('rows.0');
 
         $this->assertTrue($row['available_actions']['view']);
+    }
+
+    public function test_stale_sort_column_for_type_the_viewer_cannot_see_falls_back()
+    {
+        // See LocationsWidgetTest for full rationale.
+        Company::factory()->count(2)->create();
+
+        Passport::actingAs(User::factory()->viewComponents()->create());
+
+        $this->getJson(route('api.dashboard.companies', ['sort' => 'accessories_count', 'order' => 'desc']))
+            ->assertOk();
     }
 
     public function test_search_and_filter_params_are_ignored()

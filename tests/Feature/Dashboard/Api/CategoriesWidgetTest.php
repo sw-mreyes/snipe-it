@@ -71,6 +71,20 @@ class CategoriesWidgetTest extends TestCase
         $this->assertFalse($row['available_actions']['view']);
     }
 
+    public function test_stale_sort_column_for_type_the_viewer_cannot_see_falls_back()
+    {
+        // See LocationsWidgetTest for full rationale. localStorage-
+        // persisted bs-table sort state can name a *_count column the
+        // current caller does not have. Falling back to name keeps
+        // the widget rendering.
+        Category::factory()->count(2)->create(['category_type' => 'component']);
+
+        Passport::actingAs(User::factory()->viewComponents()->create());
+
+        $this->getJson(route('api.dashboard.categories', ['sort' => 'accessories_count', 'order' => 'desc']))
+            ->assertOk();
+    }
+
     public function test_search_and_filter_params_are_ignored()
     {
         Category::factory()->count(3)->create(['category_type' => 'accessory']);
