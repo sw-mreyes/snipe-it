@@ -301,7 +301,7 @@ class GoogleWorkspaceAdapter extends SyncAdapter implements PushableAdapter
             return false;
         }
 
-        $payload = $this->buildPushPayload($asset);
+        $payload = $this->buildOutgoingPayload($asset);
         $this->applyComposedNotesToPayload($asset, $payload);
 
         if ($payload === []) {
@@ -337,9 +337,15 @@ class GoogleWorkspaceAdapter extends SyncAdapter implements PushableAdapter
      * direction UI appear here. This is the base payload before
      * composed notes are spliced in.
      *
+     * Named distinct from the SyncAdapter base's buildPushPayload()
+     * template hook because that hook returns a `[payload, touched]`
+     * for adapters that route through pushViaSinglePayload().
+     * This adapter's push() dispatches directly and only needs the
+     * payload half, so the shape and name stay separate.
+     *
      * @return array<string, mixed>
      */
-    protected function buildPushPayload(Asset $asset): array
+    private function buildOutgoingPayload(Asset $asset): array
     {
         $payload = [];
 

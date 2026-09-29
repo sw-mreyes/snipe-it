@@ -69,7 +69,7 @@ class GoogleWorkspaceClient
                 'projection' => 'FULL',
                 'maxResults' => $pageSize,
             ];
-            if (is_string($pageToken) && $pageToken !== '') {
+            if (is_string($pageToken)) {
                 $params['pageToken'] = $pageToken;
             }
 

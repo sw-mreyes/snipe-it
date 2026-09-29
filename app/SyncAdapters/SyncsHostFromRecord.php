@@ -57,7 +57,22 @@ trait SyncsHostFromRecord
                     throw new RuntimeException('Failed to save asset during heartbeat-only sync.');
                 }
             } else {
-                $asset->saveOrFail();
+                // Asset::save() augments $this->rules with the model's
+                // fieldset validation rules INSIDE the save call, so
+                // Watson's saveOrFail() upfront isInvalid() check runs
+                // before the augmentation and passes. It then delegates
+                // to Eloquent's saveOrFail() which wraps save() in a
+                // transaction WITHOUT re-checking the return value, so
+                // when the ValidatingObserver aborts the save (returns
+                // false) the whole chain silently returns false and the
+                // sync counts the record as processed. Calling save()
+                // directly and checking the boolean mirrors
+                // createShellAsset()'s existing guard and surfaces the
+                // real validation error to the pull loop's catch.
+                if (! $asset->save()) {
+                    $errors = implode('; ', $asset->getErrors()->all()) ?: 'unknown validation failure';
+                    throw new RuntimeException("could not update asset for {$record->sourceKey} record {$record->sourceId}: {$errors}");
+                }
             }
 
             // External-source column writes gather during the mapping
@@ -1261,7 +1276,14 @@ trait SyncsHostFromRecord
         if ($user->location_id !== null) {
             $asset->location_id = $user->location_id;
         }
-        $asset->saveOrFail();
+        // See #19726 note above the primary write site. saveOrFail()
+        // returns false rather than throwing when Asset's fieldset
+        // validation aborts the save, so we check save()'s return
+        // and raise for the pull loop's catch to log.
+        if (! $asset->save()) {
+            $errors = implode('; ', $asset->getErrors()->all()) ?: 'unknown validation failure';
+            throw new RuntimeException("could not persist sync-driven checkout on asset {$asset->id}: {$errors}");
+        }
 
         $log = new Actionlog;
         $log->item_id = $asset->id;
@@ -1289,7 +1311,11 @@ trait SyncsHostFromRecord
         $asset->assigned_to = null;
         $asset->assigned_type = null;
         $asset->last_checkin = now();
-        $asset->saveOrFail();
+        // See #19726 note above the primary write site.
+        if (! $asset->save()) {
+            $errors = implode('; ', $asset->getErrors()->all()) ?: 'unknown validation failure';
+            throw new RuntimeException("could not persist sync-driven checkin on asset {$asset->id}: {$errors}");
+        }
 
         $log = new Actionlog;
         $log->item_id = $asset->id;
