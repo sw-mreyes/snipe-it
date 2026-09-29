@@ -43,10 +43,10 @@
                      can't view any of them, since NeedsAttention's
                      mount() already zeros the count for them
                      anyway. Prevents an "Unaccepted acceptances 0"
-                     line showing to e.g. a users-only viewer. --}}
+                     line showing to a users-only viewer. --}}
                 <li class="list-group-item">
                     <a href="{{ route('reports/unaccepted_assets') }}">
-                        <x-icon type="asset" class="fa-fw"/>
+                        <x-icon type="signature" class="fa-fw"/>
                         <span class="dashboard-attention-label">{{ trans('general.dashboard_unaccepted_assets') }}</span>
                         <span class="badge dashboard-attention-count">{{ number_format($pendingAcceptancesCount) }}</span>
                     </a>
@@ -55,8 +55,8 @@
             @can('canCheckoutAtLeastOneItemType')
                 <li class="list-group-item">
                     <a href="{{ route('requests.index') }}">
-                        <x-icon type="asset" class="fa-fw"/>
-                        <span class="dashboard-attention-label">{{ trans('general.dashboard_pending_requests') }}</span>
+                        <i class="fa-solid fa-boxes-packing fa-fw" aria-hidden="true"></i>
+                        <span class="dashboard-attention-label">{{ trans('general.pending_requests') }}</span>
                         <span class="badge dashboard-attention-count">{{ number_format($pendingRequestsCount) }}</span>
                     </a>
                 </li>
