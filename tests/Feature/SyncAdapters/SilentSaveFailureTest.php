@@ -5,8 +5,6 @@ namespace Tests\Feature\SyncAdapters;
 use App\Models\Asset;
 use App\Models\AssetExternalSource;
 use App\Models\AssetModel;
-use App\Models\CustomField;
-use App\Models\CustomFieldset;
 use App\Models\Statuslabel;
 use App\Models\SyncAdapterConfig;
 use App\Models\SyncAdapterInstance;
@@ -14,7 +12,6 @@ use App\SyncAdapters\HostInventoryRecord;
 use App\SyncAdapters\SyncAdapter;
 use Illuminate\Support\Facades\Crypt;
 use Tests\TestCase;
-
 
 class SilentSaveFailureTest extends TestCase
 {
@@ -25,51 +22,39 @@ class SilentSaveFailureTest extends TestCase
         Statuslabel::factory()->rtd()->create();
     }
 
-    public function test_update_path_throws_when_extra_mapping_fails_fieldset_validation(): void
+    public function test_update_path_throws_when_asset_save_fails_validation(): void
     {
-        // Build a fieldset with a MAC-format text custom field, attach
-        // it to the AssetModel the sync will resolve, and pre-create
-        // the asset + external_source row so the sync hits the UPDATE
-        // branch (not the create-shell branch, which already has its
-        // own guard).
-        $macField = CustomField::factory()->create([
-            'element' => 'text',
-            'name' => 'Fleet MAC',
-            'format' => 'MAC',
-        ]);
-        $fieldset = CustomFieldset::factory()->create();
-        $fieldset->fields()->attach($macField->id, ['required' => 0, 'order' => 1]);
+        // Trigger a save-time validation failure via the asset_tag
+        // unique_undeleted rule. Create two pre-existing assets, then
+        // sync a record that tries to overwrite one asset's tag with
+        // a value already taken by the other. The save-time
+        // ValidatingObserver aborts the save with return false, and
+        // pre-fix syncFromRecord swallowed the boolean and counted
+        // the record as processed. Uses no custom fields, so no
+        // ALTER TABLE fires inside the test transaction (which
+        // implicitly commits on MySQL / MariaDB and corrupts the
+        // savepoint state under LazilyRefreshDatabase).
+        $model = AssetModel::factory()->create(['name' => 'Generic Laptop']);
+        Asset::factory()->create(['asset_tag' => 'COLLIDE-ME', 'model_id' => $model->id]);
+        $target = Asset::factory()->create(['asset_tag' => 'ORIG-TAG', 'model_id' => $model->id]);
 
-        $model = AssetModel::factory()->create([
-            'name' => 'Generic Laptop',
-            'fieldset_id' => $fieldset->id,
-        ]);
-        $asset = Asset::factory()->create([
-            'name' => 'existing-host',
-            'model_id' => $model->id,
-        ]);
-
-        $instance = $this->configuredFleetInstance();
-        SyncAdapterConfig::put($instance->id, 'mapping.fleet_uuid', 'custom:'.$macField->id);
-
+        $this->configuredFleetInstance();
         AssetExternalSource::create([
-            'asset_id' => $asset->id,
+            'asset_id' => $target->id,
             'source' => 'fleet',
-            'external_id' => 'fleet-update-record',
+            'external_id' => 'fleet-collide-record',
         ]);
 
-        // Sync a record whose uuid extra will land on the MAC-format
-        // custom field. The MAC format validation rejects
-        // "not-a-mac-address", the ValidatingObserver aborts the
-        // save with return false, and pre-fix the whole thing was
-        // swallowed.
+        // Record's assetTag targets native:asset_tag by default. Writing
+        // "COLLIDE-ME" onto the target asset trips unique_undeleted
+        // against the first asset created above.
         $record = new HostInventoryRecord(
             sourceKey: 'fleet',
-            sourceId: 'fleet-update-record',
-            hostname: 'existing-host',
-            hardwareSerial: 'SN-EXIST',
+            sourceId: 'fleet-collide-record',
+            hostname: 'target-host',
+            hardwareSerial: 'SN-TARGET',
             hardwareModel: 'Generic Laptop',
-            extra: ['fleet_uuid' => 'not-a-mac-address'],
+            assetTag: 'COLLIDE-ME',
         );
 
         $thrown = null;
@@ -84,11 +69,11 @@ class SilentSaveFailureTest extends TestCase
         // failure so the pull loop's log line names the offending
         // record and the reason. Prior to the fix, no exception
         // reached this point.
-        $this->assertStringContainsString('could not update asset for fleet record fleet-update-record', $thrown->getMessage());
+        $this->assertStringContainsString('could not update asset for fleet record fleet-collide-record', $thrown->getMessage());
 
-        // Invalid value must not have made it into the DB.
-        $asset->refresh();
-        $this->assertNotSame('not-a-mac-address', $asset->{$macField->db_column});
+        // Duplicate tag must not have been persisted onto the target.
+        $target->refresh();
+        $this->assertSame('ORIG-TAG', $target->asset_tag);
     }
 
     public function test_valid_update_path_still_persists(): void
