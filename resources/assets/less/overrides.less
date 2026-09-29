@@ -3750,6 +3750,14 @@ dl.table-display {
   .dashboard-row-compact > [class*="col-"] > .box > .box-body {
     max-height: 400px;
     overflow-y: auto;
+    // Suppress bs-table's horizontal scrollbar on widget tables.
+    // The bootstrap-table plugin wraps every table in a
+    // .fixed-table-container that defaults to overflow-x: auto, so
+    // when column widths sum to even 1px over the container the
+    // widget grows a spurious horizontal scrollbar. Cells wrap or
+    // clip cleanly at this width, so hiding the overflow is
+    // preferable to letting the scrollbar eat vertical space.
+    overflow-x: hidden;
   }
 
   // .dashboard-chart-body opts a box-body out of the compact scroll
@@ -3762,6 +3770,16 @@ dl.table-display {
   .dashboard-row-compact > [class*="col-"] > .box > .box-body.dashboard-chart-body {
     max-height: none;
     overflow: visible;
+  }
+
+  // bs-table generates a .fixed-table-container inside each widget
+  // that also carries overflow-x: auto by default. Belt-and-braces
+  // with the parent box-body rule above so a compact widget never
+  // grows a horizontal scrollbar regardless of which layer bs-table
+  // decides to overflow at.
+  .dashboard-row-compact .fixed-table-container,
+  .dashboard-row-compact .fixed-table-body {
+    overflow-x: hidden;
   }
 }
 
