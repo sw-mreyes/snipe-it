@@ -5,6 +5,11 @@ namespace App\Http\Controllers\Api;
 use App\Helpers\Helper;
 use App\Http\Controllers\Controller;
 use App\Http\Transformers\LowStockTransformer;
+use App\Models\Accessory;
+use App\Models\AssetModel;
+use App\Models\Component;
+use App\Models\Consumable;
+use App\Models\License;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -30,10 +35,24 @@ class LowStockController extends Controller
      */
     private const SORTABLE_COLUMNS = ['name', 'type', 'qty', 'min_amt', 'remaining', 'percent'];
 
+    /**
+     * Plural type discriminator from Helper::checkLowInventory() rows
+     * mapped to the model class the row represents. Used to filter
+     * results by per-type view permission so an accessory-only viewer
+     * doesn't see consumable / component rows through this widget.
+     */
+    private const TYPE_TO_CLASS = [
+        'consumables' => Consumable::class,
+        'accessories' => Accessory::class,
+        'components' => Component::class,
+        'models' => AssetModel::class,
+        'licenses' => License::class,
+    ];
+
     public function index(Request $request): JsonResponse|array
     {
         // Base access gate. Anyone who can view any of the source types
-        // can see the widget; per-row permissions (adjust_quantity)
+        // can see the widget. Per-row permissions (adjust_quantity)
         // still gate the action buttons inside the transformer.
         $viewer = auth()->user();
         $canView = false;
@@ -48,6 +67,17 @@ class LowStockController extends Controller
         }
 
         $rows = Helper::checkLowInventory();
+
+        // Filter rows to types the caller can view so a viewer with
+        // only e.g. accessories.view doesn't get consumable / component
+        // rows leaked through the shared widget endpoint. Rows whose
+        // plural type isn't in the map (future addition) fall through
+        // gated on nothing, matching pre-filter behavior.
+        $rows = array_values(array_filter(
+            $rows,
+            fn ($row) => ! isset(self::TYPE_TO_CLASS[$row['type']])
+                || $viewer->can('view', self::TYPE_TO_CLASS[$row['type']]),
+        ));
 
         $search = trim((string) $request->input('search', ''));
         if ($search !== '') {
