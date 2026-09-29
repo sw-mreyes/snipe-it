@@ -68,10 +68,10 @@
                         </thead>
                     </table>
                 </div>
-                <div class="text-center col-md-12" style="padding-top: 10px;">
-                    <a href="{{ route('categories.index') }}" class="btn btn-theme btn-sm" style="width: 100%">{{ trans('general.viewall') }}</a>
-                </div>
             </div>
+        </div>
+        <div class="box-footer text-center">
+            <a href="{{ route('categories.index') }}" class="btn btn-theme btn-sm btn-block">{{ trans('general.viewall') }}</a>
         </div>
     </div>
 @endif
