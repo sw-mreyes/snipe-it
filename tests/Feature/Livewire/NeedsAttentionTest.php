@@ -19,12 +19,16 @@ use Tests\TestCase;
  * Coverage for the dashboard's Needs Attention Livewire widget.
  * Focuses on:
  *
- *   - boot() authorization: hasAccess('admin') gate refuses
- *     unauthenticated + non-admin users so a snapshot-replay POST
- *     can't leak counts they'd never see in the parent view.
+ *   - boot() authorization: canViewUsersAndCheckoutables gate
+ *     refuses users who can't view any HasCalendarEvents source so
+ *     a snapshot-replay POST can't leak counts they'd never see in
+ *     the parent view.
  *   - Placeholder shape: renders a skeleton with the same title +
  *     list-group chrome so hydration doesn't visibly shift the row.
  *   - Count accuracy: each of the eight counts reflects seeded data.
+ *   - Per-type scoping: a caller with a narrow view grant (e.g.
+ *     accessories.view only) gets zero for the counts covering
+ *     types they can't see, instead of a leaked global count.
  *   - FMCS scoping: a company-scoped admin sees only the counts
  *     matching rows in their own company, not cross-company totals.
  */
@@ -32,10 +36,10 @@ class NeedsAttentionTest extends TestCase implements TestsFullMultipleCompaniesS
 {
     public function test_requires_permission(): void
     {
-        // Livewire's test helper intercepts HttpExceptions raised in
-        // boot() and surfaces them as test failures rather than a
-        // response status, so call boot() directly. Non-admin user
-        // must trip the abort_unless.
+        // A user with zero view grants fails canViewUsersAndCheckoutables
+        // and boot() aborts with 403. Livewire's test helper intercepts
+        // HttpExceptions raised in boot() and surfaces them as test
+        // failures rather than a response status, so call boot() directly.
         $this->actingAs(User::factory()->create());
 
         try {
@@ -46,16 +50,49 @@ class NeedsAttentionTest extends TestCase implements TestsFullMultipleCompaniesS
         }
     }
 
-    public function test_boot_permits_admin(): void
+    public function test_boot_permits_users_who_can_view_any_source(): void
     {
-        // Superuser passes hasAccess('admin'). boot() should return
-        // silently (no throw).
-        $this->actingAs(User::factory()->superuser()->create());
+        // A non-admin who can view at least one HasCalendarEvents
+        // source (Asset here via viewAssets()) passes the widened
+        // gate. boot() should return silently.
+        $this->actingAs(User::factory()->viewAssets()->create());
 
         (new NeedsAttention)->boot();
 
         // Reaching this line means boot() didn't throw.
         $this->assertTrue(true);
+    }
+
+    public function test_boot_permits_admin(): void
+    {
+        // Superuser trivially passes canViewUsersAndCheckoutables.
+        $this->actingAs(User::factory()->superuser()->create());
+
+        (new NeedsAttention)->boot();
+
+        $this->assertTrue(true);
+    }
+
+    public function test_counts_return_zero_for_types_the_caller_cannot_view(): void
+    {
+        // Seed data that would populate every asset / license /
+        // maintenance count. A user with only accessories.view
+        // should see zero for all of them, since none of those
+        // seeds belong to a type they can view.
+        $farFuture = now()->addYears(5)->format('Y-m-d');
+
+        Asset::factory()->count(3)->create(['next_audit_date' => now()->subDays(5)])
+            ->each(fn ($asset) => $asset->forceFill(['asset_eol_date' => $farFuture])->save());
+        License::factory()->count(2)->create(['expiration_date' => now()->addDays(10)->format('Y-m-d')]);
+
+        Livewire::withoutLazyLoading();
+        Livewire::actingAs(User::factory()->viewAccessories()->create())
+            ->test(NeedsAttention::class)
+            ->assertSet('overdueAudits', 0)
+            ->assertSet('assetsPastEol', 0)
+            ->assertSet('licensesExpiringSoon', 0)
+            ->assertSet('overdueMaintenances', 0)
+            ->assertSet('usersOffboardingSoon', 0);
     }
 
     public function test_the_component_renders_for_admin(): void
