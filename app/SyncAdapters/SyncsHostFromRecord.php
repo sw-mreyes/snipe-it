@@ -833,6 +833,22 @@ trait SyncsHostFromRecord
             return;
         }
 
+        // #19725: a boolean extra with a false value arrives here as
+        // the string '0' via stringifyExtra(). Single-option checkbox
+        // custom fields (option list = ['1']) reject '0' through the
+        // `checkboxes` validator and blow up the whole asset save with
+        // "contains invalid options", so nothing on that device syncs.
+        // Empty string is what an unchecked checkbox stores natively
+        // and passes validation cleanly, so translate here. Checkbox
+        // fields that DO list '0' as a valid option (a two-option
+        // "on/off" setup) still get the raw '0' passed through.
+        if ($field->element === 'checkbox' && $value === '0') {
+            $options = $field->formatFieldValuesAsArray();
+            if (! in_array('0', $options, true)) {
+                $value = '';
+            }
+        }
+
         $asset->{$field->db_column} = $value;
     }
 
