@@ -8,6 +8,7 @@ use App\Models\CalendarEvent;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 /**
  * Unified read endpoint for the calendar page. Queries the
@@ -60,7 +61,21 @@ class CalendarEventsController extends Controller
         $eventTypes = $this->resolveEventTypes($request);
         $limit = $this->resolveLimit($request);
 
-        $baseQuery = $this->buildBaseQuery($rangeStart, $rangeEnd, $eventTypes);
+        // Pre-filter the raw query to source types the caller can
+        // view at all. This keeps `total` (and therefore the widget's
+        // "+N more" label) from counting rows the per-row policy
+        // check below would strip anyway. Without this cap a scoped
+        // viewer sees inflated remaining-count labels (e.g. "+26 more"
+        // when only 2 events in the window are actually viewable to
+        // them). Per-row FMCS / location checks still run inside
+        // filterAuthorizedRows so this is only a coarse first pass.
+        $viewableSourceTypes = array_values(array_filter(
+            CalendarEvent::sourceModels(),
+            fn (string $sourceClass) => Gate::allows('view', $sourceClass),
+        ));
+
+        $baseQuery = $this->buildBaseQuery($rangeStart, $rangeEnd, $eventTypes)
+            ->whereIn('source_type', $viewableSourceTypes);
         $total = (clone $baseQuery)->count();
         $rows = $baseQuery->orderBy('start')->limit($limit)->get();
 

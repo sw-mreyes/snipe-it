@@ -43,6 +43,7 @@ use App\Livewire\Importer;
 use App\Mail\CheckoutComponentMail;
 use App\Models\MaintenanceType;
 use App\Models\ReportTemplate;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Tabuna\Breadcrumbs\Trail;
 
@@ -823,18 +824,40 @@ Route::group(['prefix' => 'reports', 'middleware' => ['auth']], function () {
     Route::get(
         'activity', [ReportsController::class, 'getActivityReport'])
         ->name('reports.activity')
-        ->breadcrumbs(fn (Trail $trail) => $trail->parent('home')
-            ->push(trans('general.reports'), route('reports.index'))
-            ->push(trans('general.activity_report'), route('reports.activity')));
+        // Scoped viewers reach this page through the dashboard Recent
+        // Activity widget's View-all button but do not hold reports.view,
+        // so a "Reports" middle crumb linking to reports.index would 403
+        // on click. Emit it only when the caller can reach reports.index.
+        // Trail has no ->when() helper, so use a plain if inside a
+        // multi-line closure.
+        ->breadcrumbs(function (Trail $trail) {
+            $trail->parent('home');
+            if (Gate::allows('reports.view')) {
+                $trail->push(trans('general.reports'), route('reports.index'));
+            }
+            $trail->push(trans('general.activity_report'), route('reports.activity'));
+
+            return $trail;
+        });
 
     Route::post('activity', [ReportsController::class, 'postActivityReport'])
         ->name('reports.activity.post');
 
     Route::get('unaccepted_assets/{deleted?}', [ReportsController::class, 'getAssetAcceptanceReport'])
         ->name('reports/unaccepted_assets')
-        ->breadcrumbs(fn (Trail $trail) => $trail->parent('home')
-            ->push(trans('general.reports'), route('reports.index'))
-            ->push(trans('general.unaccepted_asset_report'), route('reports/unaccepted_assets')));
+        // Same reasoning as reports.activity above: scoped viewers
+        // arrive via the Needs Attention widget's link and would 403
+        // if we exposed a "Reports" middle crumb linking to
+        // reports.index.
+        ->breadcrumbs(function (Trail $trail) {
+            $trail->parent('home');
+            if (Gate::allows('reports.view')) {
+                $trail->push(trans('general.reports'), route('reports.index'));
+            }
+            $trail->push(trans('general.unaccepted_asset_report'), route('reports/unaccepted_assets'));
+
+            return $trail;
+        });
 
     Route::post('unaccepted_assets/sent_reminder', [ReportsController::class, 'sentAssetAcceptanceReminder'])
         ->name('reports/unaccepted_assets_sent_reminder');

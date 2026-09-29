@@ -17,6 +17,7 @@ use App\Models\License;
 use App\Models\LicenseSeat;
 use App\Models\Maintenance;
 use App\Models\User;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 use Livewire\Attributes\Lazy;
 use Livewire\Component;
@@ -68,10 +69,12 @@ class NeedsAttention extends Component
 
     public function boot(): void
     {
-        // This may change in the future if we ever want to show the widget to non-admins, but for now the eight
-        // counts are all admin-only, so gate it here to avoid any
-        // unnecessary queries for non-admins. Livewire's boot() runs before mount() so the eight queries
-        abort_unless(auth()->check() && auth()->user()->hasAccess('admin'), 403);
+        // Matches the DashboardController::index gate. Without this a
+        // non-viewer could POST /livewire/update against a captured
+        // snapshot and hydrate the widget even though the parent view
+        // would 302 them away, since route-level middleware doesn't
+        // guard snapshot replays. See feedback_livewire_component_authorization.
+        abort_unless(auth()->check() && Gate::allows('canViewUsersAndCheckoutables'), 403);
     }
 
     public function mount(): void
@@ -79,29 +82,51 @@ class NeedsAttention extends Component
         $todayStart = now()->startOfDay();
         $inThirtyDays = now()->addDays(30)->endOfDay();
 
-        // Range comparisons (not whereDate) so the indexes on
-        // these date columns can actually be used - see the
-        // 2026_08_14_170000 migration that adds them for every
-        // column referenced below. whereDate's DATE() wrap would
-        // sidestep the index.
-        $this->overdueAudits = Asset::where('next_audit_date', '<', $todayStart)->count();
-        $this->overdueCheckins = Asset::where('expected_checkin', '<', $todayStart)
-            ->whereNotNull('assigned_to')
-            ->count();
-        $this->overdueMaintenances = Maintenance::where('expected_completion_date', '<', $todayStart)
-            ->whereNull('completed_at')
-            ->count();
-        $this->licensesExpiringSoon = License::whereBetween('expiration_date', [$todayStart, $inThirtyDays])->count();
-        $this->assetsPastEol = Asset::where('asset_eol_date', '<', $todayStart)->count();
-        $this->usersOffboardingSoon = User::whereBetween('end_date', [$todayStart, $inThirtyDays])->count();
+        // Every count is gated by the caller's per-type view
+        // permission. A non-admin who reaches this widget through the
+        // widened dashboard gate but only holds `accessories.view`
+        // sees zero for the Asset / License / User counts rather than
+        // a leaked global count. Range comparisons (not whereDate) so
+        // the indexes on these date columns can actually be used, see
+        // the 2026_08_14_170000 migration that adds them for every
+        // column referenced below.
+        if (Gate::allows('view', Asset::class)) {
+            $this->overdueAudits = Asset::where('next_audit_date', '<', $todayStart)->count();
+            $this->overdueCheckins = Asset::where('expected_checkin', '<', $todayStart)
+                ->whereNotNull('assigned_to')
+                ->count();
+            $this->assetsPastEol = Asset::where('asset_eol_date', '<', $todayStart)->count();
+        }
 
-        // Pending checkout acceptances - matches ReportsController's
-        // pending-acceptance count on /reports/unaccepted_assets.
-        // whereHasMorph applies each checkoutable type's own
-        // CompanyableTrait global scope so FMCS scoping stays consistent.
-        $this->pendingAcceptancesCount = CheckoutAcceptance::pending()
-            ->whereHasMorph('checkoutable', [Asset::class, LicenseSeat::class, Accessory::class, SnipeComponent::class, Consumable::class])
-            ->count();
+        if (Gate::allows('view', Maintenance::class)) {
+            $this->overdueMaintenances = Maintenance::where('expected_completion_date', '<', $todayStart)
+                ->whereNull('completed_at')
+                ->count();
+        }
+
+        if (Gate::allows('view', License::class)) {
+            $this->licensesExpiringSoon = License::whereBetween('expiration_date', [$todayStart, $inThirtyDays])->count();
+        }
+
+        if (Gate::allows('view', User::class)) {
+            $this->usersOffboardingSoon = User::whereBetween('end_date', [$todayStart, $inThirtyDays])->count();
+        }
+
+        // Pending checkout acceptances. whereHasMorph applies each
+        // checkoutable type's own CompanyableTrait global scope so
+        // FMCS scoping stays consistent. Restrict the morph list to
+        // types the caller can actually view so a non-admin's count
+        // reflects what they'd see if they clicked through, matching
+        // the /reports/unaccepted_assets scoping.
+        $acceptanceTypes = array_filter(
+            [Asset::class, LicenseSeat::class, Accessory::class, SnipeComponent::class, Consumable::class],
+            fn (string $type) => Gate::allows('view', $type === LicenseSeat::class ? License::class : $type),
+        );
+        if ($acceptanceTypes !== []) {
+            $this->pendingAcceptancesCount = CheckoutAcceptance::pending()
+                ->whereHasMorph('checkoutable', $acceptanceTypes)
+                ->count();
+        }
 
         // CheckoutRequest is not itself Companyable, so the widget's
         // count would otherwise leak cross-company requests to
@@ -109,21 +134,20 @@ class NeedsAttention extends Component
         // type's own CompanyableTrait global scope (Asset is scoped,
         // AssetModel is intentionally not per its shared-catalog
         // design) so the count matches what the /requests admin queue
-        // actually renders for the current viewer. All six requestable
-        // types are enumerated so accessory / consumable / component /
-        // license requests count too now that the queue is polymorphic.
-        // pending() reads from the state machine (source of truth) instead
-        // of the pre-refactor canceled_at + fulfilled_at columns.
-        $this->pendingRequestsCount = CheckoutRequest::pending()
-            ->whereHasMorph('requestedItem', [
-                Asset::class,
-                AssetModel::class,
-                Accessory::class,
-                Consumable::class,
-                SnipeComponent::class,
-                License::class,
-            ])
-            ->count();
+        // actually renders for the current viewer. Restricted to the
+        // caller's viewable types for the same reason as the
+        // acceptance count above. pending() reads from the state
+        // machine (source of truth) instead of the pre-refactor
+        // canceled_at + fulfilled_at columns.
+        $requestTypes = array_filter(
+            [Asset::class, AssetModel::class, Accessory::class, Consumable::class, SnipeComponent::class, License::class],
+            fn (string $type) => Gate::allows('view', $type),
+        );
+        if ($requestTypes !== []) {
+            $this->pendingRequestsCount = CheckoutRequest::pending()
+                ->whereHasMorph('requestedItem', $requestTypes)
+                ->count();
+        }
     }
 
     public function placeholder(): string

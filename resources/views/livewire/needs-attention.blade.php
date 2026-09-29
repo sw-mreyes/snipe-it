@@ -33,18 +33,30 @@
                     </a>
                 </li>
             @endcan
-            <li class="list-group-item">
-                <a href="{{ route('reports/unaccepted_assets') }}">
-                    <x-icon type="asset" class="fa-fw"/>
-                    <span class="dashboard-attention-label">{{ trans('general.dashboard_unaccepted_assets') }}</span>
-                    <span class="badge dashboard-attention-count">{{ number_format($pendingAcceptancesCount) }}</span>
-                </a>
-            </li>
+            @if (Gate::allows('view', \App\Models\Asset::class)
+                 || Gate::allows('view', \App\Models\Accessory::class)
+                 || Gate::allows('view', \App\Models\Consumable::class)
+                 || Gate::allows('view', \App\Models\Component::class)
+                 || Gate::allows('view', \App\Models\License::class))
+                {{-- Unaccepted acceptances span every checkoutable
+                     type. Hide the row entirely when the caller
+                     can't view any of them, since NeedsAttention's
+                     mount() already zeros the count for them
+                     anyway. Prevents an "Unaccepted acceptances 0"
+                     line showing to a users-only viewer. --}}
+                <li class="list-group-item">
+                    <a href="{{ route('reports/unaccepted_assets') }}">
+                        <x-icon type="signature" class="fa-fw"/>
+                        <span class="dashboard-attention-label">{{ trans('general.dashboard_unaccepted_assets') }}</span>
+                        <span class="badge dashboard-attention-count">{{ number_format($pendingAcceptancesCount) }}</span>
+                    </a>
+                </li>
+            @endif
             @can('canCheckoutAtLeastOneItemType')
                 <li class="list-group-item">
                     <a href="{{ route('requests.index') }}">
-                        <x-icon type="asset" class="fa-fw"/>
-                        <span class="dashboard-attention-label">{{ trans('general.dashboard_pending_requests') }}</span>
+                        <i class="fa-solid fa-boxes-packing fa-fw" aria-hidden="true"></i>
+                        <span class="dashboard-attention-label">{{ trans('general.pending_requests') }}</span>
                         <span class="badge dashboard-attention-count">{{ number_format($pendingRequestsCount) }}</span>
                     </a>
                 </li>

@@ -223,16 +223,30 @@ class AuthServiceProvider extends ServiceProvider
                 || $user->can('checkout', License::class);
         });
 
-        // True when the user can view at least one HasCalendarEvents
-        // adopter. Named for the underlying question ("does this user
-        // have any read access to fleet items or people?") rather
-        // than a specific surface, so it reads sensibly for the
-        // calendar sidenav gate + any future consumer that wants to
-        // check the same shape. Delegates to
-        // CalendarEvent::sourceModels() so a new adopter of the
-        // HasCalendarEvents trait is picked up automatically.
+        // True when the user has any read access to a "fleet item or
+        // person" the app treats as first-class inventory. Powers the
+        // calendar sidenav gate, the dashboard's coarse admission
+        // gate, and the widened lookup-endpoint gates on Companies /
+        // Locations / Categories / Recent Activity.
+        //
+        // Two source lists are combined: HasCalendarEvents adopters
+        // (Asset, License, Maintenance, User, CheckoutRequest) so a
+        // new adopter of the trait is picked up automatically for
+        // calendar surfaces. Plus the three primary checkoutables
+        // (Accessory, Consumable, Component) that are NOT
+        // HasCalendarEvents adopters today but are still first-class
+        // inventory types. Without the second list, an accessory-only
+        // viewer would fail this gate despite the name implying they
+        // shouldn't, and the calendar sidebar would still render an
+        // empty calendar for them safely since those three don't (yet)
+        // publish calendar events.
         Gate::define('canViewUsersAndCheckoutables', function ($user) {
             foreach (CalendarEvent::sourceModels() as $sourceClass) {
+                if ($user->can('view', $sourceClass)) {
+                    return true;
+                }
+            }
+            foreach ([Accessory::class, Consumable::class, Component::class] as $sourceClass) {
                 if ($user->can('view', $sourceClass)) {
                     return true;
                 }

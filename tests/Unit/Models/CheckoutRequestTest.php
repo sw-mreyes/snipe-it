@@ -2,7 +2,11 @@
 
 namespace Tests\Unit\Models;
 
+use App\Models\Accessory;
 use App\Models\CheckoutRequest;
+use App\Models\Component;
+use App\Models\Consumable;
+use App\Models\License;
 use Tests\TestCase;
 
 class CheckoutRequestTest extends TestCase
@@ -92,5 +96,83 @@ class CheckoutRequestTest extends TestCase
             $checkoutRequest->name,
             'Property access `->name` must return the accessor value, not throw when Eloquent misinterprets name() as a relation.'
         );
+    }
+
+    public function test_calendar_url_points_at_asset_checkout_with_request_id()
+    {
+        $checkoutRequest = CheckoutRequest::factory()->forAsset()->create();
+        $asset = $checkoutRequest->requestedItem;
+
+        $url = $checkoutRequest->calendarUrl();
+
+        $this->assertStringContainsString(route('hardware.checkout.create', ['asset' => $asset->id]), $url);
+        $this->assertStringContainsString('request_id='.$checkoutRequest->id, $url);
+    }
+
+    public function test_calendar_url_points_at_asset_model_fulfill_screen_with_request_id()
+    {
+        $checkoutRequest = CheckoutRequest::factory()->forAssetModel()->create();
+        $model = $checkoutRequest->requestedItem;
+
+        $url = $checkoutRequest->calendarUrl();
+
+        $this->assertStringContainsString(route('models.fulfill-requests.create', ['model' => $model->id]), $url);
+        $this->assertStringContainsString('request_id='.$checkoutRequest->id, $url);
+    }
+
+    public function test_calendar_url_points_at_component_checkout_with_request_id()
+    {
+        $component = Component::factory()->create();
+        $checkoutRequest = CheckoutRequest::factory()->create([
+            'requestable_type' => Component::class,
+            'requestable_id' => $component->id,
+        ]);
+
+        $url = $checkoutRequest->calendarUrl();
+
+        $this->assertStringContainsString(route('components.checkout.show', ['componentID' => $component->id]), $url);
+        $this->assertStringContainsString('request_id='.$checkoutRequest->id, $url);
+    }
+
+    public function test_calendar_url_points_at_accessory_checkout_with_request_id()
+    {
+        $accessory = Accessory::factory()->create();
+        $checkoutRequest = CheckoutRequest::factory()->create([
+            'requestable_type' => Accessory::class,
+            'requestable_id' => $accessory->id,
+        ]);
+
+        $url = $checkoutRequest->calendarUrl();
+
+        $this->assertStringContainsString(route('accessories.checkout.show', ['accessory' => $accessory->id]), $url);
+        $this->assertStringContainsString('request_id='.$checkoutRequest->id, $url);
+    }
+
+    public function test_calendar_url_points_at_consumable_checkout_with_request_id()
+    {
+        $consumable = Consumable::factory()->create();
+        $checkoutRequest = CheckoutRequest::factory()->create([
+            'requestable_type' => Consumable::class,
+            'requestable_id' => $consumable->id,
+        ]);
+
+        $url = $checkoutRequest->calendarUrl();
+
+        $this->assertStringContainsString(route('consumables.checkout.show', ['consumablesID' => $consumable->id]), $url);
+        $this->assertStringContainsString('request_id='.$checkoutRequest->id, $url);
+    }
+
+    public function test_calendar_url_points_at_license_checkout_with_request_id()
+    {
+        $license = License::factory()->create();
+        $checkoutRequest = CheckoutRequest::factory()->create([
+            'requestable_type' => License::class,
+            'requestable_id' => $license->id,
+        ]);
+
+        $url = $checkoutRequest->calendarUrl();
+
+        $this->assertStringContainsString(route('licenses.checkout', ['license' => $license->id]), $url);
+        $this->assertStringContainsString('request_id='.$checkoutRequest->id, $url);
     }
 }

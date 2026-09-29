@@ -105,11 +105,43 @@ class CheckoutRequest extends Model
      * these methods when a source model isn't wired through the
      * Presenter/Presentable chain (which CheckoutRequest isn't - it
      * extends the plain Eloquent Model, not SnipeModel).
+     *
+     * Reservations link to the checkout confirmation screen with a
+     * `request_id` query hint, so an admin clicking a today-widget
+     * row lands on the pre-filled fulfill flow for that specific
+     * request. Every checkout controller under Assets / Accessories
+     * / Components / Consumables / Licenses honors the hint. Types
+     * without a dedicated checkout screen (AssetModel) fall back to
+     * the presenter's calendarUrl, which points at the item's show
+     * page.
      */
     public function calendarUrl(): ?string
     {
         $item = $this->itemRequested();
-        if ($item && method_exists($item, 'present')) {
+        if (! $item) {
+            return null;
+        }
+
+        $checkoutRoute = match (true) {
+            $item instanceof Asset => ['hardware.checkout.create', ['asset' => $item->id]],
+            $item instanceof Accessory => ['accessories.checkout.show', ['accessory' => $item->id]],
+            $item instanceof Component => ['components.checkout.show', ['componentID' => $item->id]],
+            $item instanceof Consumable => ['consumables.checkout.show', ['consumablesID' => $item->id]],
+            $item instanceof License => ['licenses.checkout', ['license' => $item->id]],
+            // AssetModel reservations point at the multi-fulfill
+            // screen where an admin picks specific assets of that
+            // model to fulfill the request against.
+            $item instanceof AssetModel => ['models.fulfill-requests.create', ['model' => $item->id]],
+            default => null,
+        };
+
+        if ($checkoutRoute !== null) {
+            [$name, $params] = $checkoutRoute;
+
+            return route($name, array_merge($params, ['request_id' => $this->id]));
+        }
+
+        if (method_exists($item, 'present')) {
             $presenter = $item->present();
             if (method_exists($presenter, 'calendarUrl')) {
                 return $presenter->calendarUrl();

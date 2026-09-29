@@ -1464,6 +1464,41 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api', 'api-throttle:api']], fu
     }); // end reports api routes
 
     /**
+     * Dashboard widget API routes.
+     */
+    Route::group(['prefix' => 'dashboard'], function () {
+
+        Route::get('activity',
+            [
+                Api\DashboardController::class,
+                'activity',
+            ]
+        )->name('api.dashboard.activity');
+
+        Route::get('categories',
+            [
+                Api\DashboardController::class,
+                'categories',
+            ]
+        )->name('api.dashboard.categories');
+
+        Route::get('companies',
+            [
+                Api\DashboardController::class,
+                'companies',
+            ]
+        )->name('api.dashboard.companies');
+
+        Route::get('locations',
+            [
+                Api\DashboardController::class,
+                'locations',
+            ]
+        )->name('api.dashboard.locations');
+
+    }); // end dashboard widget api routes
+
+    /**
      * Version API routes
      */
     Route::get('/version', function () {
