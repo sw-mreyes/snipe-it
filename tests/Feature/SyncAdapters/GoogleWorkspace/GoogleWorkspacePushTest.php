@@ -34,6 +34,7 @@ class GoogleWorkspacePushTest extends TestCase
             'private_key_type' => OPENSSL_KEYTYPE_RSA,
             'private_key_bits' => 2048,
         ]);
+        $pem = '';
         openssl_pkey_export($key, $pem);
         $this->privateKeyPem = $pem;
     }
@@ -83,8 +84,11 @@ class GoogleWorkspacePushTest extends TestCase
     {
         // Admin flags asset_tag with direction=push in the mapping UI.
         // buildPushPayload maps that to Google's annotatedAssetId key
-        // on the Chrome device resource.
-        $adapter = $this->configuredAdapter();
+        // on the Chrome device resource. configuredAdapter() is called
+        // for the config-write side effect. The pushing adapter is
+        // re-hydrated below so the fresh instance picks up the
+        // direction key we set here.
+        $this->configuredAdapter();
         $instance = SyncAdapterInstance::where('slug', 'google_workspace')->firstOrFail();
         SyncAdapterConfig::put($instance->id, 'direction.asset_tag', 'push');
 
@@ -113,7 +117,8 @@ class GoogleWorkspacePushTest extends TestCase
 
     public function test_dry_run_skips_the_http_call_and_logs_payload(): void
     {
-        $adapter = $this->configuredAdapter(template: 'Tag: {asset_tag}');
+        // Same re-hydrate shape as the asset_tag test above.
+        $this->configuredAdapter(template: 'Tag: {asset_tag}');
         $instance = SyncAdapterInstance::where('slug', 'google_workspace')->firstOrFail();
         SyncAdapterConfig::put($instance->id, 'push_dry_run', '1');
 
