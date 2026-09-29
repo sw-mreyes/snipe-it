@@ -6,17 +6,18 @@ use App\Models\User;
 use Tests\TestCase;
 
 /**
- * The activity report page (reports/activity) is reachable by two
+ * Page-access + endpoint-target + breadcrumb tests for the
+ * reports/activity page. The report page is reachable by two
  * viewer classes with different UI:
- *   - reports.view holders get the full page with CSV export and
- *     the general search / filter / sort endpoint.
+ *   - reports.view holders get the full page with the general
+ *     search / filter / sort endpoint.
  *   - Scoped viewers (canViewUsersAndCheckoutables, no reports.view)
  *     arrive through the dashboard Recent Activity widget's View-all
  *     button, land on the same template with admin-shaped UI stripped,
  *     and read from the narrow api.dashboard.activity endpoint.
  *
- * These tests pin both paths so a future permission change does not
- * quietly 403 the widget click-through or leak the export button.
+ * CSV export path lives in ActivityReportCsvExportTest so this file
+ * stays under PHPMD's per-class method threshold.
  */
 class ActivityReportPageAuthTest extends TestCase
 {
@@ -41,25 +42,6 @@ class ActivityReportPageAuthTest extends TestCase
             ->assertOk();
     }
 
-    public function test_reports_view_holder_sees_csv_export_button()
-    {
-        $this->actingAs(User::factory()->canViewReports()->create())
-            ->get(route('reports.activity'))
-            ->assertOk()
-            ->assertSee(route('reports.activity.post'));
-    }
-
-    public function test_scoped_viewer_also_sees_csv_export_button()
-    {
-        // Scoped viewers get an export gated to the same viewable
-        // types they see on the page. Filtering happens inside
-        // postActivityReport.
-        $this->actingAs(User::factory()->viewComponents()->create())
-            ->get(route('reports.activity'))
-            ->assertOk()
-            ->assertSee(route('reports.activity.post'));
-    }
-
     public function test_scoped_viewer_page_points_at_narrow_dashboard_endpoint()
     {
         $this->actingAs(User::factory()->viewComponents()->create())
@@ -75,74 +57,6 @@ class ActivityReportPageAuthTest extends TestCase
             ->get(route('reports.activity'))
             ->assertOk()
             ->assertSee(route('api.activity.index'));
-    }
-
-    public function test_permissionless_user_cannot_hit_csv_export_endpoint()
-    {
-        $this->actingAs(User::factory()->create())
-            ->post(route('reports.activity.post'))
-            ->assertForbidden();
-    }
-
-    public function test_scoped_viewer_csv_export_only_contains_rows_for_viewable_types()
-    {
-        // A components-only viewer's CSV must contain rows for
-        // Component actionlogs and omit rows for Asset / License /
-        // Consumable / Accessory actionlogs. Same viewable-type
-        // filter the on-page endpoint applies.
-        $component = \App\Models\Component::factory()->create();
-        $asset = \App\Models\Asset::factory()->create();
-
-        \App\Models\Actionlog::factory()->create([
-            'item_type' => \App\Models\Component::class,
-            'item_id' => $component->id,
-            'action_type' => 'checkout',
-            'note' => 'COMPONENT_ROW_SENTINEL',
-        ]);
-        \App\Models\Actionlog::factory()->create([
-            'item_type' => \App\Models\Asset::class,
-            'item_id' => $asset->id,
-            'action_type' => 'checkout',
-            'note' => 'ASSET_ROW_SENTINEL',
-        ]);
-
-        $body = $this->actingAs(User::factory()->viewComponents()->create())
-            ->post(route('reports.activity.post'))
-            ->assertOk()
-            ->streamedContent();
-
-        $this->assertStringContainsString('COMPONENT_ROW_SENTINEL', $body);
-        $this->assertStringNotContainsString('ASSET_ROW_SENTINEL', $body);
-    }
-
-    public function test_reports_view_holder_csv_export_contains_every_type()
-    {
-        // reports.view holders keep the full unfiltered CSV. Guard
-        // against a future refactor that accidentally applies the
-        // scoped-viewer filter to admin exports.
-        $component = \App\Models\Component::factory()->create();
-        $asset = \App\Models\Asset::factory()->create();
-
-        \App\Models\Actionlog::factory()->create([
-            'item_type' => \App\Models\Component::class,
-            'item_id' => $component->id,
-            'action_type' => 'checkout',
-            'note' => 'COMPONENT_ROW_SENTINEL',
-        ]);
-        \App\Models\Actionlog::factory()->create([
-            'item_type' => \App\Models\Asset::class,
-            'item_id' => $asset->id,
-            'action_type' => 'checkout',
-            'note' => 'ASSET_ROW_SENTINEL',
-        ]);
-
-        $body = $this->actingAs(User::factory()->canViewReports()->create())
-            ->post(route('reports.activity.post'))
-            ->assertOk()
-            ->streamedContent();
-
-        $this->assertStringContainsString('COMPONENT_ROW_SENTINEL', $body);
-        $this->assertStringContainsString('ASSET_ROW_SENTINEL', $body);
     }
 
     public function test_scoped_viewer_breadcrumb_does_not_link_to_reports_index()

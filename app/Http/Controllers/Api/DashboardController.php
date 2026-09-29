@@ -22,8 +22,8 @@ use Illuminate\Support\Facades\Gate;
 /**
  * Endpoints for the non-admin dashboard widgets.
  *
- * The general-purpose Blah::index endpoints stay gated on their original
- * per-domain permissions.
+ * The general-purpose Blah::index endpoints stay gated on their
+ * original per-domain permissions.
  */
 class DashboardController extends Controller
 {
