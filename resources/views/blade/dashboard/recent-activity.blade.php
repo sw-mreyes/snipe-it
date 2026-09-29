@@ -4,7 +4,7 @@
      gate as defense in depth for direct-invocation cases. Scoped
      viewers (canViewUsersAndCheckoutables but not activity.view) get
      results filtered server-side to actionlogs whose item_type or
-     target_type they can view. See Api\ReportsController@index. --}}
+     target_type they can view. See Api\DashboardController@activity. --}}
 @can('canViewUsersAndCheckoutables')
     <div class="box box-default">
         <div class="box-header with-border">
@@ -46,8 +46,13 @@
                 </div>
             </div>
         </div>
+        {{-- reports.activity is widened to accept scoped viewers via
+             canViewUsersAndCheckoutables, backed by
+             api.dashboard.activity for callers without activity.view.
+             CSV export and other admin UI on the report page stay
+             gated inside that view. --}}
         <div class="box-footer text-center">
-            <a href="{{ route('reports.activity') }}" class="btn btn-theme btn-sm" style="width: 100%">{{ trans('general.viewall') }}</a>
+            <a href="{{ route('reports.activity') }}" class="btn btn-theme btn-sm btn-block">{{ trans('general.viewall') }}</a>
         </div>
     </div>
 @endcan

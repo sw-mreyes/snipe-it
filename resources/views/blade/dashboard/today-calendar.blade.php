@@ -23,7 +23,7 @@
              dashboard panels. Shown only when the widget's
              onFetchMeta reports the API hit its row cap. --}}
         <div id="dashboard-today-more" class="box-footer text-center" style="display:none;">
-            <a href="{{ route('calendar.index') }}" class="btn btn-theme btn-sm" style="width: 100%" id="dashboard-today-more-link"></a>
+            <a href="{{ route('calendar.index') }}" class="btn btn-theme btn-sm btn-block" id="dashboard-today-more-link"></a>
         </div>
     </div>
 @endcan
