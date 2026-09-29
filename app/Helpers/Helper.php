@@ -880,11 +880,22 @@ class Helper
             ->havingRaw('(qty - checkouts_count) < (min_amt + ?)', [$alert_threshold])
             ->get();
 
+        // Components are checked out with a per-assignment quantity
+        // stored on the components_assets pivot (assigned_qty), NOT
+        // one row per unit. withCount() would count assignment rows
+        // and produce a wrong "remaining" ("qty - 1" instead of "qty
+        // - N" for a single pivot row that shipped N units). Match
+        // Component::numCheckedOut() by summing pivot.assigned_qty
+        // through the unconstrainedAssets relation, which also drops
+        // CompanyableScope so cross-company checkouts count against
+        // stock the same way the model method does. coalesce() maps
+        // "no assignments" (SUM returns NULL) back to 0 so the
+        // havingRaw comparison stays numeric.
         $components = Component::select('id', 'name', 'qty', 'min_amt')
-            ->withCount('assets as sum_unconstrained_assets')
+            ->withSum('unconstrainedAssets as sum_unconstrained_assets', 'components_assets.assigned_qty')
             ->whereNotNull('min_amt')
             ->groupBy('components.id', 'components.name', 'components.qty', 'components.min_amt')
-            ->havingRaw('(qty - sum_unconstrained_assets) < (min_amt + ?)', [$alert_threshold])
+            ->havingRaw('(qty - COALESCE(sum_unconstrained_assets, 0)) < (min_amt + ?)', [$alert_threshold])
             ->get();
 
         $asset_models = AssetModel::select('id', 'name', 'min_amt')
@@ -942,7 +953,7 @@ class Helper
         }
 
         foreach ($components as $component) {
-            $avail = $component->qty - $component->sum_unconstrained_assets;
+            $avail = $component->qty - ($component->sum_unconstrained_assets ?? 0);
             $percent = $component->qty > 0
                 ? number_format((($avail / $component->qty) * 100), 0)
                 : 100;
