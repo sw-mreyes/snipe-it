@@ -105,7 +105,7 @@ class CheckoutableListener
 
             if (! empty($to)) {
                 try {
-                    $toMail = (clone $mailable)->locale($notifiable->locale);
+                    $toMail = (clone $mailable)->locale($notifiable?->locale);
                     Mail::to(array_flatten($to))->send($toMail);
                     Log::info('Checkout Mail sent to checkout target');
                 } catch (ClientException $e) {
@@ -203,7 +203,7 @@ class CheckoutableListener
 
             if (! empty($to)) {
                 try {
-                    $toMail = (clone $mailable)->locale($notifiable->locale);
+                    $toMail = (clone $mailable)->locale($notifiable?->locale);
                     Mail::to(array_flatten($to))->send($toMail);
                     Log::info('Checkin Mail sent to checkin target');
                 } catch (ClientException $e) {
