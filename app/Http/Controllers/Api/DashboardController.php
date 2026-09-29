@@ -29,13 +29,22 @@ class DashboardController extends Controller
 {
     /**
      * Actionlog rows the caller is allowed to see, latest first.
-     * Backs the Recent Activity widget on the non-admin dashboard.
+     * Backs the Recent Activity widget on the non-admin dashboard
+     * AND the full reports/activity page when the caller lacks
+     * activity.view (a scoped viewer arrives at the report via the
+     * widget's View-all button).
      *
-     * Query surface is limited to `limit` (capped at 50). No search,
-     * no per-attribute filter, no sort override. The widget only ever
-     * shows the newest N rows of what the caller can see, so anything
-     * else would just expand the probe surface without benefiting the
-     * widget.
+     * Accepted query params:
+     *   - limit (capped at 500)
+     *   - offset
+     *   - search (free-text across Actionlog's searchable columns)
+     *
+     * search runs AFTER the viewable-type filter, so a scoped viewer
+     * can only search within the row set they were already allowed
+     * to see. Per-attribute probe params like `action_type`,
+     * `created_by`, `remote_ip`, `item_type`, and `target_type`
+     * are still ignored so callers cannot narrow to a specific
+     * attribute the widget / report does not surface.
      */
     public function activity(Request $request): JsonResponse
     {
@@ -70,10 +79,22 @@ class DashboardController extends Controller
             });
         }
 
-        $limit = max(1, min(50, (int) $request->input('limit', 25)));
+        // Free-text search runs against Actionlog's Searchable trait
+        // AFTER the viewable-type filter above, so it can only match
+        // rows the caller was already allowed to see. Safe to expose
+        // even to scoped viewers.
+        if ($request->filled('search')) {
+            $query->TextSearch($request->input('search'));
+        }
+
+        $limit = max(1, min(500, (int) $request->input('limit', 25)));
+        $offset = max(0, (int) $request->input('offset', 0));
 
         $total = $query->count();
-        $rows = $query->orderByDesc('action_logs.created_at')->limit($limit)->get();
+        $rows = $query->orderByDesc('action_logs.created_at')
+            ->skip($offset)
+            ->take($limit)
+            ->get();
 
         return response()->json(
             (new ActionlogsTransformer)->transformActionlogs($rows, $total),
@@ -110,21 +131,31 @@ class DashboardController extends Controller
         // Per-type withCount blocks. Assets go through showableAssets
         // to honor show_archived_in_list. Every count query FMCS-scopes
         // through each target model's CompanyableTrait, so a scoped
-        // viewer only counts items in their own company.
+        // viewer only counts items in their own company. The sort
+        // allowlist is built alongside so a caller can only ORDER BY
+        // count columns that were actually added to the SELECT list.
+        // Otherwise ORDER BY assets_count hits an unknown-column
+        // error for viewers who cannot view Asset.
+        $countSortColumns = [];
         if (Gate::allows('view', Asset::class)) {
             $query->withCount('showableAssets as assets_count');
+            $countSortColumns[] = 'assets_count';
         }
         if (Gate::allows('view', Accessory::class)) {
             $query->withCount('accessories as accessories_count');
+            $countSortColumns[] = 'accessories_count';
         }
         if (Gate::allows('view', Consumable::class)) {
             $query->withCount('consumables as consumables_count');
+            $countSortColumns[] = 'consumables_count';
         }
         if (Gate::allows('view', Component::class)) {
             $query->withCount('components as components_count');
+            $countSortColumns[] = 'components_count';
         }
         if (Gate::allows('view', License::class)) {
             $query->withCount('licenses as licenses_count');
+            $countSortColumns[] = 'licenses_count';
         }
 
         // Scoped viewers see only category rows whose category_type
@@ -134,15 +165,7 @@ class DashboardController extends Controller
             $query->whereIn('category_type', $viewableTypeKeys);
         }
 
-        $this->applyBoundedSort($query, $request, [
-            'name',
-            'category_type',
-            'assets_count',
-            'accessories_count',
-            'consumables_count',
-            'components_count',
-            'licenses_count',
-        ], 'assets_count');
+        $this->applyBoundedSort($query, $request, array_merge(['name', 'category_type'], $countSortColumns), 'name');
 
         // category_type value → withCount alias. English pluralization
         // is irregular enough (accessory → accessories, not accessorys)
@@ -184,41 +207,48 @@ class DashboardController extends Controller
             403,
         );
 
-        $query = Company::select('id', 'name');
+        // Build the withCount list and the sortable-column allowlist
+        // in lockstep so a caller can only ORDER BY a count column
+        // that actually made it into the SELECT list. See categories
+        // above for the unknown-column error this guards against.
+        // tag_color goes on the SELECT list so the row link
+        // formatter can prepend the color square whether the caller
+        // has view on this company or not.
+        $query = Company::select('id', 'name', 'tag_color');
+        $countSortColumns = [];
 
         if (Gate::allows('view', Asset::class)) {
             $query->withCount(['assets as assets_count' => fn ($q) => $q->AssetsForShow()]);
+            $countSortColumns[] = 'assets_count';
         }
         if (Gate::allows('view', Accessory::class)) {
             $query->withCount('accessories as accessories_count');
+            $countSortColumns[] = 'accessories_count';
         }
         if (Gate::allows('view', Consumable::class)) {
             $query->withCount('consumables as consumables_count');
+            $countSortColumns[] = 'consumables_count';
         }
         if (Gate::allows('view', Component::class)) {
             $query->withCount('components as components_count');
+            $countSortColumns[] = 'components_count';
         }
         if (Gate::allows('view', License::class)) {
             $query->withCount('licenses as licenses_count');
+            $countSortColumns[] = 'licenses_count';
         }
         if (Gate::allows('view', User::class)) {
             $query->withCount('users as users_count');
+            $countSortColumns[] = 'users_count';
         }
 
-        $this->applyBoundedSort($query, $request, [
-            'name',
-            'users_count',
-            'assets_count',
-            'accessories_count',
-            'consumables_count',
-            'components_count',
-            'licenses_count',
-        ], 'assets_count');
+        $this->applyBoundedSort($query, $request, array_merge(['name'], $countSortColumns), 'name');
 
         return response()->json($this->paginateRows($query, $request, function ($company) {
             $row = [
                 'id' => (int) $company->id,
                 'name' => e($company->name),
+                'tag_color' => $company->tag_color ? e($company->tag_color) : null,
                 'available_actions' => [
                     'view' => Gate::allows('view', $company),
                 ],
@@ -243,39 +273,44 @@ class DashboardController extends Controller
             403,
         );
 
-        $query = Location::select('id', 'name');
+        // See categories/companies above: allowlist must track the
+        // withCount list so a caller can only ORDER BY count columns
+        // that were actually SELECTed. tag_color goes on the SELECT
+        // so the row link formatter can render the color square
+        // whether or not the caller can view this location.
+        $query = Location::select('id', 'name', 'tag_color');
+        $countSortColumns = [];
 
         if (Gate::allows('view', Asset::class)) {
             $query->withCount(['assets as assets_count' => fn ($q) => $q->AssetsForShow()])
                 ->withCount(['assignedAssets as assigned_assets_count' => fn ($q) => $q->AssetsForShow()]);
+            $countSortColumns[] = 'assets_count';
+            $countSortColumns[] = 'assigned_assets_count';
         }
         if (Gate::allows('view', Accessory::class)) {
             $query->withCount('accessories as accessories_count');
+            $countSortColumns[] = 'accessories_count';
         }
         if (Gate::allows('view', Consumable::class)) {
             $query->withCount('consumables as consumables_count');
+            $countSortColumns[] = 'consumables_count';
         }
         if (Gate::allows('view', Component::class)) {
             $query->withCount('components as components_count');
+            $countSortColumns[] = 'components_count';
         }
         if (Gate::allows('view', User::class)) {
             $query->withCount('users as users_count');
+            $countSortColumns[] = 'users_count';
         }
 
-        $this->applyBoundedSort($query, $request, [
-            'name',
-            'assets_count',
-            'assigned_assets_count',
-            'accessories_count',
-            'consumables_count',
-            'components_count',
-            'users_count',
-        ], 'assets_count');
+        $this->applyBoundedSort($query, $request, array_merge(['name'], $countSortColumns), 'name');
 
         return response()->json($this->paginateRows($query, $request, function ($location) {
             $row = [
                 'id' => (int) $location->id,
                 'name' => e($location->name),
+                'tag_color' => $location->tag_color ? e($location->tag_color) : null,
                 'available_actions' => [
                     'view' => Gate::allows('view', $location),
                 ],
