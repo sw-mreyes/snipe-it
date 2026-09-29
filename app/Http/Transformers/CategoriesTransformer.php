@@ -73,6 +73,7 @@ class CategoriesTransformer
             ];
 
             $permissions_array['available_actions'] = [
+                'view' => Gate::allows('view', $category),
                 'update' => Gate::allows('update', $category),
                 'delete' => $category->isDeletable(),
                 'bulk_selectable' => [
