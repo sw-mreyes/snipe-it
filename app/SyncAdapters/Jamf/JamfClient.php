@@ -48,17 +48,21 @@ class JamfClient
     {
         $page = 0;
 
+        // Build the query string by hand so the wire form matches
+        // what Jamf actually reads.
+        $sections = ['GENERAL', 'HARDWARE', 'OPERATING_SYSTEM', 'USER_AND_LOCATION'];
+
         do {
+            $query = http_build_query([
+                'page' => $page,
+                'page-size' => $pageSize,
+            ]);
+            foreach ($sections as $section) {
+                $query .= '&section=' . urlencode($section);
+            }
+
             $response = $this->request()
-                ->get('/api/v1/computers-inventory', [
-                    'page' => $page,
-                    'page-size' => $pageSize,
-                    // Only the sections we normalize. skipping the
-                    // heavier ones (applications, plugins, fonts,
-                    // certificates) keeps payloads small and stays
-                    // well under Jamf's per-tenant rate limit.
-                    'section' => ['GENERAL', 'HARDWARE', 'OPERATING_SYSTEM', 'USER_AND_LOCATION'],
-                ])
+                ->get('/api/v1/computers-inventory?' . $query)
                 ->throw()
                 ->json();
 
