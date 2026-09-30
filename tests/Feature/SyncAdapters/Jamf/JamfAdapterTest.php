@@ -49,6 +49,24 @@ class JamfAdapterTest extends TestCase
         $this->assertDatabaseHas('asset_external_sources', ['source' => 'jamf', 'external_id' => '42']);
         $this->assertDatabaseHas('asset_external_sources', ['source' => 'jamf', 'external_id' => '99']);
         $this->assertDatabaseHas('assets', ['name' => 'lab-mac-01']);
+
+        // Laravel's default array-shaped query encoding produces the bracketed
+        // form and Jamf silently drops it, leaving every asset with
+        // no hardware section (and no model id). The client hand-builds
+        // the query string to force the API shape Jamf actually reads.
+        Http::assertSent(function ($request) {
+            if (!str_contains($request->url(), '/api/v1/computers-inventory')) {
+                return false;
+            }
+            $url = $request->url();
+
+            return str_contains($url, 'section=GENERAL')
+                && str_contains($url, 'section=HARDWARE')
+                && str_contains($url, 'section=OPERATING_SYSTEM')
+                && str_contains($url, 'section=USER_AND_LOCATION')
+                && !str_contains($url, 'section%5B')
+                && !str_contains($url, 'section[');
+        });
     }
 
     public function test_normalized_record_carries_expected_fields()
