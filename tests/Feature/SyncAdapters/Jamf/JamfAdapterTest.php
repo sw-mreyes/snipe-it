@@ -31,6 +31,7 @@ class JamfAdapterTest extends TestCase
         $adapter = $this->configuredJamfAdapter();
 
         Http::fake([
+            '*/api/oauth/token' => $this->jamfTokenResponse(),
             '*/api/v1/computers-inventory*' => Http::response([
                 'totalCount' => 2,
                 'results' => [
@@ -55,6 +56,7 @@ class JamfAdapterTest extends TestCase
         $adapter = $this->configuredJamfAdapter();
 
         Http::fake([
+            '*/api/oauth/token' => $this->jamfTokenResponse(),
             '*/api/v1/computers-inventory*' => Http::response([
                 'totalCount' => 1,
                 'results' => [
@@ -92,9 +94,26 @@ class JamfAdapterTest extends TestCase
     {
         $instance = SyncAdapterInstance::where('slug', 'jamf')->firstOrFail();
         SyncAdapterConfig::put($instance->id, 'url', 'https://example.jamfcloud.com');
-        SyncAdapterConfig::put($instance->id, 'token', Crypt::encrypt('fake-jamf-token'));
+        SyncAdapterConfig::put($instance->id, 'client_id', Crypt::encrypt('fake-jamf-client-id'));
+        SyncAdapterConfig::put($instance->id, 'client_secret', Crypt::encrypt('fake-jamf-client-secret'));
 
         return new JamfAdapter($instance->fresh());
+    }
+
+    /**
+     * Jamf Pro's /api/oauth/token response shape. expires_in is
+     * whatever the API Client is configured for. The client's bearer
+     * cache honors it with a 30-second buffer before re-exchanging.
+     * No return type hint because Http::response() inside a fake
+     * handler resolves to a promise, not a bare Response.
+     */
+    private function jamfTokenResponse()
+    {
+        return Http::response([
+            'access_token' => 'fake-jamf-access-token',
+            'token_type' => 'Bearer',
+            'expires_in' => 3600,
+        ]);
     }
 
     /**

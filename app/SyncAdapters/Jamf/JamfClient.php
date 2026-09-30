@@ -10,19 +10,31 @@ use Illuminate\Support\Facades\Http;
  * endpoints the sync adapter uses. Yields raw decoded JSON, no
  * normalization (that's the adapter's job).
  *
- * Auth model: a Jamf-generated Personal Access Token (create one under
- * Settings -> System -> API Roles and Clients -> API Roles) passed as
- * a bearer token. This skips the /api/v1/auth/token exchange dance and
- * keeps the credential storage shape identical to the other bearer-
- * token adapters (Fleet, Kandji, JumpCloud).
+ * Auth model: OAuth 2.0 client credentials. The admin creates an API
+ * Role granting Read on Computers (plus Read on Sites when
+ * group-to-company mapping is in play) and an API Client that uses
+ * that role, under Settings -> System -> API Roles and Clients in
+ * Jamf Pro. This client exchanges the Client ID + Client Secret for a
+ * bearer token via POST /api/oauth/token and caches it on the instance
+ * (with a small buffer before expiry so a slow sync run does not
+ * present a token that's about to be rejected). Jamf Pro's default
+ * token lifetime is 60 seconds, so any non-trivial sync will refresh
+ * at least once. Longer lifetimes are configurable per API Client in
+ * Jamf. Failures throw up to the sync runner and land in the
+ * sync-adapters log.
  *
  * Jamf Pro API reference: https://developer.jamf.com/jamf-pro/reference
  */
 class JamfClient
 {
+    private ?string $accessToken = null;
+
+    private ?int $expiresAt = null;
+
     public function __construct(
         private readonly string $baseUrl,
-        private readonly string $token,
+        private readonly string $clientId,
+        private readonly string $clientSecret,
     ) {}
 
     /**
@@ -102,8 +114,41 @@ class JamfClient
     {
         return Http::baseUrl(rtrim($this->baseUrl, '/'))
             ->withOptions(['allow_redirects' => false])
-            ->withToken($this->token)
+            ->withToken($this->bearer())
             ->acceptJson()
             ->timeout(30);
+    }
+
+    /**
+     * Exchange client credentials for a bearer token via Jamf Pro's
+     * /api/oauth/token endpoint. Tokens are short-lived (60 seconds
+     * on default API Clients, up to 68 years if the admin configured
+     * a longer lifetime) so we cache the token on this instance and
+     * re-exchange when we're within a 30-second buffer of expiry.
+     * Response shape: {access_token, token_type: Bearer, expires_in}.
+     */
+    private function bearer(): string
+    {
+        $now = time();
+        if ($this->accessToken !== null && $this->expiresAt !== null && $now < $this->expiresAt - 30) {
+            return $this->accessToken;
+        }
+
+        $response = Http::asForm()
+            ->withOptions(['allow_redirects' => false])
+            ->timeout(30)
+            ->post(rtrim($this->baseUrl, '/') . '/api/oauth/token', [
+                'grant_type' => 'client_credentials',
+                'client_id' => $this->clientId,
+                'client_secret' => $this->clientSecret,
+            ])
+            ->throw()
+            ->json();
+
+        $this->accessToken = (string) ($response['access_token'] ?? '');
+        $expiresIn = (int) ($response['expires_in'] ?? 0);
+        $this->expiresAt = $expiresIn > 0 ? $now + $expiresIn : null;
+
+        return $this->accessToken;
     }
 }
