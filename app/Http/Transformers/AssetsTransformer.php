@@ -366,7 +366,7 @@ class AssetsTransformer
 
     public function transformAssetCompact(Asset $asset)
     {
-        $array = [
+        return [
             'id' => (int) $asset->id,
             'image' => ($asset->getImageUrl()) ? $asset->getImageUrl() : null,
             'type' => 'asset',
@@ -375,9 +375,12 @@ class AssetsTransformer
             'model_number' => (($asset->model) && ($asset->model->model_number)) ? e($asset->model->model_number) : null,
             'asset_tag' => e($asset->asset_tag),
             'serial' => e($asset->serial),
+            // Drives polymorphicItemFormatter / genericColumnObjLinkFormatter:
+            // rendered as plain text (no link) when the caller cannot reach
+            // this asset's show page, so a scoped viewer's click through
+            // Assigned / Orders / History cross-links does not 403.
+            'viewable' => Gate::allows('view', $asset),
         ];
-
-        return $array;
     }
 
     public function transformCheckedoutAccessories($accessory_checkouts, $total)
@@ -397,7 +400,7 @@ class AssetsTransformer
             // The controller-supplied $total still reflects the true row count
             // and would leak "there are N accessories you can't see", so
             // decrement it by the number of rows suppressed here.
-            if (!$checkout->accessory || Gate::denies('view', $checkout->accessory)) {
+            if (! $checkout->accessory || Gate::denies('view', $checkout->accessory)) {
                 $suppressed++;
 
                 continue;

@@ -3638,6 +3638,14 @@ dl.table-display {
     display: flex;
     flex-wrap: wrap;
     align-items: stretch;
+    // Vertical gap between wrapped flex lines. When the row holds
+    // more than 12 cols worth of widgets and BS3 wraps them onto
+    // successive lines, `row-gap` inserts a consistent gutter
+    // between those lines. Without it, each wrap-line abuts the
+    // one above with no visual separation. Horizontal gaps between
+    // sibling cols are still handled by Bootstrap's built-in
+    // 15px column padding, so no `column-gap` is set here.
+    row-gap: 20px;
   }
 
   .dashboard-row-eq > [class*="col-"] {
@@ -3645,6 +3653,18 @@ dl.table-display {
     flex-direction: column;
     float: none; // BS3 gives cols float:left, which suppresses flex behavior
   }
+
+  // Let cols grow proportionally to fill any leftover space on a
+  // partial wrap-line. Full lines (cols summing to col-md-12) have
+  // no remaining space so nothing grows. Partial lines (e.g.
+  // col-md-4 + col-md-6 when the third widget is gated off for
+  // this viewer) expand both cols so the visual line reads as a
+  // complete row instead of a truncated one with dead space on
+  // the right. Grow factor mirrors the col number so a col-md-8
+  // still visually outweighs a col-md-4 on the same wrapped line.
+  .dashboard-row-eq > .col-md-4 { flex-grow: 4; }
+  .dashboard-row-eq > .col-md-6 { flex-grow: 6; }
+  .dashboard-row-eq > .col-md-8 { flex-grow: 8; }
 
   .dashboard-row-eq > [class*="col-"] > .box {
     display: flex;
@@ -3730,6 +3750,14 @@ dl.table-display {
   .dashboard-row-compact > [class*="col-"] > .box > .box-body {
     max-height: 400px;
     overflow-y: auto;
+    // Suppress bs-table's horizontal scrollbar on widget tables.
+    // The bootstrap-table plugin wraps every table in a
+    // .fixed-table-container that defaults to overflow-x: auto, so
+    // when column widths sum to even 1px over the container the
+    // widget grows a spurious horizontal scrollbar. Cells wrap or
+    // clip cleanly at this width, so hiding the overflow is
+    // preferable to letting the scrollbar eat vertical space.
+    overflow-x: hidden;
   }
 
   // .dashboard-chart-body opts a box-body out of the compact scroll
@@ -3742,6 +3770,16 @@ dl.table-display {
   .dashboard-row-compact > [class*="col-"] > .box > .box-body.dashboard-chart-body {
     max-height: none;
     overflow: visible;
+  }
+
+  // bs-table generates a .fixed-table-container inside each widget
+  // that also carries overflow-x: auto by default. Belt-and-braces
+  // with the parent box-body rule above so a compact widget never
+  // grows a horizontal scrollbar regardless of which layer bs-table
+  // decides to overflow at.
+  .dashboard-row-compact .fixed-table-container,
+  .dashboard-row-compact .fixed-table-body {
+    overflow-x: hidden;
   }
 }
 

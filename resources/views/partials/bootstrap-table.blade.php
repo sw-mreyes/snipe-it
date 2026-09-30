@@ -2416,6 +2416,15 @@
             }
 
             if (value) {
+                // Row carries available_actions.view when the user
+                // can see the show page for this record. Render as
+                // plain text (no link) when they can't, so clicking
+                // through does not 403. Transformers that don't emit
+                // the flag stay linked for back-compat since undefined
+                // is not === false.
+                if (row && row.available_actions && row.available_actions.view === false) {
+                    return '<span style="white-space:nowrap;">' + tag_icon + value + '</span>';
+                }
                 return '<span style="white-space:nowrap;">' + tag_icon + '<a href="{{ config('app.url') }}/' + destination + '/' + row.id + '">' + value + '</a></span>';
             }
         };
@@ -2518,6 +2527,16 @@
                     var tag_icon = '<i class="fa-solid fa-square" style="color: ' + value.tag_color + ';" aria-hidden="true"></i>';
                 } else {
                     var tag_icon = '';
+                }
+
+                // Same viewable-flag treatment as
+                // polymorphicItemFormatter and genericRowLinkFormatter.
+                // A scoped viewer's Recent Activity row that names an
+                // admin / target / user they cannot reach must render
+                // as plain text so the click does not 403. Values
+                // without a viewable key stay linked for back-compat.
+                if (value.viewable === false) {
+                    return '<nobr>' + tag_icon + ' ' + value.name + '</nobr>';
                 }
 
                 return '<nobr>'+ tag_icon + ' <a href="{{ config('app.url') }}/' + polymorphicItemFormatterDest + dest + '/' + value.id + '">' + value.name + '</a></span>';
@@ -2715,6 +2734,17 @@
             // Show as strikethrough if it's been deleted
             if (value.deleted_at && value.deleted_at != '') {
                 return '<nobr><span class="text-muted" data-tooltip="true" title="{{ trans('general.deleted') }} ' + value.type + '"><del><i class="' + item_icon + ' fa-fw"></i> ' + value.name + '</del></span></nobr>';
+            }
+
+            // Render as plain text (no link) when the caller cannot
+            // view the underlying record. Prevents 403 click-throughs
+            // from the dashboard's recent-activity row for scoped
+            // viewers who see actionlogs on types they can't drill
+            // into. ActionlogsTransformer emits viewable=false for
+            // those. Transformers that don't emit the flag stay
+            // linked for back-compat since undefined is not === false.
+            if (value.viewable === false) {
+                return '<nobr><span data-tooltip="true" title="' + value.type + '"><i class="' + item_icon + ' fa-fw"></i> ' + value.name + '</span></nobr>';
             }
 
             return '<nobr><a href="{{ config('app.url') }}/' + item_destination +'/' + value.id + '" data-tooltip="true" title="' + value.type + '"><i class="' + item_icon + ' fa-fw"></i> ' + value.name + '</a></nobr>';

@@ -53,6 +53,7 @@ class CompaniesTransformer
             ];
 
             $permissions_array['available_actions'] = [
+                'view' => Gate::allows('view', $company),
                 'update' => Gate::allows('update', $company),
                 'delete' => $company->isDeletable(),
                 'bulk_selectable' => [
