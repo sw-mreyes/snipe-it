@@ -48,6 +48,11 @@ class JamfPushTest extends TestCase
         ]);
 
         Http::fake([
+            '*/api/oauth/token' => Http::response([
+                'access_token' => 'fake-jamf-access-token',
+                'token_type' => 'Bearer',
+                'expires_in' => 3600,
+            ]),
             '*/api/v1/computers-inventory-detail/*' => Http::response(['ok' => true]),
         ]);
 
@@ -100,7 +105,8 @@ class JamfPushTest extends TestCase
     {
         $instance = SyncAdapterInstance::where('slug', 'jamf')->firstOrFail();
         SyncAdapterConfig::put($instance->id, 'url', 'https://example.com/jamf');
-        SyncAdapterConfig::put($instance->id, 'token', Crypt::encrypt('fake-jamf-token'));
+        SyncAdapterConfig::put($instance->id, 'client_id', Crypt::encrypt('fake-jamf-client-id'));
+        SyncAdapterConfig::put($instance->id, 'client_secret', Crypt::encrypt('fake-jamf-client-secret'));
 
         return new JamfAdapter($instance->fresh());
     }

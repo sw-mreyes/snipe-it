@@ -340,7 +340,7 @@ return [
     'pending_requests' => 'Pending Requests',
     'rtd' => 'Gotowe do wdrożenia',
     'requested_date' => 'Data złożenia zapotrzebowania',
-    'requested_assets' => 'Zawnioskuj o środek',
+    'requested_assets' => 'Żądane elementy',
     'requested_assets_menu' => 'My Requests',
     'request_canceled' => 'Żądanie anulowane',
     'request_item' => 'Poproś o ten przedmiot',

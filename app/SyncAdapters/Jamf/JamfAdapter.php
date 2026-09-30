@@ -11,10 +11,13 @@ use Illuminate\Support\Arr;
 
 /**
  * Jamf Pro adapter. Pulls computer inventory via the Jamf Pro API and
- * normalizes it into HostInventoryRecord objects. Uses a Jamf-generated
- * Personal Access Token as a bearer credential. Also pushes
- * Snipe-IT-authoritative fields (asset_tag today) back to Jamf via
- * the /api/v1/computers-inventory-detail/{id} PATCH endpoint.
+ * normalizes it into HostInventoryRecord objects. Authenticates via
+ * OAuth 2.0 client credentials against Jamf Pro's /api/oauth/token
+ * endpoint (Jamf Pro does not issue long-lived personal tokens, so
+ * this is the only workable flow). Also pushes Snipe-IT-authoritative
+ * fields (asset_tag today) back to Jamf via the
+ * /api/v1/computers-inventory-detail/{id} PATCH endpoint using the
+ * same exchanged bearer.
  */
 class JamfAdapter extends SyncAdapter implements PushableAdapter
 {
@@ -42,10 +45,15 @@ class JamfAdapter extends SyncAdapter implements PushableAdapter
     {
         return [
             [
-                'key' => 'token',
-                'label' => trans('admin/settings/sync_adapters.label_api_token'),
+                'key' => 'client_id',
+                'label' => trans('admin/settings/sync_adapters.label_client_id'),
+                'help' => trans('admin/settings/sync_adapters.jamf_client_id_help'),
+            ],
+            [
+                'key' => 'client_secret',
+                'label' => trans('admin/settings/sync_adapters.label_client_secret'),
                 'secret' => true,
-                'help' => trans('admin/settings/sync_adapters.jamf_token_help'),
+                'help' => trans('admin/settings/sync_adapters.jamf_client_secret_help'),
             ],
         ];
     }
@@ -71,7 +79,11 @@ class JamfAdapter extends SyncAdapter implements PushableAdapter
 
     public function fetchGroups(): array
     {
-        $client = new JamfClient(baseUrl: $this->url(), token: $this->credential('token'));
+        $client = new JamfClient(
+            baseUrl: $this->url(),
+            clientId: $this->credential('client_id'),
+            clientSecret: $this->credential('client_secret'),
+        );
 
         return array_map(
             fn (array $site) => [
@@ -84,7 +96,11 @@ class JamfAdapter extends SyncAdapter implements PushableAdapter
 
     public function pull(): iterable
     {
-        $client = new JamfClient(baseUrl: $this->url(), token: $this->credential('token'));
+        $client = new JamfClient(
+            baseUrl: $this->url(),
+            clientId: $this->credential('client_id'),
+            clientSecret: $this->credential('client_secret'),
+        );
 
         foreach ($client->computers() as $computer) {
             yield $this->normalize($computer);
@@ -135,10 +151,10 @@ class JamfAdapter extends SyncAdapter implements PushableAdapter
     }
 
     /**
-     * Jamf Pro writes are gated by the PAT's API role scopes. Both
-     * pull + push work with the same token when the role grants the
-     * "Update Computers" privilege. No tier / license gate, so canPush
-     * is always true for a configured instance.
+     * Jamf Pro writes are gated by the API Client's role privileges.
+     * Both pull + push work with the same OAuth client when the role
+     * grants the "Update Computers" privilege. No tier / license gate,
+     * so canPush is always true for a configured instance.
      */
     public function canPush(): bool
     {
@@ -200,7 +216,11 @@ class JamfAdapter extends SyncAdapter implements PushableAdapter
      */
     protected function dispatchPush(\App\Models\AssetExternalSource $externalSource, array $payload): void
     {
-        $client = new JamfClient(baseUrl: $this->url(), token: $this->credential('token'));
+        $client = new JamfClient(
+            baseUrl: $this->url(),
+            clientId: $this->credential('client_id'),
+            clientSecret: $this->credential('client_secret'),
+        );
         $client->updateComputerDetail($externalSource->external_id, $payload);
     }
 
