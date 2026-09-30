@@ -180,11 +180,7 @@ class CheckoutAssetMail extends BaseMailable
 
     private function getLocation(): ?string
     {
-        if ($this->target instanceof User) {
-            return $this->target->location?->name;
-        }
-
-        if ($this->target instanceof Asset) {
+        if ($this->target instanceof Asset || $this->target instanceof User) {
             return $this->target->location?->name;
         }
 
