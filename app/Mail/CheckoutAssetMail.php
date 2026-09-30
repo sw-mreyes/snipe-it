@@ -20,6 +20,22 @@ class CheckoutAssetMail extends BaseMailable
 
     private bool $firstTimeSending;
 
+    private Asset $item;
+
+    private ?User $admin;
+
+    private mixed $note;
+
+    private mixed $acceptance;
+
+    private ?Setting $settings;
+
+    private mixed $target;
+
+    private string|array|null $last_checkout;
+
+    private string|array|null $expected_checkin;
+
     /**
      * Create a new message instance.
      *
@@ -72,7 +88,7 @@ class CheckoutAssetMail extends BaseMailable
     public function content(): Content
     {
         $this->item->load('status');
-        $eula = method_exists($this->item, 'getEula') ? $this->item->getEula() : '';
+        $eula = $this->item->getEula();
         $req_accept = $this->requiresAcceptance();
         $fields = [];
         $customFields = [];
@@ -173,9 +189,9 @@ class CheckoutAssetMail extends BaseMailable
         return trans('mail.new_item_checked');
     }
 
-    private function requiresAcceptance(): int|bool
+    private function requiresAcceptance(): bool
     {
-        return method_exists($this->item, 'requireAcceptance') ? $this->item->requireAcceptance() : 0;
+        return $this->item->requireAcceptance();
     }
 
     private function getLocation(): ?string

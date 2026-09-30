@@ -5,7 +5,6 @@ namespace App\Mail;
 use App\Models\Accessory;
 use App\Models\Asset;
 use App\Models\Location;
-use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailables\Address;
@@ -18,6 +17,18 @@ use Illuminate\Support\Facades\Log;
 class CheckoutAccessoryMail extends BaseMailable
 {
     use Queueable, SerializesModels;
+
+    private Accessory $item;
+
+    private User $admin;
+
+    private mixed $note;
+
+    private mixed $checkout_qty;
+
+    private mixed $target;
+
+    private mixed $acceptance;
 
     private bool $firstTimeSending;
 
@@ -33,7 +44,6 @@ class CheckoutAccessoryMail extends BaseMailable
         $this->target = $checkedOutTo;
         $this->acceptance = $acceptance;
         $this->firstTimeSending = $firstTimeSending;
-        $this->settings = Setting::getSettings();
     }
 
     /**
@@ -107,9 +117,9 @@ class CheckoutAccessoryMail extends BaseMailable
         return trans('new_item_checked');
     }
 
-    private function requiresAcceptance(): int|bool
+    private function requiresAcceptance(): bool
     {
-        return method_exists($this->item, 'requireAcceptance') ? $this->item->requireAcceptance() : 0;
+        return $this->item->requireAcceptance();
     }
 
     /**
