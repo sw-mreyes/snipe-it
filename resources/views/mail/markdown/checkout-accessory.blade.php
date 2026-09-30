@@ -31,7 +31,7 @@
 @endif
 @if ($location)
 | **{{ trans('general.location') }}** | {{ $location }} |
-@endisset
+@endif
 @if ($note)
 | **{{ trans('mail.additional_notes') }}** | {{ $note }} |
 @endif
