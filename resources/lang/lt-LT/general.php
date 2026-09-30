@@ -340,7 +340,7 @@ return [
     'pending_requests' => 'Laukiantys užsakymai',
     'rtd' => 'Paruoštas naudojimui',
     'requested_date' => 'Prašymo data',
-    'requested_assets' => 'Prašomi daiktai',
+    'requested_assets' => 'Užsakomi daiktai',
     'requested_assets_menu' => 'Mano užsakymai',
     'request_canceled' => 'Prašymas atšauktas',
     'request_item' => 'Užsakyti šį daiktą',

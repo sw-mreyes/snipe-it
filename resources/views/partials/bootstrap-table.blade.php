@@ -397,7 +397,16 @@
                 var html = [`<form class="form-horizontal toolbar-model-form" action="${this.options.actionForm}">`];
                 var operator = this.getAdvancedSearchOperator();
 
-                html.push('<div class="form-group row"><div class="col-sm-12"><p class="help-block"><i class="fa fa-solid fa-lightbulb text-info" aria-hidden="true"></i> {!! trans('general.search_tip') !!}</p></div></div>');
+                {{-- search_tip is dropped through @js so the translation is
+                     JS-safe (escapes quotes, embedded newlines, unicode).
+                     The German locales de-DE / de-if used to carry a
+                     literal newline in this key which turned the whole
+                     inline script into a SyntaxError and left the table
+                     un-initialized. See issue #19736. Any other locale
+                     that grows a newline or apostrophe here (French,
+                     Italian, etc.) is now safe by construction. --}}
+                var searchTipHtml = @js(trans('general.search_tip'));
+                html.push('<div class="form-group row"><div class="col-sm-12"><p class="help-block"><i class="fa fa-solid fa-lightbulb text-info" aria-hidden="true"></i> ' + searchTipHtml + '</p></div></div>');
 
                 html.push(`
                     <div class="form-group row">

@@ -340,7 +340,7 @@ return [
     'pending_requests' => 'Pending Requests',
     'rtd' => '準備部署',
     'requested_date' => '申請日期',
-    'requested_assets' => 'Requested Items',
+    'requested_assets' => '可申請的項目',
     'requested_assets_menu' => 'My Requests',
     'request_canceled' => '取消申請',
     'request_item' => '申請此項目',
