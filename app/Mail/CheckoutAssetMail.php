@@ -123,6 +123,7 @@ class CheckoutAssetMail extends BaseMailable
                 'accept_url' => $accept_url,
                 'last_checkout' => $this->last_checkout,
                 'expected_checkin' => $this->expected_checkin,
+                'location' => $this->getLocation(),
                 'introduction_line' => $this->introductionLine(),
             ],
         );
@@ -175,5 +176,22 @@ class CheckoutAssetMail extends BaseMailable
     private function requiresAcceptance(): int|bool
     {
         return method_exists($this->item, 'requireAcceptance') ? $this->item->requireAcceptance() : 0;
+    }
+
+    private function getLocation(): ?string
+    {
+        if ($this->target instanceof User) {
+            return $this->target->location?->name;
+        }
+
+        if ($this->target instanceof Asset) {
+            return $this->target->location?->name;
+        }
+
+        if ($this->target instanceof Location) {
+            return $this->target->name;
+        }
+
+        return null;
     }
 }

@@ -29,6 +29,9 @@
 @if (isset($checkout_qty))
 | **{{ trans('general.qty') }}** | {{ $checkout_qty }} |
 @endif
+@if ($location)
+| **{{ trans('general.location') }}** | {{ $location }} |
+@endisset
 @if ($note)
 | **{{ trans('mail.additional_notes') }}** | {{ $note }} |
 @endif

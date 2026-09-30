@@ -79,6 +79,7 @@ class CheckoutAccessoryMail extends BaseMailable
                 'req_accept' => $req_accept,
                 'accept_url' => $accept_url,
                 'checkout_qty' => $this->checkout_qty,
+                'location' => $this->getLocation(),
                 'introduction_line' => $this->introductionLine(),
             ],
         );
@@ -128,5 +129,22 @@ class CheckoutAccessoryMail extends BaseMailable
         }
 
         return trans('mail.unaccepted_asset_reminder');
+    }
+
+    private function getLocation(): ?string
+    {
+        if ($this->target instanceof User) {
+            return $this->target->location?->name;
+        }
+
+        if ($this->target instanceof Asset) {
+            return $this->target->location?->name;
+        }
+
+        if ($this->target instanceof Location) {
+            return $this->target->name;
+        }
+
+        return null;
     }
 }
