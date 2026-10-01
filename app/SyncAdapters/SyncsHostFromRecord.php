@@ -790,16 +790,17 @@ trait SyncsHostFromRecord
                 // Only overwrite when the vendor sent a non-empty tag,
                 // so a sync run that happens to omit the tag doesn't
                 // blank whatever the admin already curated.
-                if ($value !== null && $value !== '') {
-                    $asset->asset_tag = $value;
+                $tag = is_string($value) ? trim($value) : $value;
+                if ($tag !== null && $tag !== '') {
+                    $asset->asset_tag = $tag;
                 }
                 break;
             case 'notes':
-                // Same non-empty guard as asset_tag. Reachable when
-                // an admin routes a text-like extra (fleet_labels,
-                // kandji_blueprint_id, etc.) to native:notes.
-                if ($value !== null && $value !== '') {
-                    $asset->notes = $value;
+                // Same non-empty guard as asset_tag, with the same
+                // whitespace-only coercion.
+                $notes = is_string($value) ? trim($value) : $value;
+                if ($notes !== null && $notes !== '') {
+                    $asset->notes = $notes;
                 }
                 break;
             case 'model':
