@@ -33,6 +33,14 @@ class MaintenancesController extends Controller
     {
         $this->authorize('view', Asset::class);
 
+        // Normalize array-shaped query probes (?completed[$ptt]=true)
+        // on the request itself so every downstream read in the blade
+        // and included partials sees a string.
+        request()->merge([
+            'completed' => is_string(request()->input('completed')) ? request()->input('completed') : 'false',
+            'upcoming_status' => is_string(request()->input('upcoming_status')) ? request()->input('upcoming_status') : '',
+        ]);
+
         return view('maintenances.index');
     }
 
