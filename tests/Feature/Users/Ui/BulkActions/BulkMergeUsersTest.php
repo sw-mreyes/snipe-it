@@ -3,7 +3,9 @@
 namespace Tests\Feature\Users\Ui\BulkActions;
 
 use App\Models\Asset;
+use App\Models\Company;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class BulkMergeUsersTest extends TestCase
@@ -88,6 +90,52 @@ class BulkMergeUsersTest extends TestCase
 
         $this->assertSoftDeleted($source);
         $this->assertEquals($target->id, $asset->fresh()->assigned_to);
+    }
+
+    public function test_merge_does_not_duplicate_shared_company_pivot_rows()
+    {
+        // Raw insertOrIgnore path should quietly skip the shared company
+        $admin = User::factory()->admin()->create();
+        $source = User::factory()->withoutCompany()->create();
+        $target = User::factory()->withoutCompany()->create();
+
+        $sharedCompany = Company::factory()->create();
+        $sourceOnlyCompany = Company::factory()->create();
+
+        DB::table('company_user')->insert([
+            ['company_id' => $sharedCompany->id, 'user_id' => $source->id, 'created_at' => now(), 'updated_at' => now()],
+            ['company_id' => $sharedCompany->id, 'user_id' => $target->id, 'created_at' => now(), 'updated_at' => now()],
+            ['company_id' => $sourceOnlyCompany->id, 'user_id' => $source->id, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('users.merge.save'), [
+                'ids_to_merge' => [$source->id],
+                'merge_into_id' => $target->id,
+            ])
+            ->assertRedirect(route('users.index'))
+            ->assertSessionHas('success');
+
+        $this->assertSoftDeleted($source);
+
+        // Target ends up with both companies (one brought over from
+        // source, one it already had) and exactly one pivot row per
+        // company. The duplicate-key path would have aborted the
+        // whole merge before this assertion.
+        $targetCompanyIds = DB::table('company_user')
+            ->where('user_id', $target->id)
+            ->pluck('company_id')
+            ->sort()
+            ->values()
+            ->all();
+        $expected = collect([$sharedCompany->id, $sourceOnlyCompany->id])->sort()->values()->all();
+        $this->assertSame($expected, $targetCompanyIds);
+
+        // Explicit no-dup check on the shared pivot pair.
+        $this->assertSame(1, DB::table('company_user')
+            ->where('company_id', $sharedCompany->id)
+            ->where('user_id', $target->id)
+            ->count());
     }
 
     public function test_merge_does_not_transfer_assets_when_source_is_protected()
