@@ -986,9 +986,9 @@ class AssetsController extends Controller
         if ($asset->isValid() && $asset->save()) {
 
             $file_name = null;
-            // Create the image (if one was chosen.)
-            if ($request->hasFile('image')) {
-                $file_name = $request->handleFile('private_uploads/audits/', 'audit-'.$asset->id, $request->file('image'));
+            // Field name changed from `image` to the `file[]` shape UploadFileRequest actually validates.
+            if ($request->hasFile('file.0')) {
+                $file_name = $request->handleFile('private_uploads/audits/', 'audit-'.$asset->id, $request->file('file.0'));
             }
 
             $asset->logAudit($request->input('note'), $request->input('location_id'), $file_name, $originalValues);
