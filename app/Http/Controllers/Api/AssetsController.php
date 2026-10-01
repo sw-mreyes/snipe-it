@@ -1846,8 +1846,9 @@ class AssetsController extends Controller
             // the web audit form's behavior. Filename is stored on the
             // action log so it renders in the audit history.
             $file_name = null;
-            if ($request->hasFile('image')) {
-                $file_name = $request->handleFile('private_uploads/audits/', 'audit-'.$asset->id, $request->file('image'));
+            // Legacy `image` posts are aliased to `file[0]` in UploadFileRequest::prepareForValidation.
+            if ($request->hasFile('file.0')) {
+                $file_name = $request->handleFile('private_uploads/audits/', 'audit-'.$asset->id, $request->file('file.0'));
                 $payload['image'] = $file_name;
             }
 
