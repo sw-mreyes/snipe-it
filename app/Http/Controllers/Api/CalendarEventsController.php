@@ -113,13 +113,26 @@ class CalendarEventsController extends Controller
     protected function resolveRange(Request $request): array
     {
         return [
-            $request->filled('start')
-                ? Carbon::parse($request->input('start'))
-                : now()->subMonths(3)->startOfDay(),
-            $request->filled('end')
-                ? Carbon::parse($request->input('end'))
-                : now()->addMonths(3)->endOfDay(),
+            $this->parseDateOrDefault($request->input('start'), fn() => now()->subMonths(3)->startOfDay()),
+            $this->parseDateOrDefault($request->input('end'), fn() => now()->addMonths(3)->endOfDay()),
         ];
+    }
+
+    /**
+     * Force a `start` / `end` query param to a Carbon or fall back
+     * to the provided default.
+     */
+    private function parseDateOrDefault(mixed $value, callable $default): Carbon
+    {
+        if (!is_string($value) || trim($value) === '') {
+            return $default();
+        }
+
+        try {
+            return Carbon::parse($value);
+        } catch (\Throwable) {
+            return $default();
+        }
     }
 
     /**
