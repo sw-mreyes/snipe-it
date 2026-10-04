@@ -44,7 +44,6 @@ credited, and please let us know if you would like to remain
 anonymous.)
 
 For responsible disclosure, we ask that you give us at least __90 days__ to address the issue before disclosing it
-publicly,
-but we will work with you if you need to disclose it sooner than that.
+publicly, but we will work with you if you need to disclose it sooner than that.
 
 For a full breakdown of our security policies, please see https://snipeitapp.com/security.
