@@ -13,7 +13,7 @@ return [
     'push_not_supported' => 'This adapter does not support pushing data to the vendor.',
     'push_nothing_configured' => 'Push aborted: no fields on the mapping table are directed "Push to vendor" and no composed-notes template is configured. Set at least one before hitting Push Now.',
     'not_configured' => 'This adapter has not been configured yet.',
-    'sync_complete' => 'Sync complete. Synced :count host(s), :errors error(s).',
+    'sync_complete' => 'Sync complete. Synced :count host(s), :skipped skipped, :errors error(s).',
     'sync_failed' => 'Sync failed: :summary. See storage/logs/sync-adapters.log for full details.',
     'sync_failed_network' => 'network error',
     'last_synced_label' => 'Last Synced',
@@ -121,6 +121,8 @@ return [
     'checkin_on_null_user_help' => 'When the vendor stops reporting an assigned user for a device, check the asset in from whoever had it. Off by default because a single missed sync cycle (device offline, empty field on a fresh enrollment) would unassign the asset. Turn this on only if you trust your vendor\'s user reporting to be consistent every sync.',
     'adopt_by_serial_label' => 'Match vendor hosts to existing assets by serial number',
     'adopt_by_serial_help' => 'Migration aid for customers moving from a homegrown sync script that already populated the assets table or manually entered devices. When enabled, this adapter will first check for an existing Snipe-IT asset with the same serial number and link them. Turn this off after your initial migration if you want new vendor assets to always create fresh asset rows.',
+    'create_snipeit_assets_on_pull_label' => 'Create new Snipe-IT assets for vendor records with no existing match',
+    'create_snipeit_assets_on_pull_help' => 'Turn this OFF if your vendor data contains records that should not become Snipe-IT assets (e.g. devices with generic serials that would duplicate rows you entered manually). The sync will update rows already linked to this adapter and log-and-skip anything with no match.',
 
     // Push dry-run + composite notes push
     'push_dry_run_label' => 'Dry-run push (log payloads, do not send)',

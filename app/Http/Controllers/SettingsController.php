@@ -1099,6 +1099,7 @@ class SettingsController extends Controller
         set_time_limit(0);
 
         $seen = 0;
+        $skipped = 0;
         $errors = 0;
         $startedAt = microtime(true);
 
@@ -1107,8 +1108,12 @@ class SettingsController extends Controller
         try {
             foreach ($adapter->pull() as $record) {
                 try {
-                    \App\SyncAdapters\SyncAdapter::syncFromRecord($record);
-                    $seen++;
+                    $result = \App\SyncAdapters\SyncAdapter::syncFromRecord($record);
+                    if ($result === null) {
+                        $skipped++;
+                    } else {
+                        $seen++;
+                    }
                 } catch (\Throwable $e) {
                     $errors++;
                     Log::channel('sync-adapters')->warning(sprintf(
@@ -1145,6 +1150,7 @@ class SettingsController extends Controller
 
         $result = trans('admin/settings/sync_adapters.sync_complete', [
             'count' => $seen,
+            'skipped' => $skipped,
             'errors' => $errors,
         ]);
         $instance->last_synced_at = now();
@@ -1152,7 +1158,7 @@ class SettingsController extends Controller
         $instance->save();
 
         $elapsed = number_format(microtime(true) - $startedAt, 1);
-        Log::channel('sync-adapters')->info("{$instance->slug} sync complete: {$seen} record(s) processed, {$errors} error(s), elapsed {$elapsed}s");
+        Log::channel('sync-adapters')->info("{$instance->slug} sync complete: {$seen} record(s) processed, {$skipped} skipped, {$errors} error(s), elapsed {$elapsed}s");
 
         //   at least one seen, no errors -> success (green)
         //   at least one seen, some errors -> warning (orange, admin should check log)
@@ -1584,7 +1590,7 @@ class SettingsController extends Controller
                 'filename' => basename($file),
                 'filesize' => Setting::fileSizeConvert($disk->size($file)),
                 'modified_value' => $file_timestamp,
-                'modified_display' => date($settings->date_display_format . ' ' . $settings->time_display_format, $file_timestamp),
+                'modified_display' => date($settings->date_display_format.' '.$settings->time_display_format, $file_timestamp),
             ];
         }
 
@@ -1649,7 +1655,7 @@ class SettingsController extends Controller
         }
 
         if (! config('app.lock_passwords')) {
-            $path = $backupName . '/' . $filename;
+            $path = $backupName.'/'.$filename;
             if (Storage::disk('backup')->exists($path)) {
                 Log::warning('User '.auth()->user()->username.' is attempting to download backup file: '.$filename);
 
@@ -1684,7 +1690,7 @@ class SettingsController extends Controller
             if (! config('app.lock_passwords')) {
                 // Same disk + path so S3-destination backup is deletable from the UI.
                 $disk = Storage::disk('backup');
-                $path = config('backup.backup.name', 'backups') . '/' . $filename;
+                $path = config('backup.backup.name', 'backups').'/'.$filename;
 
                 if ($disk->exists($path)) {
 
@@ -1770,9 +1776,9 @@ class SettingsController extends Controller
         // and the name defaults to 'backups'.
         $backupDisk = Storage::disk('backup');
         $backupName = config('backup.backup.name', 'backups');
-        $diskPath = $backupName . '/' . $filename;
+        $diskPath = $backupName.'/'.$filename;
 
-        if (!$backupDisk->exists($diskPath)) {
+        if (! $backupDisk->exists($diskPath)) {
             return redirect()->route('settings.backups.index')->with('error', trans('admin/settings/message.backup.file_not_found'));
         }
 
@@ -1789,12 +1795,12 @@ class SettingsController extends Controller
                 $absolutePath = $backupDisk->path($diskPath);
             } else {
                 $tempDir = storage_path('app/restore-temp');
-                if (!is_dir($tempDir) && !mkdir($tempDir, 0755, true) && !is_dir($tempDir)) {
-                    Log::error('Restore aborted: could not create temp directory ' . $tempDir);
+                if (! is_dir($tempDir) && ! mkdir($tempDir, 0755, true) && ! is_dir($tempDir)) {
+                    Log::error('Restore aborted: could not create temp directory '.$tempDir);
 
                     return redirect()->route('settings.backups.index')->with('error', trans('admin/settings/message.restore.archive_invalid', ['filename' => $filename]));
                 }
-                $localTempPath = $tempDir . '/' . $filename;
+                $localTempPath = $tempDir.'/'.$filename;
                 // readStream returns null on failure, fopen returns false.
                 $srcStream = $backupDisk->readStream($diskPath);
                 $dstStream = fopen($localTempPath, 'w');
@@ -1805,7 +1811,7 @@ class SettingsController extends Controller
                     if (is_resource($dstStream)) {
                         fclose($dstStream);
                     }
-                    Log::error('Restore aborted: failed to open streams for temp copy of ' . $diskPath);
+                    Log::error('Restore aborted: failed to open streams for temp copy of '.$diskPath);
 
                     return redirect()->route('settings.backups.index')->with('error', trans('admin/settings/message.restore.archive_invalid', ['filename' => $filename]));
                 }
@@ -1826,7 +1832,7 @@ class SettingsController extends Controller
             // Refuse to proceed if the PHP zip extension is not loaded. The
             // downstream snipeit:restore command needs ZipArchive too, so
             // running it without ext-zip would fail after the wipe.
-            if (!class_exists(ZipArchive::class)) {
+            if (! class_exists(ZipArchive::class)) {
                 Log::error('Restore aborted: PHP zip extension is not loaded, cannot validate archive before wiping database.');
 
                 return redirect()->route('settings.backups.index')->with('error', trans('admin/settings/message.restore.zip_extension_missing'));
@@ -1835,7 +1841,7 @@ class SettingsController extends Controller
             $zip = new ZipArchive;
             $openResult = $zip->open($absolutePath);
             if ($openResult !== true) {
-                Log::warning('Restore aborted: archive at ' . $absolutePath . ' failed zip open with code ' . $openResult);
+                Log::warning('Restore aborted: archive at '.$absolutePath.' failed zip open with code '.$openResult);
 
                 return redirect()->route('settings.backups.index')->with('error', trans('admin/settings/message.restore.archive_invalid', ['filename' => $filename]));
             }
@@ -1847,27 +1853,27 @@ class SettingsController extends Controller
             // Take a fresh pre-restore backup so we can point the operator at
             // it if the restore fails after we wipe. This is the mitigation
             // the pre-existing
-            $requestedBackupFilename = 'pre-restore-' . date('Y-m-d-H-i-s') . '.zip';
+            $requestedBackupFilename = 'pre-restore-'.date('Y-m-d-H-i-s').'.zip';
             // spatie prepends filename_prefix to the filename provided so this is the actual name on disk:
-            $preRestoreBackupFilename = config('backup.backup.destination.filename_prefix') . $requestedBackupFilename;
-            $preRestoreDiskPath = $backupName . '/' . $preRestoreBackupFilename;
+            $preRestoreBackupFilename = config('backup.backup.destination.filename_prefix').$requestedBackupFilename;
+            $preRestoreDiskPath = $backupName.'/'.$preRestoreBackupFilename;
             $preBackupHint = config('filesystems.disks.backup.driver') === 'local'
                 ? $backupDisk->path($preRestoreDiskPath)
-                : 'backup disk (' . $preRestoreDiskPath . ')';
+                : 'backup disk ('.$preRestoreDiskPath.')';
 
-            Log::debug('Running pre-restore backup: ' . $preRestoreBackupFilename);
+            Log::debug('Running pre-restore backup: '.$preRestoreBackupFilename);
             $preBackupExit = Artisan::call('snipeit:backup', [
                 '--filename' => $requestedBackupFilename,
                 '--force' => true,
             ]);
 
-            if ($preBackupExit !== 0 || !$backupDisk->exists($preRestoreDiskPath)) {
-                Log::warning('Pre-restore backup failed (exit ' . $preBackupExit . '); aborting restore to protect existing data.');
+            if ($preBackupExit !== 0 || ! $backupDisk->exists($preRestoreDiskPath)) {
+                Log::warning('Pre-restore backup failed (exit '.$preBackupExit.'); aborting restore to protect existing data.');
 
                 return redirect()->route('settings.backups.index')->with('error', trans('admin/settings/message.restore.pre_backup_failed'));
             }
 
-            Log::warning('User ' . auth()->user()->username . ' is attempting to restore from: ' . $absolutePath . ' (pre-restore backup at ' . $preBackupHint . ')');
+            Log::warning('User '.auth()->user()->username.' is attempting to restore from: '.$absolutePath.' (pre-restore backup at '.$preBackupHint.')');
 
             $restore_params = [
                 '--force' => true,
@@ -1893,7 +1899,7 @@ class SettingsController extends Controller
             // run the restore command
             $restoreExit = Artisan::call('snipeit:restore', $restore_params);
             $restoreOutput = Artisan::output();
-            Log::debug('snipeit:restore output: ' . $restoreOutput);
+            Log::debug('snipeit:restore output: '.$restoreOutput);
 
             // snipeit:restore returns 0 even on some internal errors, so we also
             // scan its output for its own "Could not access file" / "DB_CONNECTION
@@ -1901,7 +1907,7 @@ class SettingsController extends Controller
             $restoreLooksFailed = $restoreExit !== 0 || str_contains(strtolower($restoreOutput), 'could not access file') || str_contains(strtolower($restoreOutput), 'db_connection must be mysql');
 
             if ($restoreLooksFailed) {
-                Log::error('Restore failed after db:wipe. Pre-restore backup available at ' . $preBackupHint);
+                Log::error('Restore failed after db:wipe. Pre-restore backup available at '.$preBackupHint);
 
                 return redirect()->route('settings.backups.index')->with('error', trans('admin/settings/message.restore.failed_with_backup', [
                     'backup' => $preRestoreBackupFilename,
@@ -1915,7 +1921,7 @@ class SettingsController extends Controller
             Log::debug($migrate_output);
 
             if ($migrateExit !== 0) {
-                Log::error('Migrate failed after restore. Pre-restore backup available at ' . $preBackupHint);
+                Log::error('Migrate failed after restore. Pre-restore backup available at '.$preBackupHint);
 
                 return redirect()->route('settings.backups.index')->with('error', trans('admin/settings/message.restore.failed_with_backup', [
                     'backup' => $preRestoreBackupFilename,
@@ -1924,12 +1930,12 @@ class SettingsController extends Controller
 
             $find_user = DB::table('users')->where('username', $user->username)->exists();
 
-            if (!$find_user) {
-                Log::warning('Attempting to restore user: ' . $user->username);
+            if (! $find_user) {
+                Log::warning('Attempting to restore user: '.$user->username);
                 $new_user = $user->replicate();
                 $new_user->push();
             } else {
-                Log::debug('User: ' . $user->username . ' already exists.');
+                Log::debug('User: '.$user->username.' already exists.');
             }
 
             Log::debug('Logging all users out..');

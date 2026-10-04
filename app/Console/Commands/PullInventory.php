@@ -14,7 +14,7 @@ class PullInventory extends Command
 
     protected $description = 'Pull host inventory from configured sync-adapter instances and upsert as Snipe-IT assets.';
 
-    private const TABLE_HEADERS = ['Adapter', 'Status', 'Synced', 'Errors', 'Elapsed'];
+    private const TABLE_HEADERS = ['Adapter', 'Status', 'Synced', 'Skipped', 'Errors', 'Elapsed'];
 
     public function handle(): int
     {
@@ -110,6 +110,7 @@ class PullInventory extends Command
         set_time_limit(0);
 
         $seen = 0;
+        $skipped = 0;
         $errors = 0;
 
         Log::channel('sync-adapters')->info("{$slug} sync starting (CLI)");
@@ -117,8 +118,12 @@ class PullInventory extends Command
         try {
             foreach ($adapter->pull() as $record) {
                 try {
-                    SyncAdapter::syncFromRecord($record);
-                    $seen++;
+                    $result = SyncAdapter::syncFromRecord($record);
+                    if ($result === null) {
+                        $skipped++;
+                    } else {
+                        $seen++;
+                    }
                 } catch (Throwable $e) {
                     $errors++;
                     $sourceId = $record->sourceId;
@@ -138,10 +143,10 @@ class PullInventory extends Command
 
             $elapsed = self::formatElapsed($startedAt);
             $this->error("{$slug} {$abortSummary} ({$elapsed})");
-            Log::channel('sync-adapters')->warning("{$slug} sync aborted after {$seen} record(s), {$errors} error(s), elapsed {$elapsed}: {$message}", [
+            Log::channel('sync-adapters')->warning("{$slug} sync aborted after {$seen} record(s), {$skipped} skipped, {$errors} error(s), elapsed {$elapsed}: {$message}", [
                 'exception' => $e,
             ]);
-            $rows[] = [$slug, 'Aborted', $seen, $errors, $elapsed];
+            $rows[] = [$slug, 'Aborted', $seen, $skipped, $errors, $elapsed];
 
             return self::FAILURE;
         }
@@ -150,6 +155,7 @@ class PullInventory extends Command
         // on the settings page.
         $result = trans('admin/settings/sync_adapters.sync_complete', [
             'count' => $seen,
+            'skipped' => $skipped,
             'errors' => $errors,
         ]);
         $instance->last_synced_at = now();
@@ -157,10 +163,10 @@ class PullInventory extends Command
         $instance->save();
 
         $elapsed = self::formatElapsed($startedAt);
-        Log::channel('sync-adapters')->info("{$slug} sync complete: {$seen} record(s) processed, {$errors} error(s), elapsed {$elapsed}");
+        Log::channel('sync-adapters')->info("{$slug} sync complete: {$seen} record(s) processed, {$skipped} skipped, {$errors} error(s), elapsed {$elapsed}");
 
         $status = $errors > 0 ? 'Errors' : 'OK';
-        $rows[] = [$slug, $status, $seen, $errors, $elapsed];
+        $rows[] = [$slug, $status, $seen, $skipped, $errors, $elapsed];
 
         return $errors > 0 ? self::FAILURE : self::SUCCESS;
     }
