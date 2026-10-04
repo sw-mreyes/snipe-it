@@ -831,25 +831,45 @@ class CustomHttpAdapter extends SyncAdapter implements PushableAdapter
      */
     private function fetchResponseBody(?string $overrideUrl = null, array $queryParams = []): mixed
     {
+        $baseUrl = rtrim($this->url(), '/');
+        if ($baseUrl === '') {
+            Log::channel('sync-adapters')->warning(sprintf(
+                '%s pull aborted: base URL is empty',
+                $this->name(),
+            ));
+
+            return null;
+        }
+
         if ($overrideUrl !== null) {
-            $endpoint = $overrideUrl;
-        } else {
-            $baseUrl = rtrim($this->url(), '/');
-            if ($baseUrl === '') {
-                Log::channel('sync-adapters')->warning(sprintf(
-                    '%s pull aborted: base URL is empty',
-                    $this->name(),
-                ));
+            // next_url pagination follows a URL from the response body.
+            // Strip to path+query and pin the scheme+host from the
+            // configured base URL so a hostile upstream can't redirect
+            // the next request (and its auth header) to an attacker-
+            // chosen target.
+            $origin = $this->configuredOrigin($baseUrl);
+            if ($origin === null) {
+                Log::channel('sync-adapters')->warning($this->name().' pull aborted: base URL is unparseable');
 
                 return null;
             }
 
+            $parsed = parse_url($overrideUrl);
+            if (! is_array($parsed)) {
+                Log::channel('sync-adapters')->warning($this->name().' pull aborted: next-page URL is malformed');
+
+                return null;
+            }
+            $endpoint = $origin.($parsed['path'] ?? '/').(isset($parsed['query']) ? '?'.$parsed['query'] : '');
+        } else {
             $pullPath = $this->safeCredential('pull_path');
             if ($pullPath !== '' && ! str_starts_with($pullPath, '/')) {
                 $pullPath = '/'.$pullPath;
             }
             $endpoint = $baseUrl.$pullPath;
         }
+
+        [$endpoint, $mergedQuery] = $this->mergeQueryIntoEndpoint($endpoint, $queryParams);
 
         $request = Http::withOptions(['allow_redirects' => false])->acceptJson()->timeout(300);
         $request = $this->applyAuth($request);
@@ -858,7 +878,57 @@ class CustomHttpAdapter extends SyncAdapter implements PushableAdapter
         // and render a red-flash sanitized summary. Swallowing here
         // masked 401 (bad bearer) and 5xx as "Synced 0 host(s), 0
         // error(s)", which reads as false success to an admin.
-        return $request->get($endpoint, $queryParams)->throw()->json();
+        //
+        // Only pass the second arg when non-empty: Laravel's HTTP
+        // client sets Guzzle's `query` option whenever any value is
+        // present (including `[]`), and Guzzle then rewrites the URL's
+        // query with `http_build_query` on that value. An empty array
+        // therefore strips the query already on $endpoint. One-arg
+        // get() preserves it.
+        $response = $mergedQuery === []
+            ? $request->get($endpoint)
+            : $request->get($endpoint, $mergedQuery);
+
+        return $response->throw()->json();
+    }
+
+    /**
+     * Fold any query already present on $endpoint into $queryParams
+     * so pagination keys don't silently discard the admin's
+     * filtered-pull_path query (reporter #19755), and the next_url
+     * cursor's own query (e.g. `$skiptoken=XYZ`) survives the second
+     * hop. Pagination keys win on conflict so adapter-driven iteration
+     * can override an identically-named admin param.
+     *
+     * @param  array<string, mixed>  $queryParams
+     * @return array{0: string, 1: array<string, mixed>}
+     */
+    private function mergeQueryIntoEndpoint(string $endpoint, array $queryParams): array
+    {
+        $queryStart = strpos($endpoint, '?');
+        if ($queryStart === false) {
+            return [$endpoint, $queryParams];
+        }
+
+        $existing = [];
+        parse_str(substr($endpoint, $queryStart + 1), $existing);
+
+        return [substr($endpoint, 0, $queryStart), array_replace($existing, $queryParams)];
+    }
+
+    /**
+     * Extract scheme+host(+port) from the configured base URL so a
+     * server-supplied next-page URL can be re-based onto the admin's
+     * configured host. Returns null when the base URL is unparseable.
+     */
+    private function configuredOrigin(string $baseUrl): ?string
+    {
+        $parts = parse_url($baseUrl);
+        if (! is_array($parts) || empty($parts['scheme']) || empty($parts['host'])) {
+            return null;
+        }
+
+        return $parts['scheme'].'://'.$parts['host'].(isset($parts['port']) ? ':'.$parts['port'] : '');
     }
 
     /**

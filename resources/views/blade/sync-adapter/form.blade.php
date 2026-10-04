@@ -284,6 +284,14 @@
             :help_text="trans('admin/settings/sync_adapters.adopt_by_serial_help')"
             :disabled="$locked"
         />
+        
+        <x-form.checkbox-row
+            :name="$slug . '_create_snipeit_assets_on_pull'"
+            :checked="$adapter->createsSnipeitAssetsOnPull()"
+            :label="trans('admin/settings/sync_adapters.create_snipeit_assets_on_pull_label')"
+            :help_text="trans('admin/settings/sync_adapters.create_snipeit_assets_on_pull_help')"
+            :disabled="$locked"
+        />
     </fieldset>
 
     {{-- Push dry-run only shows for adapters that actually support

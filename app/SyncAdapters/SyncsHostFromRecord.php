@@ -33,13 +33,17 @@ use RuntimeException;
  */
 trait SyncsHostFromRecord
 {
-    public static function syncFromRecord(HostInventoryRecord $record): Asset
+    public static function syncFromRecord(HostInventoryRecord $record): ?Asset
     {
         return DB::transaction(function () use ($record) {
             $instance = SyncAdapterInstance::query()->where('slug', $record->sourceKey)->first();
             $mapping = self::loadMapping($instance);
 
-            [$asset, $isNew] = self::provisionAsset($record, $instance, $mapping);
+            $provisioned = self::provisionAsset($record, $instance, $mapping);
+            if ($provisioned === null) {
+                return null;
+            }
+            [$asset, $isNew] = $provisioned;
 
             $externalUpdates = [];
             self::applyStandardFieldMappings($asset, $externalUpdates, $record, $instance, $mapping);
@@ -103,14 +107,13 @@ trait SyncsHostFromRecord
      * or creates a fresh shell asset + identity row for first-sync
      * cases. Also handles the update-sync group-reassignment case
      * where a device moved to a different vendor group that maps to
-     * a different Snipe-IT company.
+     * a different Snipe-IT company. Returns null when the record was
+     * intentionally skipped (no match + create-on-pull disabled).
      *
-     * @return array{0: Asset, 1: bool} Tuple of the resolved asset and an "isNew" flag.
-     */
-    /**
      * @param  array<string, string>  $mapping
+     * @return array{0: Asset, 1: bool}|null
      */
-    private static function provisionAsset(HostInventoryRecord $record, ?SyncAdapterInstance $instance, array $mapping = []): array
+    private static function provisionAsset(HostInventoryRecord $record, ?SyncAdapterInstance $instance, array $mapping = []): ?array
     {
         $existingSource = DB::table('asset_external_sources')
             ->where('source', $record->sourceKey)
@@ -145,6 +148,22 @@ trait SyncsHostFromRecord
         $adopted = self::adoptExistingAssetBySerial($record, $instance);
         if ($adopted !== null) {
             return [$adopted, false];
+        }
+
+        // Opt-out: when the admin has turned "Create new Snipe-IT
+        // assets on sync" off, skip unmatched vendor records entirely
+        // instead of creating a shell. Log at warning so admins can
+        // spot drift between vendor + Snipe-IT inventories.
+        $adapter = $instance?->adapter();
+        if ($adapter instanceof SyncAdapter && ! $adapter->createsSnipeitAssetsOnPull()) {
+            Log::channel('sync-adapters')->warning(sprintf(
+                '%s sync: skipped %s record %s (no existing Snipe-IT match and asset creation on pull is off)',
+                $adapter->name(),
+                $record->sourceKey,
+                $record->sourceId,
+            ));
+
+            return null;
         }
 
         $asset = self::createShellAsset($record, $instance, $mapping);
