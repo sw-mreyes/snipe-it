@@ -370,6 +370,7 @@ abstract class SyncAdapter
             $slug.'_default_status_id' => ['required', 'integer', 'exists:status_labels,id'],
             $slug.'_user_match_strategy' => ['nullable', 'string', 'in:none,email,username,username_then_email'],
             $slug.'_adopt_by_serial' => ['nullable', 'boolean'],
+            $slug.'_create_snipeit_assets_on_pull' => ['nullable', 'boolean'],
         ];
 
         if ($this->usesConfigurableUrl()) {
@@ -630,6 +631,17 @@ abstract class SyncAdapter
             $this->instance->id,
             'adopt_by_serial',
             $request->boolean($slug.'_adopt_by_serial') ? '1' : '0',
+        );
+
+        // Opt-out: skip asset creation on pull when the vendor record
+        // has no existing Snipe-IT counterpart. Default on so existing
+        // installs keep the "vendor row with no match creates a fresh
+        // asset" behavior. Off = update rows already linked via
+        // asset_external_sources, log and skip anything with no match.
+        SyncAdapterConfig::put(
+            $this->instance->id,
+            'create_snipeit_assets_on_pull',
+            $request->boolean($slug.'_create_snipeit_assets_on_pull', true) ? '1' : '0',
         );
 
         // Push dry-run flag. When on, adapters log the push payload
@@ -1365,7 +1377,6 @@ abstract class SyncAdapter
      * Migration aid: when on, the sync loop looks for an existing
      * Snipe-IT asset with a matching serial before creating a new
      * shell asset for a first-time sync vendor host.
-     *
      */
     public function adoptsBySerial(): bool
     {
@@ -1375,6 +1386,21 @@ abstract class SyncAdapter
         }
 
         return $this->instance->last_synced_at === null;
+    }
+
+    /**
+     * When off, pull-side vendor records with no `asset_external_sources`
+     * link are logged and skipped rather than creating a new Snipe-IT
+     * asset. Default on so existing installs behave unchanged. Admins
+     * flip it off when their vendor data contains rows that shouldn't
+     * become Snipe-IT assets (e.g. Intune devices with generic serials
+     * that would duplicate manually-entered rows).
+     */
+    public function createsSnipeitAssetsOnPull(): bool
+    {
+        $stored = SyncAdapterConfig::get($this->instance->id, 'create_snipeit_assets_on_pull');
+
+        return $stored === null ? true : $stored === '1';
     }
 
     /**
