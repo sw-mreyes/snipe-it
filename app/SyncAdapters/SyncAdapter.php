@@ -248,7 +248,202 @@ abstract class SyncAdapter
      */
     public function extraFields(): array
     {
+        return $this->presetExtraFields() + $this->adminDefinedExtraFields();
+    }
+
+    /**
+     * Vendor-specific extras the adapter extracts in its own normalize()
+     * from well-known API fields. Default empty - adapters that emit
+     * extras override this with their preset keys (e.g. Intune's
+     * compliance_state, Jamf's building, Kandji's blueprint).
+     *
+     * This replaced the old extraFields() hook when admin-defined extras
+     * were added. extraFields() now composes presets with admin extras
+     * so Blade / mapping-targets consumers see the union.
+     *
+     * @return array<string, string|array{label?: string, label_key?: string, type?: string, admin_defined?: bool}>
+     */
+    public function presetExtraFields(): array
+    {
         return [];
+    }
+
+    /**
+     * Admin-defined extras surfaced as mapping targets. Every adapter
+     * gets a Custom Extras widget below its mapping table where admins
+     * can pair a Snipe-IT destination (custom:X or native:X) with a
+     * vendor-record dot-path. extraFields() includes these alongside
+     * the adapter's own presetExtraFields() so the mapping picker
+     * shows both groups.
+     *
+     * @return array<string, array{label: string, admin_defined: true}>
+     */
+    public function adminDefinedExtraFields(): array
+    {
+        $out = [];
+        foreach (array_keys($this->adminDefinedExtras()) as $key) {
+            $out[$key] = ['label' => $key, 'admin_defined' => true];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Admin-configured extras rows for this instance: destination key
+     * (`custom:X` / `native:X`) mapped to a dot-path into the vendor
+     * record. Shared with CustomHttpAdapter's existing Vendor Response
+     * Paths widget via the same `field_paths` config key. Entries whose
+     * destination is a HostInventoryRecord slot (hostname / serial /
+     * etc.) are filtered out here - those are CustomHttp-specific and
+     * driven by its own normalize path, not the admin-extras overlay.
+     *
+     * @return array<string, string>
+     */
+    public function adminDefinedExtras(): array
+    {
+        $raw = SyncAdapterConfig::get($this->instance->id, 'field_paths');
+        if (! is_string($raw) || trim($raw) === '') {
+            return [];
+        }
+
+        $decoded = json_decode($raw, true);
+        if (! is_array($decoded)) {
+            return [];
+        }
+
+        $out = [];
+        foreach ($decoded as $key => $path) {
+            if (! is_string($key) || ! is_string($path) || $path === '') {
+                continue;
+            }
+            if (! str_starts_with($key, 'custom:') && ! str_starts_with($key, 'native:')) {
+                continue;
+            }
+            $out[$key] = $path;
+        }
+
+        return $out;
+    }
+
+    /**
+     * Overlay admin-defined extras onto an adapter's preset extras.
+     * Called from each adapter's normalize() after assembling the
+     * preset extras, right before yielding the HostInventoryRecord.
+     * Walks every configured dot-path against the raw vendor record
+     * and populates the corresponding extras key.
+     *
+     * @param  array<string, mixed>  $extra
+     * @param  array<string, mixed>  $vendorRecord
+     * @return array<string, mixed>
+     */
+    protected function applyAdminExtras(array $extra, array $vendorRecord): array
+    {
+        foreach ($this->adminDefinedExtras() as $key => $path) {
+            $extra[$key] = self::dotPathGet($vendorRecord, $path);
+        }
+
+        return $extra;
+    }
+
+    /**
+     * Which destination options to expose in this adapter's Custom
+     * Extras widget. Named adapters only let admins add new custom:X
+     * / native:X mappings so they can't accidentally remap an identity
+     * field (serial, hostname, etc.) that the adapter's normalize()
+     * owns. CustomHttp overrides this to include HostInventoryRecord
+     * slots because for that adapter, admins ARE the ones defining
+     * where every field comes from.
+     *
+     * @return array<string, string>
+     */
+    public function customExtrasDestinationOptions(): array
+    {
+        $options = [
+            'native:notes' => trans('admin/settings/sync_adapters.target_native_notes'),
+            'native:purchase_date' => MappingTargets::labelFor('native:purchase_date'),
+            'native:order_number' => MappingTargets::labelFor('native:order_number'),
+        ];
+
+        foreach (\App\Models\CustomField::whereIn('element', ['text', 'textarea', 'markdown-textarea', 'checkbox'])->orderBy('name')->get() as $cf) {
+            $options['custom:'.$cf->id] = trans('admin/settings/sync_adapters.target_custom_prefix').': '.$cf->name;
+        }
+
+        return $options;
+    }
+
+    /**
+     * CustomHttp drives its field_paths widget via its own schema
+     * entry (type: field_map) because that widget predates admin-
+     * extras and also exposes HostInventoryRecord slots. Named
+     * adapters opt into the shared Custom Extras widget by leaving
+     * this at its default of false.
+     */
+    public function rendersFieldPathsInSchema(): bool
+    {
+        return false;
+    }
+
+    /**
+     * Whether the shared "Custom Extras" fieldset renders on this
+     * adapter's settings page. Default off so adapters that haven't
+     * been wired up (no applyAdminExtras() call in their normalize())
+     * don't advertise a widget that then does nothing at sync time.
+     * Adapters opt in once their normalize() is calling
+     * applyAdminExtras() by overriding this to true.
+     */
+    public function supportsAdminDefinedExtras(): bool
+    {
+        return false;
+    }
+
+    /**
+     * Hook for an adapter-specific "fetch extra details per device"
+     * toggle in the shared settings UI. When this returns a label +
+     * help string, the base saveConfig persists the posted
+     * `{slug}_fetch_per_device_details` boolean and the shared Blade
+     * renders a checkbox row. Adapters that don't need the toggle
+     * (every adapter whose LIST endpoint already returns everything)
+     * leave this at the default null.
+     *
+     * @return array{label: string, help: string}|null
+     */
+    public function perDeviceDetailsToggle(): ?array
+    {
+        return null;
+    }
+
+    /**
+     * Walk a dot-separated path into a nested array structure. Empty
+     * path returns the input unchanged. Numeric segments (like
+     * "data.0.serial") index into sequential arrays. Returns null for
+     * any miss so downstream null-guards do the right thing.
+     */
+    public static function dotPathGet(mixed $data, string $path): mixed
+    {
+        if ($path === '') {
+            return $data;
+        }
+
+        $current = $data;
+        foreach (explode('.', $path) as $segment) {
+            if (! is_array($current)) {
+                return null;
+            }
+            if (array_key_exists($segment, $current)) {
+                $current = $current[$segment];
+
+                continue;
+            }
+            if (ctype_digit($segment) && array_key_exists((int) $segment, $current)) {
+                $current = $current[(int) $segment];
+
+                continue;
+            }
+
+            return null;
+        }
+
+        return $current;
     }
 
     /**
@@ -373,6 +568,19 @@ abstract class SyncAdapter
             $slug.'_create_snipeit_assets_on_pull' => ['nullable', 'boolean'],
         ];
 
+        // Admin-defined extras widget. Posts as an associative array
+        // of {destination: vendor_path}. Only rendered for adapters
+        // that opt in via supportsAdminDefinedExtras(), but the rule
+        // itself is cheap and harmless when absent.
+        if ($this->supportsAdminDefinedExtras()) {
+            $rules[$slug.'_field_paths'] = ['nullable', 'array'];
+            $rules[$slug.'_field_paths.*'] = ['nullable', 'string', 'max:191'];
+        }
+
+        if ($this->perDeviceDetailsToggle() !== null) {
+            $rules[$slug.'_fetch_per_device_details'] = ['nullable', 'boolean'];
+        }
+
         if ($this->usesConfigurableUrl()) {
             $rules[$slug.'_url'] = ['required', new ExternalUrl];
         }
@@ -442,11 +650,49 @@ abstract class SyncAdapter
             $this->persistGroupMappings($request, $slug);
         }
 
+        if ($this->supportsAdminDefinedExtras()) {
+            $this->persistAdminDefinedExtras($request, $slug);
+        }
+
         $validFields = $this->validMappingFields();
         $this->persistFieldMappings($request, $slug, $validFields);
         $this->persistFieldDirections($request, $slug, $validFields);
 
         $this->afterSaveConfig();
+    }
+
+    /**
+     * Persist the Custom Extras widget's rows. Posted shape is an
+     * associative array mapping destination (`custom:X` or `native:X`)
+     * to a vendor-record dot-path. Stored as a JSON blob in
+     * `field_paths` and also written as self-routing mapping entries
+     * (mapping.<key> = <key>) so the framework's extras loop writes
+     * each extracted value to its target at sync time.
+     */
+    private function persistAdminDefinedExtras(Request $request, string $slug): void
+    {
+        $posted = (array) $request->input($slug.'_field_paths', []);
+        $cleaned = [];
+        foreach ($posted as $key => $path) {
+            if (! is_string($key) || ! is_string($path)) {
+                continue;
+            }
+            $path = trim($path);
+            if ($path === '') {
+                continue;
+            }
+            if (! str_starts_with($key, 'custom:') && ! str_starts_with($key, 'native:')) {
+                continue;
+            }
+            $cleaned[$key] = $path;
+            SyncAdapterConfig::put($this->instance->id, 'mapping.'.$key, $key);
+        }
+
+        SyncAdapterConfig::put(
+            $this->instance->id,
+            'field_paths',
+            $cleaned === [] ? '' : json_encode($cleaned, JSON_UNESCAPED_SLASHES),
+        );
     }
 
     /**
@@ -643,6 +889,18 @@ abstract class SyncAdapter
             'create_snipeit_assets_on_pull',
             $request->boolean($slug.'_create_snipeit_assets_on_pull', true) ? '1' : '0',
         );
+
+        // Per-device enrichment opt-in. Only persisted for adapters
+        // that declare a perDeviceDetailsToggle(). Default off so
+        // large-fleet installs don't eat an extra Graph call per
+        // device unless the admin explicitly opts in.
+        if ($this->perDeviceDetailsToggle() !== null) {
+            SyncAdapterConfig::put(
+                $this->instance->id,
+                'fetch_per_device_details',
+                $request->boolean($slug.'_fetch_per_device_details') ? '1' : '0',
+            );
+        }
 
         // Push dry-run flag. When on, adapters log the push payload
         // instead of sending it, so admins can verify mapping +

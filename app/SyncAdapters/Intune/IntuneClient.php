@@ -92,6 +92,32 @@ class IntuneClient
     }
 
     /**
+     * Per-device GET against Graph's managedDevice endpoint with a
+     * caller-chosen $select set. Used for properties the LIST
+     * endpoint always returns null for (ethernetMacAddress,
+     * physicalMemoryInBytes, etc. - Microsoft docs explicitly flag
+     * these as "requires per-device GET"). Returns the attributes
+     * array on success. Fails soft to null on 4xx/5xx so one bad
+     * device doesn't abort the enclosing enrichment pass.
+     *
+     * @param  array<int, string>  $select
+     * @return array<string, mixed>|null
+     */
+    public function managedDeviceDetail(string $deviceId, array $select): ?array
+    {
+        $url = rtrim($this->graphBaseUrl, '/').'/v1.0/deviceManagement/managedDevices/'.rawurlencode($deviceId);
+
+        try {
+            return $this->request()
+                ->get($url, ['$select' => implode(',', $select)])
+                ->throw()
+                ->json();
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
      * Fetch (or reuse) a bearer token via OAuth 2.0 client-credentials
      * against the tenant-scoped token endpoint. Token is cached on
      * this instance for the life of the sync run.
