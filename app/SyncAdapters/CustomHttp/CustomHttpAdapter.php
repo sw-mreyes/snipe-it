@@ -1017,42 +1017,6 @@ class CustomHttpAdapter extends SyncAdapter implements PushableAdapter
         );
     }
 
-    /**
-     * Walk a dot-separated path into a nested array structure. Empty
-     * path returns the input unchanged, so an admin using the whole
-     * response body as the records array can leave records_path
-     * blank. Numeric segments (like "data.0.serial") index into
-     * sequential arrays too, so an API that returns a list at the
-     * root plus a wrapper object further down is representable.
-     */
-    private static function dotPathGet(mixed $data, string $path): mixed
-    {
-        if ($path === '') {
-            return $data;
-        }
-
-        $current = $data;
-        foreach (explode('.', $path) as $segment) {
-            if (! is_array($current)) {
-                return null;
-            }
-            if (array_key_exists($segment, $current)) {
-                $current = $current[$segment];
-
-                continue;
-            }
-            if (ctype_digit($segment) && array_key_exists((int) $segment, $current)) {
-                $current = $current[(int) $segment];
-
-                continue;
-            }
-
-            return null;
-        }
-
-        return $current;
-    }
-
     private static function stringOrNull(mixed $value): ?string
     {
         if ($value === null) {
