@@ -574,7 +574,80 @@ class CustomHttpAdapterTest extends TestCase
 
         Http::assertNotSent(fn ($request) => str_contains($request->url(), 'attacker.example'));
         Http::assertSent(fn ($request) => str_contains($request->url(), 'vendor.example/exfil')
+            && str_contains($request->url(), 'token=steal')
             && $request->hasHeader('Authorization', 'Bearer leak-canary'));
+    }
+
+    public function test_pull_path_query_string_survives_pagination_style_none()
+    {
+        // Regression test for #19755. The admin configures a filtered
+        // pull_path (ancestor_group_id=...) and expects every pull to
+        // honor it. With pagination_style=none the adapter passed an
+        // empty $queryParams to ->get(), which Laravel/Guzzle turned
+        // into a `query` option that overwrote the URL's existing
+        // query, silently dropping the filter.
+        $adapter = $this->configuredAdapter([
+            'records_path' => 'data',
+            'field_source_id' => 'id',
+            'pagination_style' => 'none',
+            'pull_path' => '/v2/devices?ancestor_group_id=42&limit=100',
+        ]);
+
+        Http::fake(['vendor.example/*' => Http::response(['data' => [['id' => 'x']]])]);
+
+        iterator_to_array($adapter->pull());
+
+        Http::assertSent(fn($request) => str_contains($request->url(), 'ancestor_group_id=42')
+            && str_contains($request->url(), 'limit=100'));
+    }
+
+    public function test_pull_path_query_string_survives_offset_limit_pagination()
+    {
+        // Same bug class as the None case but with pagination params
+        // present. The admin's query + the adapter's offset/limit must
+        // coexist on the outgoing URL.
+        $adapter = $this->configuredAdapter([
+            'records_path' => 'data',
+            'field_source_id' => 'id',
+            'pagination_style' => 'offset_limit',
+            'pagination_page_size' => '50',
+            'pull_path' => '/v2/devices?ancestor_group_id=42',
+        ]);
+
+        Http::fake(['vendor.example/*' => Http::response(['data' => [['id' => 'only']]])]);
+
+        iterator_to_array($adapter->pull());
+
+        Http::assertSent(fn($request) => str_contains($request->url(), 'ancestor_group_id=42')
+            && str_contains($request->url(), 'limit=50')
+            && str_contains($request->url(), 'offset=0'));
+    }
+
+    public function test_next_url_cursor_query_string_survives_second_hop()
+    {
+        // Graph-style cursors carry their pagination state in query
+        // (`$skiptoken=XYZ`). The second-hop request must preserve
+        // that query or pagination terminates on page one with partial
+        // results. Companion to the host-pinning check above.
+        $adapter = $this->configuredAdapter([
+            'records_path' => 'rows',
+            'field_source_id' => 'id',
+            'pagination_style' => 'next_url',
+            'pagination_next_path' => 'links.next',
+        ]);
+
+        Http::fake([
+            'vendor.example/exfil*' => Http::response(['rows' => [['id' => 'b']], 'links' => ['next' => null]]),
+            'vendor.example/api' => Http::response([
+                'rows' => [['id' => 'a']],
+                'links' => ['next' => 'https://vendor.example/exfil?skiptoken=next-page-cursor'],
+            ]),
+        ]);
+
+        $records = iterator_to_array($adapter->pull());
+
+        $this->assertSame(['a', 'b'], array_map(fn($r) => $r->sourceId, $records));
+        Http::assertSent(fn($request) => str_contains($request->url(), 'skiptoken=next-page-cursor'));
     }
 
     public function test_pagination_style_none_yields_one_page_and_stops()

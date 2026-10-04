@@ -869,6 +869,8 @@ class CustomHttpAdapter extends SyncAdapter implements PushableAdapter
             $endpoint = $baseUrl.$pullPath;
         }
 
+        [$endpoint, $mergedQuery] = $this->mergeQueryIntoEndpoint($endpoint, $queryParams);
+
         $request = Http::withOptions(['allow_redirects' => false])->acceptJson()->timeout(300);
         $request = $this->applyAuth($request);
 
@@ -876,7 +878,42 @@ class CustomHttpAdapter extends SyncAdapter implements PushableAdapter
         // and render a red-flash sanitized summary. Swallowing here
         // masked 401 (bad bearer) and 5xx as "Synced 0 host(s), 0
         // error(s)", which reads as false success to an admin.
-        return $request->get($endpoint, $queryParams)->throw()->json();
+        //
+        // Only pass the second arg when non-empty: Laravel's HTTP
+        // client sets Guzzle's `query` option whenever any value is
+        // present (including `[]`), and Guzzle then rewrites the URL's
+        // query with `http_build_query` on that value. An empty array
+        // therefore strips the query already on $endpoint. One-arg
+        // get() preserves it.
+        $response = $mergedQuery === []
+            ? $request->get($endpoint)
+            : $request->get($endpoint, $mergedQuery);
+
+        return $response->throw()->json();
+    }
+
+    /**
+     * Fold any query already present on $endpoint into $queryParams
+     * so pagination keys don't silently discard the admin's
+     * filtered-pull_path query (reporter #19755), and the next_url
+     * cursor's own query (e.g. `$skiptoken=XYZ`) survives the second
+     * hop. Pagination keys win on conflict so adapter-driven iteration
+     * can override an identically-named admin param.
+     *
+     * @param  array<string, mixed>  $queryParams
+     * @return array{0: string, 1: array<string, mixed>}
+     */
+    private function mergeQueryIntoEndpoint(string $endpoint, array $queryParams): array
+    {
+        $queryStart = strpos($endpoint, '?');
+        if ($queryStart === false) {
+            return [$endpoint, $queryParams];
+        }
+
+        $existing = [];
+        parse_str(substr($endpoint, $queryStart + 1), $existing);
+
+        return [substr($endpoint, 0, $queryStart), array_replace($existing, $queryParams)];
     }
 
     /**
