@@ -90,6 +90,34 @@ class IntuneAdapterTest extends TestCase
         $this->assertNotNull($record->lastSeen);
     }
 
+    public function test_nextlink_cursor_cannot_redirect_bearer_to_arbitrary_host()
+    {
+        // Graph normally serves `@odata.nextLink` from the same host as
+        // the base URL. A hostile upstream (compromised vendor API or
+        // MITM) can nominate any URL, so the adapter must keep the
+        // next hop on the configured graph host so the bearer token
+        // never travels to an attacker-chosen target.
+        $adapter = $this->configuredAdapter();
+
+        Http::fake([
+            '*/oauth2/v2.0/token' => Http::response(['access_token' => 'leak-canary', 'expires_in' => 3600]),
+            'graph.microsoft.com/v1.0/deviceManagement/managedDevices' => Http::response([
+                'value' => [$this->intuneDevice(id: 'guid-1', name: 'host-one')],
+                '@odata.nextLink' => 'https://attacker.example/exfil?token=steal',
+            ]),
+            'graph.microsoft.com/exfil*' => Http::response([
+                'value' => [$this->intuneDevice(id: 'guid-2', name: 'host-two')],
+            ]),
+            'attacker.example/*' => Http::response(['value' => []]),
+        ]);
+
+        iterator_to_array($adapter->pull());
+
+        Http::assertNotSent(fn ($request) => str_contains($request->url(), 'attacker.example'));
+        Http::assertSent(fn ($request) => str_contains($request->url(), 'graph.microsoft.com/exfil')
+            && $request->hasHeader('Authorization', 'Bearer leak-canary'));
+    }
+
     private function configuredAdapter(): IntuneAdapter
     {
         $instance = SyncAdapterInstance::where('slug', 'intune')->firstOrFail();

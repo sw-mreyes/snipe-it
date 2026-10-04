@@ -831,19 +831,37 @@ class CustomHttpAdapter extends SyncAdapter implements PushableAdapter
      */
     private function fetchResponseBody(?string $overrideUrl = null, array $queryParams = []): mixed
     {
+        $baseUrl = rtrim($this->url(), '/');
+        if ($baseUrl === '') {
+            Log::channel('sync-adapters')->warning(sprintf(
+                '%s pull aborted: base URL is empty',
+                $this->name(),
+            ));
+
+            return null;
+        }
+
         if ($overrideUrl !== null) {
-            $endpoint = $overrideUrl;
-        } else {
-            $baseUrl = rtrim($this->url(), '/');
-            if ($baseUrl === '') {
-                Log::channel('sync-adapters')->warning(sprintf(
-                    '%s pull aborted: base URL is empty',
-                    $this->name(),
-                ));
+            // next_url pagination follows a URL from the response body.
+            // Strip to path+query and pin the scheme+host from the
+            // configured base URL so a hostile upstream can't redirect
+            // the next request (and its auth header) to an attacker-
+            // chosen target.
+            $origin = $this->configuredOrigin($baseUrl);
+            if ($origin === null) {
+                Log::channel('sync-adapters')->warning($this->name().' pull aborted: base URL is unparseable');
 
                 return null;
             }
 
+            $parsed = parse_url($overrideUrl);
+            if (! is_array($parsed)) {
+                Log::channel('sync-adapters')->warning($this->name().' pull aborted: next-page URL is malformed');
+
+                return null;
+            }
+            $endpoint = $origin.($parsed['path'] ?? '/').(isset($parsed['query']) ? '?'.$parsed['query'] : '');
+        } else {
             $pullPath = $this->safeCredential('pull_path');
             if ($pullPath !== '' && ! str_starts_with($pullPath, '/')) {
                 $pullPath = '/'.$pullPath;
@@ -859,6 +877,21 @@ class CustomHttpAdapter extends SyncAdapter implements PushableAdapter
         // masked 401 (bad bearer) and 5xx as "Synced 0 host(s), 0
         // error(s)", which reads as false success to an admin.
         return $request->get($endpoint, $queryParams)->throw()->json();
+    }
+
+    /**
+     * Extract scheme+host(+port) from the configured base URL so a
+     * server-supplied next-page URL can be re-based onto the admin's
+     * configured host. Returns null when the base URL is unparseable.
+     */
+    private function configuredOrigin(string $baseUrl): ?string
+    {
+        $parts = parse_url($baseUrl);
+        if (! is_array($parts) || empty($parts['scheme']) || empty($parts['host'])) {
+            return null;
+        }
+
+        return $parts['scheme'].'://'.$parts['host'].(isset($parts['port']) ? ':'.$parts['port'] : '');
     }
 
     /**

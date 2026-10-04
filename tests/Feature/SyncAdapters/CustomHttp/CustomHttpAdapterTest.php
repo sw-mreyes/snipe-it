@@ -211,11 +211,11 @@ class CustomHttpAdapterTest extends TestCase
         $instance = SyncAdapterInstance::where('slug', $slug)->firstOrFail();
 
         $adapter->saveConfig(\Illuminate\Http\Request::create('/', 'POST', [
-            $slug . '_url' => 'https://vendor.example/api',
-            $slug . '_source_id_path' => 'id',
-            $slug . '_field_paths' => [],
-            $slug . '_field_paths_pending' => ['key' => 'hostname', 'value' => 'device.name'],
-            $slug . '_direction_pending' => ['value' => 'push'],
+            $slug.'_url' => 'https://vendor.example/api',
+            $slug.'_source_id_path' => 'id',
+            $slug.'_field_paths' => [],
+            $slug.'_field_paths_pending' => ['key' => 'hostname', 'value' => 'device.name'],
+            $slug.'_direction_pending' => ['value' => 'push'],
         ]));
 
         $stored = json_decode(SyncAdapterConfig::get($instance->id, 'field_paths'), true);
@@ -235,11 +235,11 @@ class CustomHttpAdapterTest extends TestCase
         $instance = SyncAdapterInstance::where('slug', $slug)->firstOrFail();
 
         $adapter->saveConfig(\Illuminate\Http\Request::create('/', 'POST', [
-            $slug . '_url' => 'https://vendor.example/api',
-            $slug . '_source_id_path' => 'id',
-            $slug . '_field_paths' => [],
-            $slug . '_field_paths_pending' => ['key' => 'custom:9', 'value' => 'location.room'],
-            $slug . '_direction_pending' => ['value' => 'pull'],
+            $slug.'_url' => 'https://vendor.example/api',
+            $slug.'_source_id_path' => 'id',
+            $slug.'_field_paths' => [],
+            $slug.'_field_paths_pending' => ['key' => 'custom:9', 'value' => 'location.room'],
+            $slug.'_direction_pending' => ['value' => 'pull'],
         ]));
 
         $stored = json_decode(SyncAdapterConfig::get($instance->id, 'field_paths'), true);
@@ -259,11 +259,11 @@ class CustomHttpAdapterTest extends TestCase
         $instance = SyncAdapterInstance::where('slug', $slug)->firstOrFail();
 
         $adapter->saveConfig(\Illuminate\Http\Request::create('/', 'POST', [
-            $slug . '_url' => 'https://vendor.example/api',
-            $slug . '_source_id_path' => 'id',
-            $slug . '_field_paths' => [],
-            $slug . '_field_paths_pending' => ['key' => 'hostname', 'value' => ''],
-            $slug . '_direction_pending' => ['value' => 'push'],
+            $slug.'_url' => 'https://vendor.example/api',
+            $slug.'_source_id_path' => 'id',
+            $slug.'_field_paths' => [],
+            $slug.'_field_paths_pending' => ['key' => 'hostname', 'value' => ''],
+            $slug.'_direction_pending' => ['value' => 'push'],
         ]));
 
         $stored = json_decode(SyncAdapterConfig::get($instance->id, 'field_paths'), true);
@@ -299,8 +299,8 @@ class CustomHttpAdapterTest extends TestCase
 
         iterator_to_array($adapter->pull());
 
-        $matches = array_filter($captured, fn($m) => str_contains($m, 'blargh.not_a_real_field') && str_contains($m, 'serial'));
-        $this->assertNotEmpty($matches, 'Expected an always-null summary warning naming the offending path. Captured: ' . json_encode($captured));
+        $matches = array_filter($captured, fn ($m) => str_contains($m, 'blargh.not_a_real_field') && str_contains($m, 'serial'));
+        $this->assertNotEmpty($matches, 'Expected an always-null summary warning naming the offending path. Captured: '.json_encode($captured));
     }
 
     public function test_pull_does_not_warn_when_path_resolves_on_at_least_one_record()
@@ -330,7 +330,7 @@ class CustomHttpAdapterTest extends TestCase
 
         iterator_to_array($adapter->pull());
 
-        $this->assertEmpty($captured, 'No warning expected when the path resolves on at least one record. Captured: ' . json_encode($captured));
+        $this->assertEmpty($captured, 'No warning expected when the path resolves on at least one record. Captured: '.json_encode($captured));
     }
 
     public function test_pull_does_not_warn_on_empty_vendor_response()
@@ -541,6 +541,40 @@ class CustomHttpAdapterTest extends TestCase
         $records = iterator_to_array($adapter->pull());
 
         $this->assertSame(['a', 'b', 'c'], array_map(fn ($r) => $r->sourceId, $records));
+    }
+
+    public function test_next_url_pagination_rejects_cross_host_cursor()
+    {
+        // A hostile upstream can emit any absolute URL in the next-URL
+        // field. The adapter must keep the second-hop request on the
+        // configured host so the auth header can't be leaked to an
+        // attacker-chosen target.
+        $adapter = $this->configuredAdapter([
+            'records_path' => 'rows',
+            'field_source_id' => 'id',
+            'pagination_style' => 'next_url',
+            'pagination_next_path' => 'links.next',
+            'auth_method' => 'bearer',
+            'bearer_token' => 'leak-canary',
+        ]);
+
+        Http::fake([
+            'vendor.example/api' => Http::response([
+                'rows' => [['id' => 'first']],
+                'links' => ['next' => 'https://attacker.example/exfil?token=steal'],
+            ]),
+            'vendor.example/exfil*' => Http::response([
+                'rows' => [['id' => 'second']],
+                'links' => ['next' => null],
+            ]),
+            'attacker.example/*' => Http::response(['rows' => [], 'links' => ['next' => null]]),
+        ]);
+
+        iterator_to_array($adapter->pull());
+
+        Http::assertNotSent(fn ($request) => str_contains($request->url(), 'attacker.example'));
+        Http::assertSent(fn ($request) => str_contains($request->url(), 'vendor.example/exfil')
+            && $request->hasHeader('Authorization', 'Bearer leak-canary'));
     }
 
     public function test_pagination_style_none_yields_one_page_and_stops()
@@ -864,7 +898,6 @@ class CustomHttpAdapterTest extends TestCase
         // must round-trip through Crypt so credential() can read them.
         // Anything not in this set is stored plaintext.
         $secretKeys = ['bearer_token', 'basic_password', 'api_key_value'];
-
 
         if (array_key_exists('field_source_id', $config)) {
             SyncAdapterConfig::put($instance->id, 'source_id_path', (string) $config['field_source_id']);
