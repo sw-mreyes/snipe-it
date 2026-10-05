@@ -275,8 +275,17 @@ class AcceptanceController extends Controller
                 return redirect()->back()->with('error', trans('admin/users/message.accept_pdf_write_failed'));
             }
 
-            // Log the acceptance
-            $acceptance->accept($sig_filename, $item->getEula(), $pdf_filename, $request->input('note'));
+            // Log the acceptance. accept() runs a compare-and-set UPDATE
+            // under the hood, so if another request already finalized this
+            // row, we bail here before any notification, event, or follow-up
+            // side effect fires. The PDF file we just wrote is left behind
+            // (same disposition as the signature file above) rather than
+            // rolled back, since cleaning up on the loser side would race
+            // the winner reading the same file. Not ideal, but the alternative
+            // is a more complex transactional file store that can roll back on failure.
+            if (!$acceptance->accept($sig_filename, $item->getEula(), $pdf_filename, $request->input('note'))) {
+                return redirect()->route('account.accept')->with('error', trans('admin/users/message.error.asset_already_accepted'));
+            }
 
             // Send the PDF to the signing user
             if (($request->input('send_copy') === '1') && ($assignedUser->email !== '')) {
@@ -301,8 +310,12 @@ class AcceptanceController extends Controller
             // Item was declined
         } else {
 
-            for ($i = 0; $i < ($acceptance->qty ?? 1); $i++) {
-                $acceptance->decline($sig_filename, $request->input('note'));
+            // decline() does its own compare-and-set and loops the per-unit
+            // declinedCheckout side effects internally for qty > 1. If another
+            // request already finalized this row, bail before notifications
+            // and events fire.
+            if (!$acceptance->decline($sig_filename, $request->input('note'))) {
+                return redirect()->route('account.accept')->with('error', trans('admin/users/message.error.asset_already_accepted'));
             }
 
             $acceptance->notify(new AcceptanceItemDeclinedNotification($data));

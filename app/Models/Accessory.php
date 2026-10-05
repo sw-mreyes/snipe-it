@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Watson\Validating\ValidatingTrait;
 
@@ -457,12 +458,23 @@ class Accessory extends SnipeModel
      */
     public function declinedCheckout(User $declinedBy, $signature)
     {
-        if (is_null($accessory_checkout = AccessoryCheckout::userAssigned()->where('assigned_to', $declinedBy->id)->where('accessory_id', $this->id)->latest('created_at'))) {
-            // Redirect to the accessory management page with error
-            return redirect()->route('accessories.index')->with('error', trans('admin/accessories/message.does_not_exist'));
+        // ->latest() on a builder is never null, so the previous
+        // `is_null($query_builder)` guard was dead code and the subsequent
+        // `->limit(1)->delete()` ran unconditionally. Resolve the row first
+        // and delete by model so the no-match path is explicit.
+        $accessory_checkout = AccessoryCheckout::userAssigned()
+            ->where('assigned_to', $declinedBy->id)
+            ->where('accessory_id', $this->id)
+            ->latest('created_at')
+            ->first();
+
+        if ($accessory_checkout === null) {
+            Log::warning('No AccessoryCheckout row found to decline for accessory '.$this->id.' and user '.$declinedBy->id);
+
+            return;
         }
 
-        $accessory_checkout->limit(1)->delete();
+        $accessory_checkout->delete();
     }
 
     /**
