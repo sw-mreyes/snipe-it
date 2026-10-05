@@ -116,43 +116,76 @@ class CheckoutAcceptance extends Model
     }
 
     /**
-     * Add a record to the checkout_acceptance table ONLY.
-     * Do not add stuff here that doesn't have a corresponding column in the
-     * checkout_acceptances table or you'll get an error.
+     * Finalize this acceptance as accepted. Returns false when another
+     * request already finalized the row (accepted or declined). The state
+     * transition is a compare-and-set UPDATE scoped by whereNull on both
+     * timestamps, so overlapping requests cannot both run the side effects.
      *
      * @param  string  $signature_filename
      */
-    public function accept($signature_filename, $eula = null, $filename = null, $note = null)
+    public function accept($signature_filename, $eula = null, $filename = null, $note = null): bool
     {
-        $this->accepted_at = now();
-        $this->signature_filename = $signature_filename;
-        $this->stored_eula = $eula;
-        $this->stored_eula_file = $filename;
-        $this->note = $note;
-        $this->save();
+        $now = now();
 
-        /**
-         * Update state for the checked out item
-         */
+        $claimed = static::query()
+            ->where('id', $this->id)
+            ->whereNull('accepted_at')
+            ->whereNull('declined_at')
+            ->update([
+                'accepted_at' => $now,
+                'signature_filename' => $signature_filename,
+                'stored_eula' => $eula,
+                'stored_eula_file' => $filename,
+                'note' => $note,
+                'updated_at' => $now,
+            ]);
+
+        if ($claimed === 0) {
+            return false;
+        }
+
+        $this->refresh();
+
         $this->checkoutable->acceptedCheckout($this->assignedTo, $signature_filename, $filename);
+
+        return true;
     }
 
     /**
-     * Decline the checkout acceptance
+     * Finalize this acceptance as declined. Returns false when another
+     * request already finalized the row. The qty loop lives here (not in
+     * the controller) so the per-unit side effects are tied to a winning
+     * state transition.
      *
      * @param  string  $signature_filename
      */
-    public function decline($signature_filename, $note = null)
+    public function decline($signature_filename, $note = null): bool
     {
-        $this->declined_at = now();
-        $this->note = $note;
-        $this->signature_filename = $signature_filename;
-        $this->save();
+        $now = now();
 
-        /**
-         * Update state for the checked out item
-         */
-        $this->checkoutable->declinedCheckout($this->assignedTo, $signature_filename);
+        $claimed = static::query()
+            ->where('id', $this->id)
+            ->whereNull('accepted_at')
+            ->whereNull('declined_at')
+            ->update([
+                'declined_at' => $now,
+                'signature_filename' => $signature_filename,
+                'note' => $note,
+                'updated_at' => $now,
+            ]);
+
+        if ($claimed === 0) {
+            return false;
+        }
+
+        $this->refresh();
+
+        $qty = max((int) ($this->qty ?? 1), 1);
+        for ($i = 0; $i < $qty; $i++) {
+            $this->checkoutable->declinedCheckout($this->assignedTo, $signature_filename);
+        }
+
+        return true;
     }
 
     /**

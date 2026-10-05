@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Helpers\Helper;
 use App\Http\Traits\ConvertsBase64ToFiles;
 use App\Models\SnipeModel;
 use enshrined\svgSanitize\Sanitizer;
@@ -34,11 +35,19 @@ class ImageUploadRequest extends Request
      */
     public function rules()
     {
+        // dimensions caps run via getimagesize() (header-read only, no raster
+        // decode), so they fire before Image::make() gets to allocate a
+        // decompressed pixel buffer. Without them, a tiny solid-color PNG
+        // with large declared dimensions decodes to many hundreds of
+        // megabytes of RGBA before resize() ever runs. SVGs are hard-skipped
+        // by the dimensions validator, which is the behavior we want - they
+        // go through the sanitizer, not GD/ImageMagick.
+        $max_size = Helper::file_upload_max_size();
 
         return [
-            'image' => 'mimes:png,gif,jpg,jpeg,svg,bmp,svg+xml,webp,avif',
-            'avatar' => 'mimes:png,gif,jpg,jpeg,svg,bmp,svg+xml,webp,avif',
-            'favicon' => 'mimes:png,gif,jpg,jpeg,svg,bmp,svg+xml,webp,image/x-icon,image/vnd.microsoft.icon,ico',
+            'image' => 'mimes:png,gif,jpg,jpeg,svg,bmp,svg+xml,webp,avif|max:'.$max_size.'|dimensions:max_width=10000,max_height=10000',
+            'avatar' => 'mimes:png,gif,jpg,jpeg,svg,bmp,svg+xml,webp,avif|max:'.$max_size.'|dimensions:max_width=10000,max_height=10000',
+            'favicon' => 'mimes:png,gif,jpg,jpeg,svg,bmp,svg+xml,webp,image/x-icon,image/vnd.microsoft.icon,ico|max:'.$max_size.'|dimensions:max_width=1024,max_height=1024',
         ];
     }
 
