@@ -415,18 +415,6 @@ parameters:
 			path: app/Console/Commands/MergeUsersByUsername.php
 
 		-
-			message: '#^Method Illuminate\\Filesystem\\FilesystemAdapter\:\:url\(\) invoked with 2 parameters, 1 required\.$#'
-			identifier: arguments.count
-			count: 1
-			path: app/Console/Commands/MoveUploadsToNewDisk.php
-
-		-
-			message: '#^Static method Illuminate\\Filesystem\\FilesystemAdapter\:\:url\(\) invoked with 2 parameters, 1 required\.$#'
-			identifier: arguments.count
-			count: 1
-			path: app/Console/Commands/MoveUploadsToNewDisk.php
-
-		-
 			message: '#^Method App\\Console\\Commands\\NormalizeUserNames\:\:handle\(\) should return int but return statement is missing\.$#'
 			identifier: return.missing
 			count: 1
@@ -704,12 +692,6 @@ parameters:
 
 		-
 			message: '#^Access to an undefined property App\\Models\\AssetModel\:\:\$available_assets_count\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Helpers/Helper.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Component\:\:\$sum_unconstrained_assets\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Helpers/Helper.php
@@ -1497,12 +1479,6 @@ parameters:
 		-
 			message: '#^PHPDoc tag @param references unknown parameter\: \$request$#'
 			identifier: parameter.notFound
-			count: 1
-			path: app/Http/Controllers/Api/ImportController.php
-
-		-
-			message: '#^Property App\\Models\\Import\:\:\$filesize \(int\) does not accept null\.$#'
-			identifier: assign.propertyType
 			count: 1
 			path: app/Http/Controllers/Api/ImportController.php
 
@@ -3469,12 +3445,6 @@ parameters:
 			path: app/Http/Controllers/Users/BulkUsersController.php
 
 		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\Relation\:\:sync\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Http/Controllers/Users/BulkUsersController.php
-
-		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\Relation\:\:updateExistingPivot\(\)\.$#'
 			identifier: method.notFound
 			count: 3
@@ -4963,100 +4933,10 @@ parameters:
 			path: app/Mail/CheckinLicenseMail.php
 
 		-
-			message: '#^Access to an undefined property App\\Mail\\CheckoutAccessoryMail\:\:\$acceptance\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Mail/CheckoutAccessoryMail.php
-
-		-
-			message: '#^Access to an undefined property App\\Mail\\CheckoutAccessoryMail\:\:\$admin\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Mail/CheckoutAccessoryMail.php
-
-		-
-			message: '#^Access to an undefined property App\\Mail\\CheckoutAccessoryMail\:\:\$checkout_qty\.$#'
-			identifier: property.notFound
-			count: 6
-			path: app/Mail/CheckoutAccessoryMail.php
-
-		-
-			message: '#^Access to an undefined property App\\Mail\\CheckoutAccessoryMail\:\:\$item\.$#'
-			identifier: property.notFound
-			count: 6
-			path: app/Mail/CheckoutAccessoryMail.php
-
-		-
-			message: '#^Access to an undefined property App\\Mail\\CheckoutAccessoryMail\:\:\$note\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Mail/CheckoutAccessoryMail.php
-
-		-
-			message: '#^Access to an undefined property App\\Mail\\CheckoutAccessoryMail\:\:\$settings\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Mail/CheckoutAccessoryMail.php
-
-		-
-			message: '#^Access to an undefined property App\\Mail\\CheckoutAccessoryMail\:\:\$target\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Mail/CheckoutAccessoryMail.php
-
-		-
 			message: '#^Access to an undefined property App\\Models\\Accessory\:\:\$checkout_qty\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Mail/CheckoutAccessoryMail.php
-
-		-
-			message: '#^Access to an undefined property App\\Mail\\CheckoutAssetMail\:\:\$acceptance\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Mail/CheckoutAssetMail.php
-
-		-
-			message: '#^Access to an undefined property App\\Mail\\CheckoutAssetMail\:\:\$admin\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Mail/CheckoutAssetMail.php
-
-		-
-			message: '#^Access to an undefined property App\\Mail\\CheckoutAssetMail\:\:\$expected_checkin\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Mail/CheckoutAssetMail.php
-
-		-
-			message: '#^Access to an undefined property App\\Mail\\CheckoutAssetMail\:\:\$item\.$#'
-			identifier: property.notFound
-			count: 11
-			path: app/Mail/CheckoutAssetMail.php
-
-		-
-			message: '#^Access to an undefined property App\\Mail\\CheckoutAssetMail\:\:\$last_checkout\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Mail/CheckoutAssetMail.php
-
-		-
-			message: '#^Access to an undefined property App\\Mail\\CheckoutAssetMail\:\:\$note\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Mail/CheckoutAssetMail.php
-
-		-
-			message: '#^Access to an undefined property App\\Mail\\CheckoutAssetMail\:\:\$settings\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Mail/CheckoutAssetMail.php
-
-		-
-			message: '#^Access to an undefined property App\\Mail\\CheckoutAssetMail\:\:\$target\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Mail/CheckoutAssetMail.php
 
 		-
 			message: '#^PHPDoc tag @param references unknown parameter\: \$notifiable$#'
@@ -5563,12 +5443,6 @@ parameters:
 			path: app/Models/Actionlog.php
 
 		-
-			message: '#^PHPDoc tag @SuppressWarnings has invalid value \(\(PHPMD\.UnusedFormalParameter\)\)\: Unexpected token "\.UnusedFormalParameter\)", expected ''\)'' at offset 351 on line 10$#'
-			identifier: phpDoc.parseError
-			count: 1
-			path: app/Models/Actionlog.php
-
-		-
 			message: '#^Property App\\Models\\Actionlog\:\:\$searchableAttributes \(array\) on left side of \?\? is not nullable\.$#'
 			identifier: nullCoalesce.property
 			count: 1
@@ -5761,12 +5635,6 @@ parameters:
 			path: app/Models/Asset.php
 
 		-
-			message: '#^PHPDoc tag @param references unknown parameter\: \$query$#'
-			identifier: parameter.notFound
-			count: 1
-			path: app/Models/Asset.php
-
-		-
 			message: '#^PHPDoc tag @param references unknown parameter\: \$settings$#'
 			identifier: parameter.notFound
 			count: 1
@@ -5780,12 +5648,6 @@ parameters:
 
 		-
 			message: '#^PHPDoc tag @return with type Illuminate\\Database\\Query\\Builder is incompatible with native type Illuminate\\Database\\Eloquent\\Builder\.$#'
-			identifier: return.phpDocType
-			count: 1
-			path: app/Models/Asset.php
-
-		-
-			message: '#^PHPDoc tag @return with type Illuminate\\Database\\Query\\Builder is incompatible with native type array\.$#'
 			identifier: return.phpDocType
 			count: 1
 			path: app/Models/Asset.php
@@ -6233,6 +6095,12 @@ parameters:
 			identifier: return.type
 			count: 1
 			path: app/Models/Builders/MaintenanceQueryBuilder.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$company_id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Models/CalendarEvent.php
 
 		-
 			message: '#^Call to function is_array\(\) with string will always evaluate to false\.$#'
@@ -7207,6 +7075,12 @@ parameters:
 			path: app/Models/Depreciation.php
 
 		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\Relation\:\:detach\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Models/Group.php
+
+		-
 			message: '#^Call to function is_array\(\) with string will always evaluate to false\.$#'
 			identifier: function.impossibleType
 			count: 1
@@ -7240,12 +7114,6 @@ parameters:
 			message: '#^Unsafe access to private property App\\Models\\Group\:\:\$customFieldFilterMapCache through static\:\:\.$#'
 			identifier: staticClassAccess.privateProperty
 			count: 4
-			path: app/Models/Group.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\Relation\:\:detach\(\)\.$#'
-			identifier: method.notFound
-			count: 1
 			path: app/Models/Group.php
 
 		-
@@ -8035,12 +7903,6 @@ parameters:
 			path: app/Models/SnipeSCIMConfig.php
 
 		-
-			message: '#^Variable \$subNode might not be defined\.$#'
-			identifier: variable.undefined
-			count: 1
-			path: app/Models/SnipeSCIMConfig.php
-
-		-
 			message: '#^Call to function is_array\(\) with string will always evaluate to false\.$#'
 			identifier: function.impossibleType
 			count: 1
@@ -8287,6 +8149,12 @@ parameters:
 			path: app/Models/User.php
 
 		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\Relation\:\:detach\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Models/User.php
+
+		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\Relation\:\:sync\(\)\.$#'
 			identifier: method.notFound
 			count: 1
@@ -8439,12 +8307,6 @@ parameters:
 		-
 			message: '#^Using nullsafe property access "\?\-\>company_id" in isset\(\) is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Models/User.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\Relation\:\:detach\(\)\.$#'
-			identifier: method.notFound
 			count: 1
 			path: app/Models/User.php
 
@@ -10306,18 +10168,6 @@ parameters:
 			message: '#^Access to an undefined property Database\\Seeders\\AssetSeeder\:\:\$adminuser\.$#'
 			identifier: property.notFound
 			count: 2
-			path: database/seeders/AssetSeeder.php
-
-		-
-			message: '#^Binary operation "\." between ''Deleting\: '' and non\-empty\-array\<string\> results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 1
-			path: database/seeders/AssetSeeder.php
-
-		-
-			message: '#^Binary operation "\." between ''assets/'' and non\-empty\-array\<string\> results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 1
 			path: database/seeders/AssetSeeder.php
 
 		-

@@ -124,7 +124,7 @@ class ActivationLockEnrichmentTest extends TestCase
                         'wifiMacAddress' => 'AA:BB:CC:00:11:22',
                         'bluetoothMacAddress' => 'AA:BB:CC:00:11:23',
                         'ethernetMacAddress' => null,
-                        'imei' => '351234567890123',
+                        'imei' => ['351234567890123'],
                         'meid' => '35123456789012',
                         'eid' => '89012345678901234567890123456789',
                         'addedToOrgDateTime' => '2024-11-01T14:22:00Z',
@@ -142,7 +142,8 @@ class ActivationLockEnrichmentTest extends TestCase
         $this->assertSame('AA:BB:CC:00:11:22', $record->extra['abm_wifi_mac']);
         $this->assertSame('AA:BB:CC:00:11:23', $record->extra['abm_bluetooth_mac']);
         $this->assertNull($record->extra['abm_ethernet_mac']);
-        $this->assertSame('351234567890123', $record->extra['abm_imei']);
+        $this->assertSame('351234567890123', $record->extra['abm_imei_1']);
+        $this->assertNull($record->extra['abm_imei_2']);
         $this->assertSame('35123456789012', $record->extra['abm_meid']);
         $this->assertSame('89012345678901234567890123456789', $record->extra['abm_eid']);
         $this->assertSame('2024-11-01', $record->extra['abm_added_to_org']);

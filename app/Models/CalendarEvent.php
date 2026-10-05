@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Traits\CompanyableTrait;
 use App\Models\Traits\HasCalendarEvents;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
@@ -20,6 +21,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class CalendarEvent extends Model
 {
+    use CompanyableTrait;
     use SoftDeletes;
 
     protected $fillable = [
@@ -29,6 +31,7 @@ class CalendarEvent extends Model
         'event_type',
         'start',
         'end',
+        'company_id',
     ];
 
     protected $casts = [

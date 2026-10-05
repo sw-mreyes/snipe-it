@@ -292,6 +292,21 @@
             :help_text="trans('admin/settings/sync_adapters.create_snipeit_assets_on_pull_help')"
             :disabled="$locked"
         />
+
+        {{-- Adapter-specific "fetch per-device details" opt-in. Lets
+             admins pay the extra per-device cost for fields the
+             vendor's LIST endpoint doesn't populate (Intune's
+             ethernet MAC + physical memory). --}}
+        @php $perDeviceDetailsToggle = $adapter->perDeviceDetailsToggle(); @endphp
+        @if ($perDeviceDetailsToggle !== null)
+            <x-form.checkbox-row
+                :name="$slug . '_fetch_per_device_details'"
+                :checked="method_exists($adapter, 'fetchesPerDeviceDetails') && $adapter->fetchesPerDeviceDetails()"
+                :label="$perDeviceDetailsToggle['label']"
+                :help_text="$perDeviceDetailsToggle['help']"
+                :disabled="$locked"
+            />
+        @endif
     </fieldset>
 
     {{-- Push dry-run only shows for adapters that actually support
@@ -487,6 +502,30 @@
                 :direction_options="$directionOptions"
                 :supports_push="$supportsPush"
                 :locked="$locked"
+            />
+        </fieldset>
+    @endif
+
+    {{-- Admin-defined custom extras. Each row pairs a Snipe-IT
+         destination (custom:X / native:X) with a vendor-record
+         dot-path the adapter extracts at pull time. Opt-in per
+         adapter via supportsAdminDefinedExtras(). Rows show up as
+         targets in the mapping picker above once saved. --}}
+    @if ($adapter->supportsAdminDefinedExtras())
+        @php
+            $cxName = $slug.'_field_paths';
+            $cxStored = $adapter->adminDefinedExtras();
+            $cxStored = old($cxName, is_array($cxStored) ? $cxStored : []);
+            $cxStored = is_array($cxStored) ? $cxStored : [];
+        @endphp
+        <fieldset>
+            <x-form.legend icon="tip" help_text="{{ trans('admin/settings/sync_adapters.custom_extras_section_intro') }}">
+                {{ trans('admin/settings/sync_adapters.custom_extras_section_title') }}
+            </x-form.legend>
+            <x-input.field-map
+                :name="$cxName"
+                :options="$adapter->customExtrasDestinationOptions()"
+                :stored="$cxStored"
             />
         </fieldset>
     @endif
