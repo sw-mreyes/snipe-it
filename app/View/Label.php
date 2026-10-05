@@ -217,7 +217,12 @@ class Label implements View
                         return $toAdd ? $myFields->push($toAdd) : $myFields;
                     }, new Collection);
 
-                $emptyRowsCount = $settings->label2_empty_row_count;
+                // Stick to the template's physical capacity because the
+                // ->take() below drops everything past it anyway. This
+                // also handles unbounded or negative values reaching
+                // range(), which otherwise materializes an N-element array
+                // before the ->take() can throw it away
+                $emptyRowsCount = min(max((int) $settings->label2_empty_row_count, 0), $template->getSupportFields());
                 if ($emptyRowsCount) {
                     // Create empty rows
                     $emptyRows = collect(range(1, $emptyRowsCount))->map(function () {

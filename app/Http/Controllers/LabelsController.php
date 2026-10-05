@@ -81,11 +81,21 @@ class LabelsController extends Controller
                 }
             });
 
-        $settings = Setting::getSettings();
-        if (request()->has('settings')) {
-            $overrides = request()->input('settings');
+        // Clone to isolate preview overrides from the Setting::getSettings()
+        // singleton. Without the clone, one caller's `?settings[key]=value`
+        // mutates the static cache for the lifetime of the PHP-FPM worker,
+        // poisoning settings reads for every subsequent request on the same
+        // worker. Allowlist to the label2_ prefix matches the keys the
+        // Settings → Labels preview UI actually sends from
+        // resources/views/partials/label2-preview.blade.php, so an attacker
+        // cannot drive arbitrary settings keys from this endpoint.
+        $settings = clone Setting::getSettings();
+        $overrides = request()->input('settings');
+        if (is_array($overrides)) {
             foreach ($overrides as $key => $value) {
-                $settings->$key = $value;
+                if (is_string($key) && str_starts_with($key, 'label2_')) {
+                    $settings->$key = $value;
+                }
             }
         }
 
