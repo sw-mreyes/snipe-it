@@ -409,16 +409,18 @@ class RegenerateAcceptances extends Command
 
     private function printDeclinedAndExcluded(RegenerateAcceptancesResult $result): void
     {
-        if ($result->excludeDeclined) {
-            $this->newLine();
-            $this->info('Previously declined and excluded: '.$result->declinedAndExcluded.'.');
+        if (! $result->excludeDeclined) {
+            return;
+        }
 
-            if ($result->declinedRows !== []) {
-                $this->table(
-                    ['User ID', 'User', 'Item', 'Item Type', 'Item ID', 'Units currently held'],
-                    $result->declinedRows
-                );
-            }
+        $this->newLine();
+        $this->info('Previously declined and excluded: '.$result->declinedAndExcluded.'.');
+
+        if ($result->declinedRows !== []) {
+            $this->table(
+                ['User ID', 'User', 'Item', 'Item Type', 'Item ID', 'Units currently held'],
+                $result->declinedRows
+            );
         }
     }
 
