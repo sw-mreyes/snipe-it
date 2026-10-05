@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Traits\CompanyableChildTrait;
 use App\Models\Traits\Searchable;
 use App\Presenters\AccessoryPresenter;
 use Illuminate\Database\Eloquent\Builder;
@@ -17,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\Relation;
  */
 class AccessoryCheckout extends Model
 {
+    use CompanyableChildTrait;
     use HasFactory;
     use Searchable;
 
@@ -26,6 +28,19 @@ class AccessoryCheckout extends Model
         'assigned_type',
         'note',
     ];
+
+    /**
+     * CompanyableChildScope walks these relation names at query time
+     * and inner-joins against the parent, applying CompanyableScope on
+     * the parent so pivot rows pointing to accessories in another FMCS
+     * tenant drop out of every Eloquent query against this model.
+     *
+     * @return array<int, string>
+     */
+    public function getCompanyableParents()
+    {
+        return ['accessory'];
+    }
 
     protected $presenter = AccessoryPresenter::class;
 
