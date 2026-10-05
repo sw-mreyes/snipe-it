@@ -3,6 +3,8 @@
 namespace App\Livewire;
 
 use App\Helpers\Helper;
+use App\Http\Transformers\LowStockTransformer;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 use Livewire\Attributes\Lazy;
 use Livewire\Component;
@@ -54,8 +56,22 @@ class AlertMenu extends Component
 
     public function render(): View
     {
-        $alert_items = Helper::checkLowInventory();
-        $deprecations = Helper::deprecationCheck();
+        // Filter the shared low-inventory result to the categories this
+        // caller can view. Reuses the per-row filter the LowStock API
+        // uses so the bell and the dashboard widget never disagree on
+        // what a given user can see. Admins who can view no source
+        // type at all get an empty bell rather than the component
+        // throwing - this is a nav widget that mounts on every page.
+        $alert_items = LowStockTransformer::viewableByCaller(
+            Helper::checkLowInventory(),
+            auth()->user(),
+        );
+
+        // Deprecation notices leak operator config (currently a
+        // webhook-provider heads-up for admins to action), so gate on
+        // the admin policy. Normal users don't see the notice even
+        // when the admin's webhook config matches.
+        $deprecations = Gate::allows('admin') ? Helper::deprecationCheck() : [];
 
         return view('livewire.alert-menu', [
             'alert_items' => $alert_items,
