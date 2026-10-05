@@ -190,6 +190,11 @@ class License extends Depreciable
             && ($this->deleted_at == '');
     }
 
+    public function calendarEventCompanyId(): ?int
+    {
+        return $this->company_id;
+    }
+
     public function calendarEventDefinitions(): array
     {
         return [
