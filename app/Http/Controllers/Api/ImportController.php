@@ -230,14 +230,17 @@ class ImportController extends Controller
                     );
                 }
 
-                $date = date('Y-m-d-his');
-
+                // Namespace the storage key by the uploader so two users
+                // posting the same filename in the same second can never clobber
+                // each other's bytes on disk. H is 24-hour so AM/PM do not
+                // alias to the same timestamp either.
+                $date = now()->format('Y-m-d-His');
                 $fixed_filename = Str::of($file->getClientOriginalName())->basename('.csv').'.csv';
-                $file_name = $date . '-' . $fixed_filename;
+                $file_name = auth()->id().'-'.$date.'-'.$fixed_filename;
 
                 // Storage::putFileAs routes through the Filesystem abstraction so it works
                 // uniformly against local and s3_private drivers.
-                if (!Storage::putFileAs($diskPath, $file, $file_name)) {
+                if (! Storage::putFileAs($diskPath, $file, $file_name)) {
                     $results['error'] = trans('admin/hardware/message.upload.error');
 
                     return response()->json(Helper::formatStandardApiResponse('error', null, $results['error']), 500);
@@ -464,7 +467,7 @@ class ImportController extends Controller
                 // the default (private) disk. The pre-fix path 'imports/'
                 // missed the 'private_uploads/' prefix and silently
                 // no-op'd on both drivers.
-                Storage::delete('private_uploads/imports/' . $import->file_path);
+                Storage::delete('private_uploads/imports/'.$import->file_path);
                 $import->delete();
 
                 return response()->json(Helper::formatStandardApiResponse('success', null, trans('admin/hardware/message.import.file_delete_success')));
