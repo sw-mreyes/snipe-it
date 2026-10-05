@@ -218,7 +218,9 @@ class AssetModelsController extends Controller
      */
     public function assets(Request $request, $id): JsonResponse|array
     {
+        
         $this->authorize('view', AssetModel::class);
+        $this->authorize('view', Asset::class);
         $model = AssetModel::findOrFail($id);
 
         // Eager-load the same relations AssetsTransformer walks per row.
