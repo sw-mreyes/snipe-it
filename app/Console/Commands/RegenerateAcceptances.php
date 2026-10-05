@@ -323,25 +323,12 @@ class RegenerateAcceptances extends Command
      * Prints what the run re-requested, or under a dry run what it would have, followed
      * by the pairs it passed over and why.
      *
-     * The declined line runs below the table it qualifies, and only on a run that is
-     * re-asking decliners: re-asking them is the default, and the one judgment on the
-     * report an operator might want to reverse. Under `--exclude-declined` it is left
-     * out rather than reworded — every declined pair is excluded under that flag, so the
-     * count would be identical to the one heading the excluded table and would read as a
-     * second population.
-     *
      * The closing tally is held back when a confirmation prompt is about to follow. The
      * wizard's preview is a real dry run, so it would otherwise sign off with "Nothing
      * was created." — and then ask whether to create anything, which reads as though the
      * question came too late. The same goes for the notify tally, which would report
      * nobody emailed immediately before asking whether to email. A standalone
      * `--dry-run` has no question coming and keeps its footer.
-     *
-     * A run that created rows without `--notify` closes by naming
-     * `snipeit:acceptance-reminder`, because the rows it just wrote are silent until
-     * somebody emails them. That command emails every user with a pending request, so
-     * its reach is wider than a `--category`-scoped run of this one. `created` is only
-     * incremented off a dry run, so it carries the dry-run case too.
      *
      * @param  bool  $awaitingConfirmation  whether the operator is about to be asked to go ahead
      */
@@ -353,6 +340,23 @@ class RegenerateAcceptances extends Command
             return self::SUCCESS;
         }
 
+        $this->printCounts($result);
+        $this->printRegenerationDetails($result);
+        $this->printCoveredAcceptances($result);
+        $this->printDeclinedAndExcluded($result);
+
+        if ($awaitingConfirmation) {
+            return self::SUCCESS;
+        }
+
+        $this->printCreatedCount($result);
+        $this->printNotificationResults($result);
+
+        return self::SUCCESS;
+    }
+
+    private function printCounts(RegenerateAcceptancesResult $result): void
+    {
         $this->info('Total acceptances to regenerate: '.count($result->reportRows).'.');
 
         if ($result->sendCountsByType !== []) {
@@ -365,39 +369,74 @@ class RegenerateAcceptances extends Command
                 [array_values($result->sendCountsByType)]
             );
         }
+    }
 
+    /**
+     * The declined line runs below the table it qualifies, and only on a run that is
+     * re-asking decliners: re-asking them is the default, and the one judgment on the
+     * report an operator might want to reverse. Under `--exclude-declined` it is left
+     * out rather than reworded — every declined pair is excluded under that flag, so the
+     * count would be identical to the one heading the excluded table and would read as a
+     * second population.
+     */
+    private function printRegenerationDetails(RegenerateAcceptancesResult $result): void
+    {
         if ($result->reportRows !== []) {
             $this->info('Details:');
-            $this->table(['User ID', 'User', 'Item', 'Item Type', 'Item ID', 'Units currently held', 'Units to re-request'], $result->reportRows);
+            $this->table(
+                ['User ID', 'User', 'Item', 'Item Type', 'Item ID', 'Units currently held', 'Units to re-request'],
+                $result->reportRows
+            );
         }
 
         if (! $result->excludeDeclined && $result->previouslyDeclined > 0) {
             $this->warn('Includes '.$result->previouslyDeclined.' previously declined, being asked to accept again.');
         }
+    }
 
+    private function printCoveredAcceptances(RegenerateAcceptancesResult $result): void
+    {
         $this->newLine();
         $this->info('Already covered by a pending request: '.$result->alreadyCovered.'.');
 
         if ($result->coveredRows !== []) {
-            $this->table(['User ID', 'User', 'Item', 'Item Type', 'Item ID', 'Units currently held', 'Units already pending'], $result->coveredRows);
+            $this->table(
+                ['User ID', 'User', 'Item', 'Item Type', 'Item ID', 'Units currently held', 'Units already pending'],
+                $result->coveredRows
+            );
         }
+    }
 
+    private function printDeclinedAndExcluded(RegenerateAcceptancesResult $result): void
+    {
         if ($result->excludeDeclined) {
             $this->newLine();
             $this->info('Previously declined and excluded: '.$result->declinedAndExcluded.'.');
 
             if ($result->declinedRows !== []) {
-                $this->table(['User ID', 'User', 'Item', 'Item Type', 'Item ID', 'Units currently held'], $result->declinedRows);
+                $this->table(
+                    ['User ID', 'User', 'Item', 'Item Type', 'Item ID', 'Units currently held'],
+                    $result->declinedRows
+                );
             }
         }
+    }
 
-        if ($awaitingConfirmation) {
-            return self::SUCCESS;
-        }
-
+    private function printCreatedCount(RegenerateAcceptancesResult $result): void
+    {
         $this->newLine();
         $this->info($result->dryRun ? 'Nothing was created.' : 'Created: '.$result->created.'.');
+    }
 
+    /**
+     * A run that created rows without `--notify` closes by naming
+     * `snipeit:acceptance-reminder`, because the rows it just wrote are silent until
+     * somebody emails them. That command emails every user with a pending request, so
+     * its reach is wider than a `--category`-scoped run of this one. `created` is only
+     * incremented off a dry run, so it carries the dry-run case too.
+     */
+    private function printNotificationResults(RegenerateAcceptancesResult $result): void
+    {
         if ($result->notify) {
             $this->info('Notified: '.$result->notified.'.');
 
@@ -408,7 +447,5 @@ class RegenerateAcceptances extends Command
         } elseif ($result->created > 0) {
             $this->line('Nobody was emailed. Run snipeit:acceptance-reminder to email them.');
         }
-
-        return self::SUCCESS;
     }
 }
