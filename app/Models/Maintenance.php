@@ -337,6 +337,15 @@ class Maintenance extends SnipeModel implements ICompanyableChild
         return $this->morphTo('checked_out_to');
     }
 
+    public function calendarEventCompanyId(): ?int
+    {
+        // loadMissing covers the observer path where the created hook
+        // fires before the $with eager-load has run. Without it the
+        // observer writes company_id=null and the FMCS scope filter
+        // on the read path hides the row from legitimate viewers.
+        return $this->loadMissing('asset')->asset?->company_id;
+    }
+
     /**
      * Fields published to the calendar_events index table via the
      * HasCalendarEvents trait. A single range event per maintenance

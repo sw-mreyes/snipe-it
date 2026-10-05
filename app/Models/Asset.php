@@ -282,6 +282,25 @@ class Asset extends Depreciable
         static::softDeleted(function (Asset $asset) {
             $asset->requests()->delete();
         });
+
+        // When an asset moves between companies, its own calendar
+        // events pick up the new company_id through the HasCalendarEvents
+        // trait's updated hook, but child Maintenances resolve their
+        // calendar_events company_id from the parent asset and would
+        // otherwise keep the stale value until they themselves are
+        // touched. Cascade the re-sync here so FMCS filtering stays
+        // accurate on both the asset's and the maintenance's rows.
+        static::updated(function (Asset $asset) {
+            if (array_key_exists('company_id', $asset->getChanges())) {
+                // withoutGlobalScopes bypasses CompanyableChildScope on
+                // Maintenance so the cascade reaches every related
+                // maintenance regardless of the saving context's auth
+                // state (CLI, system jobs, cross-tenant admin saves).
+                $asset->maintenances()->withoutGlobalScopes()->get()->each(
+                    fn (Maintenance $m) => $m->forceSyncCalendarEvents(),
+                );
+            }
+        });
     }
 
     public function setExpectedCheckinAttribute($value)
@@ -1869,16 +1888,11 @@ class Asset extends Depreciable
         );
     }
 
-    /**
-     * Query builder scope for Archived assets counting
-     *
-     * This is primarily used for the tab counters so that IF the admin
-     * has chosen to not display archived assets in their regular lists
-     * and views, it will return the correct number.
-     *
-     * @param  \Illuminate\Database\Query\Builder  $query  Query builder instance
-     * @return \Illuminate\Database\Query\Builder Modified query builder
-     */
+    public function calendarEventCompanyId(): ?int
+    {
+        return $this->company_id;
+    }
+
     public function calendarEventDefinitions(): array
     {
         // Most entries are marked all_day: true because they represent
