@@ -36,11 +36,6 @@ class AlertMenu extends Component
         // sync with the same-shape hidden-label in the loaded view
         // (livewire/alert-menu.blade.php) so the "no alerts" state also
         // preserves the reserved width.
-        // Match the loaded view's markup exactly — same icon, same
-        // sr-only span position, same label markup with no surrounding
-        // whitespace. Any inline-element width difference between the
-        // placeholder and the loaded state translates directly into a
-        // top-nav layout shift on hydration.
         $srOnly = trans('general.alerts');
 
         return <<<HTML
