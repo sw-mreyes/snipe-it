@@ -15,9 +15,8 @@ use Livewire\Component;
  *
  * `#[Lazy]` makes the component render a lightweight placeholder on the
  * initial page load, then Livewire fires a second XHR to hydrate the
- * real body — so `Helper::checkLowInventory()` and
- * `Helper::deprecationCheck()` (both cached at the helper layer with
- * observer-driven invalidation) never sit on the critical render path.
+ * real body, so the helper queries below never sit on the critical
+ * render path.
  *
  * The setting-gate lives on the tag in layouts/default.blade.php:
  * `@if ($snipeSettings->show_alerts_in_menu == '1') <livewire:alert-menu />`
