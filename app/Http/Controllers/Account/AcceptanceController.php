@@ -101,9 +101,16 @@ class AcceptanceController extends Controller
         // Bound the note server-side. Unbounded notes were reaching synchronous
         // CommonMark rendering in the acceptance notification email and
         // consuming worker CPU on a per-request basis (defense in depth against
-        // the parser CVE; the commonmark bump to 2.9.0 is the primary fix).
+        // the parser CVE, with the commonmark bump to 2.9.0 as the primary fix).
+        //
+        // Bound signature_output as well. Legitimate signaturepad canvas output
+        // is well under 100 KB base64. The 2 MB cap here keeps a crafted
+        // payload from forcing base64_decode and the downstream image
+        // flattening into very large allocations before any dimension check
+        // runs.
         $request->validate([
             'note' => 'nullable|string|max:1000',
+            'signature_output' => 'nullable|string|max:2097152',
         ]);
 
         $acceptance = CheckoutAcceptance::find($id);
@@ -177,7 +184,26 @@ class AcceptanceController extends Controller
                     return redirect()->back()->with('error', trans('general.shitty_browser'));
                 }
 
-                $decoded_image = $this->flattenSignatureBackgroundToWhite($decoded_image);
+                // Validate the decoded bytes are an image and bound dimensions
+                // BEFORE allocating any pixel buffer. getimagesizefromstring
+                // reads headers only, so a crafted payload with large declared
+                // width/height is rejected without imagecreatefromstring
+                // decoding the raster or the flatten path allocating a second
+                // same-size buffer.
+                $imgInfo = @getimagesizefromstring($decoded_image);
+                if ($imgInfo === false || $imgInfo[0] > 2000 || $imgInfo[1] > 2000) {
+                    return redirect()->back()->with('error', trans('general.shitty_browser'));
+                }
+
+                $flattened = $this->flattenSignatureBackgroundToWhite($decoded_image);
+                if ($flattened !== null) {
+                    $decoded_image = $flattened;
+                }
+                // Keep the original validated bytes if flattening is unavailable
+                // (no GD) or allocation failed. Dimensions already clear the
+                // 2000x2000 cap, and getimagesizefromstring already confirmed
+                // the content is a real image rather than attacker-supplied
+                // text passed through base64.
                 $encodedSignatureImage = base64_encode($decoded_image);
 
                 // Storage::put returns false on silent write failures on
@@ -283,7 +309,7 @@ class AcceptanceController extends Controller
             // rolled back, since cleaning up on the loser side would race
             // the winner reading the same file. Not ideal, but the alternative
             // is a more complex transactional file store that can roll back on failure.
-            if (!$acceptance->accept($sig_filename, $item->getEula(), $pdf_filename, $request->input('note'))) {
+            if (! $acceptance->accept($sig_filename, $item->getEula(), $pdf_filename, $request->input('note'))) {
                 return redirect()->route('account.accept')->with('error', trans('admin/users/message.error.asset_already_accepted'));
             }
 
@@ -314,7 +340,7 @@ class AcceptanceController extends Controller
             // declinedCheckout side effects internally for qty > 1. If another
             // request already finalized this row, bail before notifications
             // and events fire.
-            if (!$acceptance->decline($sig_filename, $request->input('note'))) {
+            if (! $acceptance->decline($sig_filename, $request->input('note'))) {
                 return redirect()->route('account.accept')->with('error', trans('admin/users/message.error.asset_already_accepted'));
             }
 
@@ -468,16 +494,21 @@ class AcceptanceController extends Controller
         return [(int) $acceptance->checkoutable_id, session('sign_in_place_resource_type', 'Assets')];
     }
 
-    private function flattenSignatureBackgroundToWhite(string $signatureBinary): string
+    private function flattenSignatureBackgroundToWhite(string $signatureBinary): ?string
     {
+        // Fail-closed on every unexpected branch rather than returning
+        // the original bytes. The previous shape fell through on
+        // decode failure, which let non-image input survive to the
+        // Storage::put below and land in private_uploads/signatures
+        // with a .png filename.
         if (! function_exists('imagecreatefromstring') || ! function_exists('imagecreatetruecolor')) {
-            return $signatureBinary;
+            return null;
         }
 
         $source = @imagecreatefromstring($signatureBinary);
 
         if ($source === false) {
-            return $signatureBinary;
+            return null;
         }
 
         $width = imagesx($source);
@@ -487,7 +518,7 @@ class AcceptanceController extends Controller
         if ($flattened === false) {
             imagedestroy($source);
 
-            return $signatureBinary;
+            return null;
         }
 
         $white = imagecolorallocate($flattened, 255, 255, 255);
