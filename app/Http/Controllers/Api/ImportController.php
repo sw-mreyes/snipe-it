@@ -173,6 +173,15 @@ class ImportController extends Controller
                             $tmpname = tempnam(sys_get_temp_dir(), '');
                             $tmpresults = file_put_contents($tmpname, $transliterated);
                             $transliterated = null; // save on memory?
+
+                            // Clean up the UTF-8 copy at request end so we don't
+                            // leave the transliterated bytes sitting in sys_get_temp_dir()
+                            register_shutdown_function(static function () use ($tmpname) {
+                                if (is_file($tmpname)) {
+                                    @unlink($tmpname);
+                                }
+                            });
+
                             if ($tmpresults !== false) {
                                 $newfile = new UploadedFile($tmpname, $file->getClientOriginalName(), null, null, true); // WARNING: this is enabling 'test mode' - which is gross, but otherwise the file won't be treated as 'uploaded'
                                 if ($newfile->isValid()) {
