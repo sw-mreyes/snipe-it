@@ -173,6 +173,15 @@ class ImportController extends Controller
                             $tmpname = tempnam(sys_get_temp_dir(), '');
                             $tmpresults = file_put_contents($tmpname, $transliterated);
                             $transliterated = null; // save on memory?
+
+                            // Clean up the UTF-8 copy at request end so we don't
+                            // leave the transliterated bytes sitting in sys_get_temp_dir()
+                            register_shutdown_function(static function () use ($tmpname) {
+                                if (is_file($tmpname)) {
+                                    @unlink($tmpname);
+                                }
+                            });
+
                             if ($tmpresults !== false) {
                                 $newfile = new UploadedFile($tmpname, $file->getClientOriginalName(), null, null, true); // WARNING: this is enabling 'test mode' - which is gross, but otherwise the file won't be treated as 'uploaded'
                                 if ($newfile->isValid()) {
@@ -198,20 +207,21 @@ class ImportController extends Controller
                     );
                 }
 
-                // duplicate headers check
+                // duplicate headers check: single-pass seen-map keyed by
+                // header name recording the first-seen column index. The
+                // previous shape ran in_array + array_search for every
+                // header, and each of those scans the full array of
+                // values on every call. For N headers that was roughly
+                // N x N comparisons even when no duplicates existed.
                 $duplicate_headers = [];
+                $seen = [];
+                foreach ($import->header_row as $i => $header) {
+                    if (array_key_exists($header, $seen)) {
+                        $duplicate_headers[] = "Duplicate header '$header' detected, first at column: ".($seen[$header] + 1).', repeats at column: '.($i + 1);
 
-                for ($i = 0; $i < count($import->header_row); $i++) {
-                    $header = $import->header_row[$i];
-                    if (in_array($header, $import->header_row)) {
-                        $found_at = array_search($header, $import->header_row);
-                        if ($i > $found_at) {
-                            // avoid reporting duplicates twice, e.g. "1 is same as 17! 17 is same as 1!!!"
-                            // as well as "1 is same as 1!!!" (which is always true)
-                            // has to be > because otherwise the first result of array_search will always be $i itself(!)
-                            array_push($duplicate_headers, "Duplicate header '$header' detected, first at column: ".($found_at + 1).', repeats at column: '.($i + 1));
-                        }
+                        continue;
                     }
+                    $seen[$header] = $i;
                 }
                 if (count($duplicate_headers) > 0) {
                     return response()->json(Helper::formatStandardApiResponse('error', null, implode('; ', $duplicate_headers)), 422);
