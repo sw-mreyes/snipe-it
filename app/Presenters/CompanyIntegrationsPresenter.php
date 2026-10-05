@@ -21,14 +21,6 @@ class CompanyIntegrationsPresenter extends Presenter
                 'visible' => true,
                 'formatter' => 'companiesLinkFormatter',
             ], [
-                'field' => 'email',
-                'searchable' => true,
-                'sortable' => true,
-                'switchable' => false,
-                'title' => trans('admin/suppliers/table.email'),
-                'visible' => true,
-                'formatter' => 'emailFormatter',
-            ], [
                 'field' => 'webhook_selected',
                 'searchable' => false,
                 'sortable' => true,
