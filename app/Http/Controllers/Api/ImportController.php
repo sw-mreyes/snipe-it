@@ -55,7 +55,6 @@ class ImportController extends Controller
             // storage/private_uploads/imports, and under s3_private it lands at <bucket>/private_uploads/imports
             $diskPath = 'private_uploads/imports';
             $results = [];
-            $import = new Import;
             $detector = new EncodingDetector;
 
             // No file uploaded
@@ -64,6 +63,8 @@ class ImportController extends Controller
             }
 
             foreach ($files as $file) {
+                // Fresh model per file.
+                $import = new Import;
                 // Reject phantoms and fail early if the file is invalid (e.g. exceeds the server upload limit).
                 // The CSV reader below will reject anything that isn't actually parseable with a more precise error.
                 if (! $file instanceof UploadedFile || ! $file->isValid()) {
