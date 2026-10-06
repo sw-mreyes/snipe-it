@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\FileStorage;
 use enshrined\svgSanitize\Sanitizer;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
@@ -294,43 +295,14 @@ class RestoreFromBackup extends Command
             return $this->error('Could not access file: '.$filename.' - '.$error_msg);
         }
 
-        $private_dirs = [
-            'storage/private_uploads/accessories',
-            'storage/private_uploads/assetmodels' => 'storage/private_uploads/models', // this was changed from assetmodels => models Aug 10 2025
-            'storage/private_uploads/asset_maintenances' => 'storage/private_uploads/maintenances', // this was changed from asset_maintenances => maintenances Aug 10 2025
-            'storage/private_uploads/maintenances', // but let 'maintenances' take precedence
-            'storage/private_uploads/models', // and let 'models' take precedence
-            'storage/private_uploads/assets', // these are asset _files_, not the pictures.
-            'storage/private_uploads/audits',
-            'storage/private_uploads/components',
-            'storage/private_uploads/consumables',
-            'storage/private_uploads/eula-pdfs',
-            'storage/private_uploads/imports',
-            'storage/private_uploads/locations',
-            'storage/private_uploads/licenses',
-            'storage/private_uploads/signatures',
-            'storage/private_uploads/users',
-        ];
+        // Upload directory enumeration lives in App\Enums\FileStorage
+        // as the single source of truth.
+        $private_dirs = FileStorage::privateDirs();
         $private_files = [
             'storage/oauth-private.key',
             'storage/oauth-public.key',
         ];
-        $public_dirs = [
-            'public/uploads/accessories',
-            // 'public/uploads/assetmodels' => 'public/uploads/models', //according to git, this was _never_ a thing... (see below)
-            'public/uploads/maintenances',
-            'public/uploads/assets', // these are asset _pictures_, not asset files
-            'public/uploads/avatars',
-            'public/uploads/categories',
-            'public/uploads/companies',
-            'public/uploads/components',
-            'public/uploads/consumables',
-            'public/uploads/departments',
-            'public/uploads/locations',
-            'public/uploads/manufacturers',
-            'public/uploads/models', // ...it's been this way for 9 years (as of late 2025)
-            'public/uploads/suppliers',
-        ];
+        $public_dirs = FileStorage::publicDirs();
 
         $public_files = self::PUBLIC_FILES;
 
@@ -512,7 +484,7 @@ class RestoreFromBackup extends Command
             ' -u '.escapeshellarg($connectionConfig['username']).' '.
             (empty($connectionConfig['unix_socket'])
                 ? ' -P '.escapeshellarg($connectionConfig['port'])
-                : ' -S '.escapeshellarg($connectionConfig['unix_socket'])). ' '.
+                : ' -S ' . escapeshellarg($connectionConfig['unix_socket'])) . ' ' .
             escapeshellarg($connectionConfig['database']), // yanked -p since we pass via ENV
             [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
             $pipes,
@@ -584,8 +556,14 @@ class RestoreFromBackup extends Command
             return $this->error('There may have been a problem with the database import: Error number '.$close_results);
         }
 
+        // Prune the upload directories before extracting the backup's
+        // files on top. A restore replaces the entire install (the DB
+        // was wiped before this command ran), so any image or file that
+        // the backup does not carry should not survive the restore.
+        self::pruneUploadDirectories($public_dirs, $private_dirs);
+        self::pruneUploadFiles(self::PUBLIC_FILES);
+
         // and now copy the files over too (right?)
-        // FIXME - we don't prune the filesystem space yet!!!!
         if ($this->option('no-progress')) {
             $bar = null;
         } else {
@@ -629,6 +607,66 @@ class RestoreFromBackup extends Command
         }
         foreach ($boring_files as $boring_file) {
             $this->warn($boring_file.' was skipped.');
+        }
+    }
+
+    /**
+     * Clear every file out of each upload directory the restore is
+     * about to extract into. `.gitkeep` is preserved so the empty
+     * directory still exists post-restore. Nested subdirectories are
+     * left alone (Snipe-IT's upload dirs are flat per-resource today,
+     * but defensive against future shapes).
+     *
+     * Accepts the directory lists as parameters rather than reading
+     * them from UploadDirectories directly so a test can hand in a
+     * fake sandbox dir instead of touching the real repo tree.
+     *
+     * @param  array<int|string, string>  $publicDirs
+     * @param  array<int|string, string>  $privateDirs
+     */
+    protected static function pruneUploadDirectories(array $publicDirs, array $privateDirs): void
+    {
+        $all = [];
+        foreach ([$publicDirs, $privateDirs] as $set) {
+            foreach ($set as $src => $dst) {
+                $all[] = is_int($src) ? $dst : $dst;
+            }
+        }
+
+        foreach (array_unique($all) as $dir) {
+            if (!is_dir($dir)) {
+                continue;
+            }
+            foreach (scandir($dir) ?: [] as $entry) {
+                if ($entry === '.' || $entry === '..' || $entry === '.gitkeep') {
+                    continue;
+                }
+                $path = $dir . '/' . $entry;
+                if (is_file($path)) {
+                    @unlink($path);
+                }
+            }
+        }
+    }
+
+    /**
+     * Delete every file matching the given glob patterns before the
+     * restore extracts its own copies on top. Covers the root-level
+     * Settings branding files (Setting-*, logo.*, favicon.*, etc.)
+     * that live outside the enumerated upload subdirectories, same
+     * reasoning as pruneUploadDirectories but for the file-pattern
+     * category. #19770.
+     *
+     * @param  list<string>  $patterns
+     */
+    protected static function pruneUploadFiles(array $patterns): void
+    {
+        foreach ($patterns as $pattern) {
+            foreach (glob($pattern) ?: [] as $match) {
+                if (is_file($match)) {
+                    @unlink($match);
+                }
+            }
         }
     }
 }
