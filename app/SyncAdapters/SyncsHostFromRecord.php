@@ -866,9 +866,16 @@ trait SyncsHostFromRecord
                 // Watson validating rule wants date_format:Y-m-d.
                 // Log + skip if the string isn't parseable so a bad record
                 // doesn't donk the sync run.
+                //
+                // Rotate to app.timezone before extracting the date part so
+                // a vendor datetime at the UTC day boundary (e.g.
+                // "2024-07-23T03:00:00Z" which is 2024-07-22 20:00 Pacific)
+                // records the date the user would recognize. Same reason
+                // the last_seen path converts to app timezone before
+                // producing its naive string. #19765.
                 if ($value !== null && $value !== '') {
                     try {
-                        $asset->purchase_date = \Carbon\Carbon::parse((string) $value)->format('Y-m-d');
+                        $asset->purchase_date = \Carbon\Carbon::parse((string) $value)->timezone(config('app.timezone'))->format('Y-m-d');
                     } catch (\Exception $e) {
                         Log::channel('sync-adapters')->warning("Skipping unparseable purchase_date \"{$value}\" for asset {$asset->id}: ".$e->getMessage());
                     }
