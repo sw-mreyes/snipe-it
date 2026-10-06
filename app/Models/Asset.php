@@ -69,7 +69,7 @@ class Asset extends Depreciable
 
     use Acceptable;
 
-    public static function fileStorage(string $field = 'image'): FileStorage
+    public static function fileStorage(): FileStorage
     {
         return FileStorage::Assets;
     }

@@ -34,7 +34,7 @@ class AssetModel extends SnipeModel
     use SoftDeletes;
     use TwoColumnUniqueUndeletedTrait;
 
-    public static function fileStorage(string $field = 'image'): FileStorage
+    public static function fileStorage(): FileStorage
     {
         return FileStorage::Models;
     }

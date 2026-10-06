@@ -588,7 +588,6 @@ class RestoreFromBackup extends Command
                 }
                 fclose($migrated_file);
                 fclose($fp);
-                // $this->info("Wrote $ugly_file_name to $pretty_file_name");
             }
             if ($bar) {
                 $bar->advance();
