@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\FileStorage;
 use App\Events\CheckoutableCheckedOut;
 use App\Exceptions\CheckoutNotAllowed;
 use App\Helpers\Helper;
@@ -9,6 +10,7 @@ use App\Http\Traits\UniqueUndeletedTrait;
 use App\Models\Traits\Acceptable;
 use App\Models\Traits\CompanyableTrait;
 use App\Models\Traits\HasCalendarEvents;
+use App\Models\Traits\HasImageUpload;
 use App\Models\Traits\HasOrders;
 use App\Models\Traits\HasUploads;
 use App\Models\Traits\Loggable;
@@ -49,6 +51,7 @@ class Asset extends Depreciable
     use CompanyableTrait;
     use HasCalendarEvents;
     use HasFactory;
+    use HasImageUpload;
     use HasOrders;
     use HasUploads;
     use Loggable;
@@ -65,6 +68,11 @@ class Asset extends Depreciable
     public const USER = 'user';
 
     use Acceptable;
+
+    public static function fileStorage(string $field = 'image'): FileStorage
+    {
+        return FileStorage::Assets;
+    }
 
     /**
      * Run after the checkout acceptance was declined by the user
@@ -355,7 +363,7 @@ class Asset extends Depreciable
 
         if ($this->model_id && $this->model && (string) $this->model->require_serial === '1') {
             $this->rules['serial'] = array_merge(
-                array_filter($this->rules['serial'] ?? [], fn($r) => $r !== 'nullable'),
+                array_filter($this->rules['serial'] ?? [], fn ($r) => $r !== 'nullable'),
                 ['required'],
             );
         }

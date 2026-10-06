@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Enums\FileStorage;
 use App\Http\Traits\TwoColumnUniqueUndeletedTrait;
+use App\Models\Traits\HasImageUpload;
 use App\Models\Traits\HasUploads;
 use App\Models\Traits\Loggable;
 use App\Models\Traits\Requestable;
@@ -26,10 +28,16 @@ use Watson\Validating\ValidatingTrait;
 class AssetModel extends SnipeModel
 {
     use HasFactory;
+    use HasImageUpload;
     use HasUploads;
     use Loggable, Presentable, Requestable;
     use SoftDeletes;
     use TwoColumnUniqueUndeletedTrait;
+
+    public static function fileStorage(string $field = 'image'): FileStorage
+    {
+        return FileStorage::Models;
+    }
 
     /**
      * Whether the model should inject its identifier to the unique
