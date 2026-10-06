@@ -276,7 +276,7 @@ class CheckoutRequest extends Model
             return '';
         }
 
-        return $this->itemType() === 'asset' ? $item->display_name : $item->name;
+        return $item->display_name;
     }
 
     /**
