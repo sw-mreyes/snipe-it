@@ -353,6 +353,13 @@ class Asset extends Depreciable
     {
         $this->rules += $this->customFieldValidationRules();
 
+        if ($this->model_id && $this->model && (string) $this->model->require_serial === '1') {
+            $this->rules['serial'] = array_merge(
+                array_filter($this->rules['serial'] ?? [], fn($r) => $r !== 'nullable'),
+                ['required'],
+            );
+        }
+
         return parent::save($params);
     }
 

@@ -166,6 +166,26 @@ trait SyncsHostFromRecord
             return null;
         }
 
+        // UX layer on top of the authoritative require_serial check
+        // in Asset::save().
+        if ($record->hardwareSerial === null || $record->hardwareSerial === '') {
+            $modelName = self::resolveModelSourceValue($record, $mapping);
+            if ($modelName !== null && $modelName !== '') {
+                $existingModel = AssetModel::where('name', $modelName)->first();
+                if ($existingModel !== null && (string) $existingModel->require_serial === '1') {
+                    Log::channel('sync-adapters')->warning(sprintf(
+                        '%s sync: skipped %s record %s (no serial, and asset model "%s" requires one)',
+                        $adapter?->name() ?? $record->sourceKey,
+                        $record->sourceKey,
+                        $record->sourceId,
+                        $existingModel->name,
+                    ));
+
+                    return null;
+                }
+            }
+        }
+
         $asset = self::createShellAsset($record, $instance, $mapping);
 
         // Identity row created empty of inventory columns. the
