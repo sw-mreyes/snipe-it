@@ -735,6 +735,27 @@ trait SyncsHostFromRecord
 
     /**
      * Extract the normalized value for a given field from the record.
+     *
+     * `last_seen` passes through a timezone rotation to app.timezone before
+     * the naive string is produced. Vendor adapters typically parse their
+     * API response with `Carbon::parse` on an ISO-8601 string carrying a
+     * `Z` suffix, which yields a Carbon in UTC. `toDateTimeString()` on
+     * that instance would write UTC wall clock into a column every other
+     * Snipe-IT write populates with app-timezone wall clock, and the view
+     * layer would then interpret that UTC wall clock as if it were in
+     * app.timezone (future-dated on anything west of UTC, past-dated on
+     * anything east).
+     *
+     * This is part of a much bigger yuck that we'll eventually have to solve
+     * with a fugly migration and then putting everything into UTC properly.
+     * For now, this is a stopgap to keep the sync from writing
+     * future-dated last_seen values, so while it's still "wrong", it's at
+     * least "wrong in the same way as everything else" and doesn't
+     * break the view layer.
+     *
+     * Laravel pulled APP_TIMEZONE out of the config in 10.x but still
+     * honors it in 11.x, so this is a workaround until we can get a proper
+     * fix in place. See #19765.
      */
     private static function recordValueFor(HostInventoryRecord $record, string $field): mixed
     {
@@ -747,7 +768,7 @@ trait SyncsHostFromRecord
             'ip' => $record->primaryIp,
             'os' => $record->os,
             'os_version' => $record->osVersion,
-            'last_seen' => $record->lastSeen?->toDateTimeString(),
+            'last_seen' => $record->lastSeen?->copy()->timezone(config('app.timezone'))->toDateTimeString(),
             default => null,
         };
     }
