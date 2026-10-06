@@ -1226,7 +1226,12 @@ class AppleBusinessManagerAdapter extends SyncAdapter
         }
 
         try {
-            return Carbon::parse($value)->toDateString();
+            // Rotate to app.timezone before extracting the date part so a
+            // vendor datetime at the UTC day boundary records the date
+            // the user would recognize. Same reason the last_seen path
+            // converts to app timezone before producing its naive string.
+            // #19765.
+            return Carbon::parse($value)->timezone(config('app.timezone'))->toDateString();
         } catch (\Throwable) {
             return null;
         }
