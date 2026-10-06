@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\SyncAdapters\Intune;
 
+use App\Models\Asset;
+use App\Models\AssetModel;
 use App\Models\Statuslabel;
 use App\Models\SyncAdapterConfig;
 use App\Models\SyncAdapterInstance;
@@ -140,5 +142,66 @@ class IntuneAdapterTest extends TestCase
             'serialNumber' => 'SN-'.$id,
             'model' => 'Generic Model',
         ];
+    }
+
+    public function test_vendor_record_without_serial_is_skipped_when_model_requires_serial()
+    {
+        AssetModel::factory()->create([
+            'name' => 'Generic Model',
+            'require_serial' => 1,
+        ]);
+
+        $adapter = $this->configuredAdapter();
+
+        Http::fake([
+            '*/oauth2/v2.0/token' => Http::response(['access_token' => 'stub-bearer', 'expires_in' => 3600]),
+            '*/v1.0/deviceManagement/managedDevices*' => Http::response([
+                'value' => [
+                    [
+                        'id' => 'guid-no-serial',
+                        'deviceName' => 'defender-onboarded-host',
+                        'serialNumber' => '',
+                        'model' => 'Generic Model',
+                    ],
+                ],
+            ]),
+        ]);
+
+        foreach ($adapter->pull() as $record) {
+            SyncAdapter::syncFromRecord($record);
+        }
+
+        $this->assertDatabaseMissing('asset_external_sources', ['source' => 'intune', 'external_id' => 'guid-no-serial']);
+        $this->assertSame(0, Asset::query()->count(), 'No asset should be created when the model requires a serial and the vendor record has none.');
+    }
+
+    public function test_vendor_record_without_serial_still_creates_when_model_does_not_require_serial()
+    {
+        AssetModel::factory()->create([
+            'name' => 'Generic Model',
+            'require_serial' => 0,
+        ]);
+
+        $adapter = $this->configuredAdapter();
+
+        Http::fake([
+            '*/oauth2/v2.0/token' => Http::response(['access_token' => 'stub-bearer', 'expires_in' => 3600]),
+            '*/v1.0/deviceManagement/managedDevices*' => Http::response([
+                'value' => [
+                    [
+                        'id' => 'guid-no-serial-ok',
+                        'deviceName' => 'serial-less-but-ok',
+                        'serialNumber' => '',
+                        'model' => 'Generic Model',
+                    ],
+                ],
+            ]),
+        ]);
+
+        foreach ($adapter->pull() as $record) {
+            SyncAdapter::syncFromRecord($record);
+        }
+
+        $this->assertDatabaseHas('asset_external_sources', ['source' => 'intune', 'external_id' => 'guid-no-serial-ok']);
     }
 }
