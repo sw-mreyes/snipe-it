@@ -109,6 +109,47 @@ class KandjiAdapterTest extends TestCase
         iterator_to_array($adapter->pull());
     }
 
+    public function test_last_seen_is_stored_in_app_timezone_not_vendor_utc(): void
+    {
+        // Issue #19765: Kandji returns `last_check_in` as ISO-8601 UTC with a
+        // Z suffix. Pre-fix, Carbon::parse honored the Z and the shared
+        // writer called ->toDateTimeString() on the UTC Carbon, so the UTC
+        // wall clock went into asset_external_sources.last_seen. On an
+        // instance with APP_TIMEZONE set to a non-UTC value, the view then
+        // interpreted that stored string as app-timezone wall clock,
+        // which read 7 hours in the future on PDT.
+        config(['app.timezone' => 'America/Los_Angeles']);
+
+        $adapter = $this->configuredKandjiAdapter();
+
+        Http::fake([
+            '*/api/v1/devices*' => Http::sequence()
+                ->push([
+                    $this->kandjiDevice(
+                        id: 'tz-1',
+                        device_name: 'pacific-mbp',
+                        serial_number: 'TZ-SN-1',
+                        last_check_in: '2026-01-15T22:11:37.000Z',
+                    ),
+                ])
+                ->push([]),
+        ]);
+
+        foreach ($adapter->pull() as $record) {
+            SyncAdapter::syncFromRecord($record);
+        }
+
+        // 22:11:37 UTC on 2026-01-15 is 14:11:37 the same day in Pacific
+        // standard time. The stored naive string must match the Pacific
+        // wall clock, same as every other naive datetime Snipe-IT writes
+        // under the same config.
+        $this->assertDatabaseHas('asset_external_sources', [
+            'source' => 'kandji',
+            'external_id' => 'tz-1',
+            'last_seen' => '2026-01-15 14:11:37',
+        ]);
+    }
+
     private function configuredKandjiAdapter(): KandjiAdapter
     {
         $instance = SyncAdapterInstance::where('slug', 'kandji')->firstOrFail();
