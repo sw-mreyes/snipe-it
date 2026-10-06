@@ -10,7 +10,7 @@
 @component('mail::table')
 |        |          |
 | ------------- | ------------- |
-| **{{ trans('mail.asset_name') }}** | {{ $item->name }} |
+| **{{ trans('mail.accessory_name') }}** | {{ $item->name }} |
 @if (isset($item->manufacturer))
 | **{{ trans('general.manufacturer') }}** | {{ $item->manufacturer->name }} |
 @endif

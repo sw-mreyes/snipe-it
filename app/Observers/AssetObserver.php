@@ -9,6 +9,8 @@ use App\Models\OrderItem;
 use App\Models\Setting;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use App\Models\CalendarEvent;
+use App\Models\CheckoutRequest;
 
 class AssetObserver
 {
@@ -276,6 +278,10 @@ class AssetObserver
         $logAction->created_by = auth()->id();
         $logAction->logaction('delete');
 
+        $this->reservationCalendarEventsFor($asset)
+            ->whereNull('deleted_at')
+            ->delete();
+
         // Sync-adapter identity rows would otherwise become orphans
         // that violate the unique(source, external_id) constraint on
         // the next sync run when the vendor keeps reporting the same
@@ -298,6 +304,10 @@ class AssetObserver
         $logAction->created_at = date('Y-m-d H:i:s');
         $logAction->created_by = auth()->id();
         $logAction->logaction('restore');
+
+        $this->reservationCalendarEventsFor($asset)
+            ->whereNotNull('deleted_at')
+            ->restore();
     }
 
     /**
@@ -336,5 +346,18 @@ class AssetObserver
         if ((! is_null($asset->asset_eol_date)) && (! is_null($asset->purchase_date)) && (is_null($asset->model?->eol) || ($asset->model?->eol == 0))) {
             $asset->eol_explicit = true;
         }
+    }
+
+    private function reservationCalendarEventsFor(Asset $asset)
+    {
+        $requestIds = CheckoutRequest::withTrashed()
+            ->where('requestable_type', Asset::class)
+            ->where('requestable_id', $asset->id)
+            ->pluck('id');
+
+        return CalendarEvent::withTrashed()
+            ->where('source_type', CheckoutRequest::class)
+            ->whereIn('source_id', $requestIds)
+            ->where('event_type', 'request.reservation');
     }
 }
