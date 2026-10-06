@@ -94,10 +94,9 @@ class SQLStreamer
         return '';
     }
 
-    // this is used in exactly *TWO* places, and in both cases should return a prefix I think?
-    // first - if you do the --sanitize-only one (which is mostly for testing/development)
-    // next - when you run *without* a guessed prefix, this is run first to figure out the prefix
-    // I think we have to *duplicate* the call to be able to run it again?
+    // Used in exactly *TWO* places. Both return a prefix:
+    //   1. --sanitize-only (mostly for testing/development).
+    //   2. When running *without* a guessed prefix, this runs first to figure out the prefix.
     public static function guess_prefix($input): string
     {
         $parser = new self($input, null);
@@ -177,8 +176,7 @@ class RestoreFromBackup extends Command
      *
      * @var string
      */
-    // FIXME - , stripping prefixes and nonstandard SQL statements. Without --prefix, guess and return the correct prefix to strip
-    protected $signature = 'snipeit:restore 
+    protected $signature = 'snipeit:restore
                                             {--force : Skip the danger prompt; assuming you enter "y"} 
                                             {filename : The zip file to be migrated}
                                             {--no-progress : Don\'t show a progress bar}
@@ -437,7 +435,7 @@ class RestoreFromBackup extends Command
 
         $sql_stat = $za->statIndex($sqlfile_indices[0]);
         // $this->info("SQL Stat is: ".print_r($sql_stat,true));
-        $sql_contents = $za->getStream($sql_stat['name']); // maybe copy *THIS* thing?
+        $sql_contents = $za->getStream($sql_stat['name']);
 
         if ($sql_contents === false) {
             $this->error('Unable to open SQL file: '.$sql_stat['name']);
@@ -445,7 +443,7 @@ class RestoreFromBackup extends Command
             return -1;
         }
 
-        // OKAY, now that we *found* the sql file if we're doing just the guess-prefix thing, we can do that *HERE* I think?
+        // Now that we *found* the sql file, if we're doing just the guess-prefix thing we can do that *HERE*.
         if ($this->option('sanitize-guess-prefix')) {
             $prefix = SQLStreamer::guess_prefix($sql_contents);
             $this->line($prefix);
@@ -458,9 +456,12 @@ class RestoreFromBackup extends Command
             $sql_importer = new SQLStreamer($sql_contents, STDOUT, $this->option('sanitize-with-prefix'));
             $bytes_read = $sql_importer->line_aware_piping();
 
-            return $this->warn("$bytes_read total bytes read");
-            // TODO - it'd be nice to dump this message to STDERR so that STDOUT is just pure SQL,
-            // which would be good for redirecting to a file, and not having to trim the last line off of it
+            // STDERR so stdout stays pure SQL for `--sql-stdout-only >
+            // out.sql` redirection and the operator does not have to
+            // trim the trailing status line off the dump.
+            $this->getOutput()->getErrorStyle()->writeln('<comment>'.$bytes_read.' total bytes read</comment>');
+
+            return 0;
         }
 
         // how to invoke the restore?
@@ -484,7 +485,7 @@ class RestoreFromBackup extends Command
             ' -u '.escapeshellarg($connectionConfig['username']).' '.
             (empty($connectionConfig['unix_socket'])
                 ? ' -P '.escapeshellarg($connectionConfig['port'])
-                : ' -S ' . escapeshellarg($connectionConfig['unix_socket'])) . ' ' .
+                : ' -S '.escapeshellarg($connectionConfig['unix_socket'])).' '.
             escapeshellarg($connectionConfig['database']), // yanked -p since we pass via ENV
             [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
             $pipes,
@@ -515,7 +516,7 @@ class RestoreFromBackup extends Command
             Log::error('Error during restore!!!! '.$e->getMessage());
             // Drain both pipes fully so the DB client's own diagnostic ends up in
             // the log instead of just the downstream "broken pipe". Then include
-            // the process exit code so root-cause is visible without strace.
+            // the process exit code so the cause is visible without strace.
             // The deprecation warning about maria-db is a red herring, and not the actual problem.
             // "Deprecated program name. It will be removed in a future release, use '/usr/bin/mariadb' instead"
             // was drowning out the actual problem.
@@ -612,7 +613,7 @@ class RestoreFromBackup extends Command
      * about to extract into. `.gitkeep` is preserved so the empty
      * directory still exists post-restore. Nested subdirectories are
      * left alone (Snipe-IT's upload dirs are flat per-resource today,
-     * but defensive against future shapes).
+     * but this is defensive against future directory/subdir structures).
      *
      * Accepts the directory lists as parameters rather than reading
      * them from UploadDirectories directly so a test can hand in a
@@ -631,7 +632,7 @@ class RestoreFromBackup extends Command
         }
 
         foreach (array_unique($all) as $dir) {
-            if (!is_dir($dir)) {
+            if (! is_dir($dir)) {
                 continue;
             }
             foreach (scandir($dir) ?: [] as $entry) {
@@ -653,9 +654,7 @@ class RestoreFromBackup extends Command
      * Delete every file matching the given glob patterns before the
      * restore extracts its own copies on top. Covers the root-level
      * Settings branding files (Setting-*, logo.*, favicon.*, etc.)
-     * that live outside the enumerated upload subdirectories, same
-     * reasoning as pruneUploadDirectories but for the file-pattern
-     * category. #19770.
+     * that live outside the enumerated upload subdirectories.
      *
      * @param  list<string>  $patterns
      */
