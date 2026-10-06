@@ -514,6 +514,7 @@ class AssetsController extends Controller
         } else {
             $order = array_flip($ids);
             $assets = Asset::query()
+                ->withTrashed()
                 ->whereIn('assets.id', $ids)
                 ->setEagerLoads($assets->getEagerLoads())
                 ->get()
