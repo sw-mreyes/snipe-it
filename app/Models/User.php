@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use App\Enums\FileStorage;
 use App\Http\Traits\UniqueUndeletedTrait;
 use App\Models\Traits\CompanyableTrait;
 use App\Models\Traits\HasCalendarEvents;
+use App\Models\Traits\HasImageUpload;
 use App\Models\Traits\HasUploads;
 use App\Models\Traits\Loggable;
 use App\Models\Traits\Searchable;
@@ -39,7 +41,13 @@ class User extends SnipeModel implements AuthenticatableContract, AuthorizableCo
     use CompanyableTrait;
     use HasCalendarEvents;
     use HasFactory;
+    use HasImageUpload;
     use HasUploads;
+
+    public static function fileStorage(): FileStorage
+    {
+        return FileStorage::Avatars;
+    }
 
     protected $presenter = UserPresenter::class;
 
