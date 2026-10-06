@@ -550,7 +550,6 @@ class RestoreFromBackup extends Command
         $this->error(stream_get_contents($pipes[2]));
         fclose($pipes[2]);
 
-        // wait, have to do fclose() on all pipes first?
         $close_results = proc_close($proc_results);
         if ($close_results != 0) {
             return $this->error('There may have been a problem with the database import: Error number '.$close_results);
