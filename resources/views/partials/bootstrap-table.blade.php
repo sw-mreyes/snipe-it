@@ -2897,11 +2897,9 @@
             if (!typeSlug) {
                 return actions; // Unknown type, don't render a broken cancel button.
             }
-            // Same shape the old blade posted to. Includes the fifth
-            // "requestingUser" segment so an admin cancels the
-            // specific user's request rather than their own.
+            
             var cancelUrl = '{{ config('app.url') }}/account/request/' +
-                typeSlug + '/' + row.requestable.id + '/1/' + row.user.id;
+                typeSlug + '/' + row.requestable.id + '/' + row.user.id;
             // Pipe through the shared dataConfirmModal so this
             // behaves like every other destructive action in the
             // app (delete-asset class + data-href + data-content).
