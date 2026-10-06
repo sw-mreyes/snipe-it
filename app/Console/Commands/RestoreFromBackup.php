@@ -638,10 +638,13 @@ class RestoreFromBackup extends Command
                 continue;
             }
             foreach (scandir($dir) ?: [] as $entry) {
-                if ($entry === '.' || $entry === '..' || $entry === '.gitkeep') {
+                // Preserve both .gitkeep and .gitignore so the directory
+                // still exists after a restore AND still carries its
+                // ignore rules for git-installed deployments.
+                if ($entry === '.' || $entry === '..' || $entry === '.gitkeep' || $entry === '.gitignore') {
                     continue;
                 }
-                $path = $dir . '/' . $entry;
+                $path = $dir.'/'.$entry;
                 if (is_file($path)) {
                     @unlink($path);
                 }
