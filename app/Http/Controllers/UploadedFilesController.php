@@ -47,11 +47,6 @@ class UploadedFilesController extends Controller
             return redirect()->back()->withFragment('files')->with('error', trans('general.file_upload_status.invalid_object'));
         }
 
-        // If the file storage directory doesn't exist, create it
-        if (! Storage::exists(parent::getMapStoragePath()[$object_type])) {
-            Storage::makeDirectory(parent::getMapStoragePath()[$object_type], 775);
-        }
-
         if ($request->hasFile('file')) {
             // Loop over the attached files and add them to the object
             foreach ($request->file('file') as $file) {
