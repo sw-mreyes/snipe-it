@@ -30,9 +30,9 @@ use function Laravel\Prompts\warning;
  *     left behind by soft-delete + purge, by manual DB edits, or by
  *     older code paths that forgot their delete-hook.
  *
- * Scope map, driven off FileStorage cases:
+ * Scope map is driven off FileStorage cases:
  *
- *   - Model image + avatar columns (assets, models, accessories,
+ *   - MVC Model image + avatar columns (assets, models, accessories,
  *     consumables, components, locations, manufacturers, suppliers,
  *     companies, departments, categories, maintenances, users).
  *     Added to the sweep automatically when a new FileStorage case
@@ -45,9 +45,6 @@ use function Laravel\Prompts\warning;
  *   - checkout_acceptances.signature_filename and stored_eula_file,
  *     the only non-action_log route into FileStorage::Signatures and
  *     FileStorage::EulaPdfs.
- *
- * S3 compat comes for free by routing everything through the Storage
- * facade.
  */
 class AuditFileStorage extends Command
 {
@@ -1082,9 +1079,9 @@ class AuditFileStorage extends Command
     }
 
     /**
-     * @param  array<int, array{table: string, type: string, id: int|string, file: string}>  $missing
+     * @param  array<int, array{direction?: string, table: string, type: string, id: int|string, file: string}>  $rows
      */
-    private function writeCsv(string $csvPath, array $missing): void
+    private function writeCsv(string $csvPath, array $rows): void
     {
         $handle = fopen($csvPath, 'w');
         if ($handle === false) {
@@ -1093,13 +1090,19 @@ class AuditFileStorage extends Command
             return;
         }
 
-        fputcsv($handle, ['table', 'id', 'type', 'file']);
-        foreach ($missing as $row) {
-            fputcsv($handle, [$row['table'], $row['id'], $row['type'], $row['file']]);
+        fputcsv($handle, ['direction', 'table', 'id', 'type', 'file']);
+        foreach ($rows as $row) {
+            fputcsv($handle, [
+                $row['direction'] ?? 'missing',
+                $row['table'],
+                $row['id'],
+                $row['type'],
+                $row['file'],
+            ]);
         }
         fclose($handle);
 
-        note('Wrote '.number_format(count($missing))." row(s) to $csvPath.");
+        note('Wrote ' . number_format(count($rows)) . " row(s) to $csvPath.");
     }
 
     /**
