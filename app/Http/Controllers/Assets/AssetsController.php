@@ -694,11 +694,12 @@ class AssetsController extends Controller
                         Storage::disk('public')->put($qr_key, $barcode_obj->getPngData());
                     }
 
-                    // Buffered rather than StreamedResponse so S3 serving
-                    // works consistently. QR PNGs are a few KB, memory is
-                    // fine, and the streaming path was truncating bodies
-                    // on S3 somewhere in the StreamedResponse/readStream
-                    // pipeline.
+                    // Buffered rather than StreamedResponse or a redirect
+                    // to the storage URL. StreamedResponse was truncating
+                    // bodies on S3, and a 302 to the storage URL leaves
+                    // Safari with a text/html 302 body on the img fetch
+                    // which it refuses to render as an image. QR PNGs
+                    // are a few KB, in-memory is fine.
                     return response(Storage::disk('public')->get($qr_key), 200, [
                         'Content-type' => 'image/png',
                     ]);
@@ -752,8 +753,8 @@ class AssetsController extends Controller
                     }
                 }
 
-                // Buffered rather than StreamedResponse so S3 serving
-                // works consistently. See getQrCode() for context.
+                // Buffered rather than StreamedResponse or a redirect.
+                // See getQrCode() for the Safari-img-tag context.
                 return response(Storage::disk('public')->get($barcode_key), 200, [
                     'Content-type' => 'image/png',
                 ]);
