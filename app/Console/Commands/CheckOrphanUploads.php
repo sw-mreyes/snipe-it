@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\FileStorage;
 use App\Models\Accessory;
 use App\Models\Actionlog;
 use App\Models\Asset;
@@ -294,7 +295,7 @@ class CheckOrphanUploads extends Command
             ->chunkById($chunk, function ($rows) use (&$missing, &$count): void {
                 foreach ($rows as $import) {
                     $count++;
-                    $path = 'private_uploads/imports/'.$import->file_path;
+                    $path = FileStorage::Imports->privateStorageKey().$import->file_path;
 
                     if (! Storage::exists($path)) {
                         $missing[] = [

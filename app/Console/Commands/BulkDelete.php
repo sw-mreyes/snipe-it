@@ -1055,10 +1055,10 @@ class BulkDelete extends Command
     private function deleteAcceptanceFiles(CheckoutAcceptance $acceptance): void
     {
         if ($acceptance->signature_filename) {
-            $this->deleteStorageFile('local', 'private_uploads/signatures/'.$acceptance->signature_filename);
+            $this->deleteStorageFile('local', FileStorage::Signatures->privateStorageKey().$acceptance->signature_filename);
         }
         if ($acceptance->stored_eula_file) {
-            $this->deleteStorageFile('local', 'private_uploads/eula-pdfs/'.$acceptance->stored_eula_file);
+            $this->deleteStorageFile('local', FileStorage::EulaPdfs->privateStorageKey().$acceptance->stored_eula_file);
         }
     }
 

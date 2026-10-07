@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use App\Enums\FileStorage;
 use App\Models\Actionlog;
 use App\Models\CheckoutAcceptance;
 use App\Models\Consumable;
@@ -69,7 +70,7 @@ class ConsumableObserver
 
         foreach ($uploads as $file) {
             try {
-                Storage::delete('private_uploads/consumables/'.$file->filename);
+                Storage::delete(FileStorage::Consumables->privateStorageKey().$file->filename);
                 $file->delete();
             } catch (\Exception $e) {
                 Log::info($e);

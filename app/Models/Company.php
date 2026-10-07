@@ -475,6 +475,17 @@ final class Company extends SnipeModel
                     Log::info($e->getMessage());
                 }
             }
+
+            foreach ($company->uploads as $upload) {
+                if (($path = $upload->uploads_file_path()) !== null) {
+                    try {
+                        Storage::delete($path);
+                    } catch (\Exception $e) {
+                        Log::info($e->getMessage());
+                    }
+                }
+                $upload->delete();
+            }
         });
     }
 

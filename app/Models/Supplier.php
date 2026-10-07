@@ -110,8 +110,11 @@ class Supplier extends SnipeModel
             Component::where('default_supplier_id', $supplier->id)->update(['default_supplier_id' => null]);
         });
 
-        // On hard-delete, wipe the image file. Soft-delete leaves it
-        // alone so a subsequent restore comes back with its image intact.
+        // On hard-delete, wipe the image file and Files-tab attachments.
+        // Soft-delete leaves everything alone so a restore comes back
+        // with the image + files intact. The attachment action_log rows
+        // get soft-deleted (not hard-deleted) so the audit trail of what
+        // was attached-and-when survives even after the parent is gone.
         static::forceDeleted(function (self $supplier) {
             if ($supplier->image) {
                 try {
@@ -119,6 +122,17 @@ class Supplier extends SnipeModel
                 } catch (\Exception $e) {
                     Log::info($e->getMessage());
                 }
+            }
+
+            foreach ($supplier->uploads as $upload) {
+                if (($path = $upload->uploads_file_path()) !== null) {
+                    try {
+                        Storage::delete($path);
+                    } catch (\Exception $e) {
+                        Log::info($e->getMessage());
+                    }
+                }
+                $upload->delete();
             }
         });
     }
