@@ -462,6 +462,23 @@ final class Company extends SnipeModel
     }
 
     /**
+     * On hard-delete, wipe the image file. Soft-delete leaves it alone so a
+     * subsequent restore comes back with its image intact.
+     */
+    protected static function booted(): void
+    {
+        self::forceDeleted(function (self $company) {
+            if ($company->image) {
+                try {
+                    Storage::disk('public')->delete(FileStorage::Companies->publicPath().$company->image);
+                } catch (\Exception $e) {
+                    Log::info($e->getMessage());
+                }
+            }
+        });
+    }
+
+    /**
      * Checks if company can be deleted
      *
      * @author [Dan Meltzer] [<dmeltzer.devel@gmail.com>]

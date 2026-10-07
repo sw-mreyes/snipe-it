@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Enums\FileStorage;
 use App\Models\Traits\Searchable;
 use App\Presenters\ManufacturerPresenter;
 use App\Presenters\Presentable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Watson\Validating\ValidatingTrait;
 
 class Manufacturer extends SnipeModel
@@ -81,6 +84,23 @@ class Manufacturer extends SnipeModel
     protected $searchableRelations = [
         'adminuser' => ['first_name', 'last_name', 'display_name'],
     ];
+
+    /**
+     * On hard-delete, wipe the image file. Soft-delete leaves it alone so a
+     * subsequent restore comes back with its image intact.
+     */
+    protected static function booted(): void
+    {
+        static::forceDeleted(function (self $manufacturer) {
+            if ($manufacturer->image) {
+                try {
+                    Storage::disk('public')->delete(FileStorage::Manufacturers->publicPath().$manufacturer->image);
+                } catch (\Exception $e) {
+                    Log::info($e->getMessage());
+                }
+            }
+        });
+    }
 
     public function isDeletable()
     {

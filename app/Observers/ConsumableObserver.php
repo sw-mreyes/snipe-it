@@ -2,7 +2,6 @@
 
 namespace App\Observers;
 
-use App\Enums\FileStorage;
 use App\Models\Actionlog;
 use App\Models\CheckoutAcceptance;
 use App\Models\Consumable;
@@ -77,14 +76,8 @@ class ConsumableObserver
             }
         }
 
-        try {
-            Storage::disk('public')->delete(FileStorage::Consumables->publicPath().$consumable->image);
-        } catch (\Exception $e) {
-            Log::info($e);
-        }
-
-        $consumable->image = null;
-        $consumable->save();
+        // Image file cleanup lives on the Consumable model's forceDeleted
+        // hook so soft-delete + restore preserves the image reference.
 
         $logAction = new Actionlog;
         $logAction->item_type = Consumable::class;

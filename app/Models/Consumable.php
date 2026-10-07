@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Watson\Validating\ValidatingTrait;
 
@@ -133,6 +134,23 @@ class Consumable extends SnipeModel
         // the Orders table so historical order references still match.
         'orders' => ['order_number'],
     ];
+
+    /**
+     * On hard-delete, wipe the image file. Soft-delete leaves it alone so a
+     * subsequent restore comes back with its image intact.
+     */
+    protected static function booted(): void
+    {
+        static::forceDeleted(function (self $consumable) {
+            if ($consumable->image) {
+                try {
+                    Storage::disk('public')->delete(FileStorage::Consumables->publicPath().$consumable->image);
+                } catch (\Exception $e) {
+                    Log::info($e->getMessage());
+                }
+            }
+        });
+    }
 
     /**
      * Normalize the requestable form input so an empty string from an

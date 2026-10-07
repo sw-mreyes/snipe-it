@@ -2,15 +2,12 @@
 
 namespace App\Actions\Manufacturers;
 
-use App\Enums\FileStorage;
 use App\Exceptions\ItemStillHasAccessories;
 use App\Exceptions\ItemStillHasAssets;
 use App\Exceptions\ItemStillHasComponents;
 use App\Exceptions\ItemStillHasConsumables;
 use App\Exceptions\ItemStillHasLicenses;
 use App\Models\Manufacturer;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 
 class DestroyManufacturerAction
 {
@@ -47,16 +44,9 @@ class DestroyManufacturerAction
             throw new ItemStillHasLicenses($manufacturer);
         }
 
-        if ($manufacturer->image) {
-            try {
-                Storage::disk('public')->delete(FileStorage::Manufacturers->publicPath().$manufacturer->image);
-            } catch (\Exception $e) {
-                Log::info($e);
-            }
-        }
-
+        // Image file cleanup lives on the model's forceDeleted hook so
+        // soft-delete + restore preserves the image reference.
         $manufacturer->delete();
-        // dd($manufacturer);
 
         return true;
     }

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\FileStorage;
 use App\Http\Traits\UniqueUndeletedTrait;
 use App\Models\Traits\HasUploads;
 use App\Models\Traits\Loggable;
@@ -12,6 +13,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Watson\Validating\ValidatingTrait;
 
 class Supplier extends SnipeModel
@@ -105,6 +108,18 @@ class Supplier extends SnipeModel
             Accessory::where('default_supplier_id', $supplier->id)->update(['default_supplier_id' => null]);
             Consumable::where('default_supplier_id', $supplier->id)->update(['default_supplier_id' => null]);
             Component::where('default_supplier_id', $supplier->id)->update(['default_supplier_id' => null]);
+        });
+
+        // On hard-delete, wipe the image file. Soft-delete leaves it
+        // alone so a subsequent restore comes back with its image intact.
+        static::forceDeleted(function (self $supplier) {
+            if ($supplier->image) {
+                try {
+                    Storage::disk('public')->delete(FileStorage::Suppliers->publicPath().$supplier->image);
+                } catch (\Exception $e) {
+                    Log::info($e->getMessage());
+                }
+            }
         });
     }
 

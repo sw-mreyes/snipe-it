@@ -2,7 +2,6 @@
 
 namespace App\Actions\Companies;
 
-use App\Enums\FileStorage;
 use App\Exceptions\ItemStillHasAccessories;
 use App\Exceptions\ItemStillHasAssets;
 use App\Exceptions\ItemStillHasChildCompanies;
@@ -11,8 +10,6 @@ use App\Exceptions\ItemStillHasConsumables;
 use App\Exceptions\ItemStillHasLicenses;
 use App\Exceptions\ItemStillHasUsers;
 use App\Models\Company;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 
 class DestroyCompanyAction
 {
@@ -68,14 +65,8 @@ class DestroyCompanyAction
             throw new ItemStillHasChildCompanies($company);
         }
 
-        if ($company->image) {
-            try {
-                Storage::disk('public')->delete(FileStorage::Companies->publicPath().$company->image);
-            } catch (\Exception $e) {
-                Log::info($e->getMessage());
-            }
-        }
-
+        // Image file cleanup lives on the model's forceDeleted hook so
+        // soft-delete + restore preserves the image reference.
         $company->delete();
 
         return true;
