@@ -32,6 +32,19 @@ class Actionlog extends SnipeModel
     // This is to manually set the source (via setActionSource()) for determineActionSource()
     protected ?string $source = null;
 
+    /**
+     * Ambient action-source for every action_log written inside a
+     * long-running operation (LDAP sync, sync-adapter pulls) that has
+     * no HTTP context to infer `gui` / `api` from and that spawns many
+     * observer-driven writes we can't reach into individually.
+     *
+     * Set + restored around a callback via withActionSource(). The
+     * priority order in determineActionSource() is: explicit per-log
+     * $this->source first, ambient second, then the request-shape
+     * fallbacks.
+     */
+    protected static ?string $ambientSource = null;
+
     protected $with = ['adminuser'];
 
     protected $presenter = ActionlogPresenter::class;
@@ -626,11 +639,37 @@ class Actionlog extends SnipeModel
      *
      * @since  v6.3.0
      */
+    /**
+     * Run $callback with every action_log it writes stamped as $source.
+     * Previous ambient value is restored on exit (including on
+     * exception) so nested wraps don't leak out of their scope. Used by
+     * LdapSync + the sync-adapter pull entry points to attribute
+     * observer-driven writes to the owning operation.
+     */
+    public static function withActionSource(string $source, callable $callback): mixed
+    {
+        $previous = self::$ambientSource;
+        self::$ambientSource = $source;
+        try {
+            return $callback();
+        } finally {
+            self::$ambientSource = $previous;
+        }
+    }
+
     public function determineActionSource(): string
     {
-        // This is a manually set source
+        // Explicit per-log override, set via setActionSource() on the
+        // Actionlog instance before save.
         if ($this->source) {
             return $this->source;
+        }
+
+        // Ambient source set by a surrounding withActionSource() wrap.
+        // Catches observer-driven writes from LDAP sync and sync-adapter
+        // pulls that we can't reach to tag individually.
+        if (self::$ambientSource !== null) {
+            return self::$ambientSource;
         }
 
         // This is an API call

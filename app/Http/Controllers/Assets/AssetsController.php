@@ -694,7 +694,14 @@ class AssetsController extends Controller
                         Storage::disk('public')->put($qr_key, $barcode_obj->getPngData());
                     }
 
-                    return Storage::disk('public')->response($qr_key, basename($qr_key), ['Content-type' => 'image/png']);
+                    // Buffered rather than StreamedResponse so S3 serving
+                    // works consistently. QR PNGs are a few KB, memory is
+                    // fine, and the streaming path was truncating bodies
+                    // on S3 somewhere in the StreamedResponse/readStream
+                    // pipeline.
+                    return response(Storage::disk('public')->get($qr_key), 200, [
+                        'Content-type' => 'image/png',
+                    ]);
                 }
             }
 
@@ -745,7 +752,11 @@ class AssetsController extends Controller
                     }
                 }
 
-                return Storage::disk('public')->response($barcode_key, basename($barcode_key), ['Content-type' => 'image/png']);
+                // Buffered rather than StreamedResponse so S3 serving
+                // works consistently. See getQrCode() for context.
+                return response(Storage::disk('public')->get($barcode_key), 200, [
+                    'Content-type' => 'image/png',
+                ]);
             }
         }
 

@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Actionlog;
 use App\Models\Asset;
 use App\Models\Group;
 use App\Models\Ldap;
@@ -51,6 +52,21 @@ class LdapSync extends Command
             exit();
         }
 
+        // Tag every action_log written during this run (direct writes
+        // and the observer-driven writes User saves trigger) as `ldap`
+        // so the activity report distinguishes LDAP-created entries
+        // from gui / api / sync-adapter origins.
+        $previousActionSource = Actionlog::setAmbientSource('ldap');
+
+        try {
+            return $this->runSync();
+        } finally {
+            Actionlog::setAmbientSource($previousActionSource);
+        }
+    }
+
+    private function runSync()
+    {
         ini_set('max_execution_time', config('app.ldap_time_limit')); // 600 seconds = 10 minutes
         ini_set('memory_limit', config('app.ldap_memory_limit'));
 
