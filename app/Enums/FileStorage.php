@@ -27,6 +27,7 @@ enum FileStorage: string
     case Assets = 'assets';
     case Audits = 'audits';
     case Avatars = 'avatars';
+    case Backups = 'backups';
     case Barcodes = 'barcodes';
     case Categories = 'categories';
     case Companies = 'companies';
@@ -56,6 +57,19 @@ enum FileStorage: string
         'asset_maintenances' => 'maintenances',
     ];
 
+    /**
+     * Subdir names enumerated by publicDirs() / privateDirs() that the
+     * restore command must leave untouched. Backups live here because
+     * wiping storage/app/backups during a restore would race against
+     * the archive being read and destroy sibling rollback points.
+     * Entries match the enum backing value.
+     *
+     * @var array<int, string>
+     */
+    private const SKIP_IN_RESTORE_PRUNE = [
+        'backups',
+    ];
+
     public function hasPublicScope(): bool
     {
         return match ($this) {
@@ -83,6 +97,7 @@ enum FileStorage: string
             self::Accessories,
             self::Assets,
             self::Audits,
+            self::Backups,
             self::Components,
             self::Consumables,
             self::EulaPdfs,
@@ -126,11 +141,20 @@ enum FileStorage: string
 
     /**
      * Full private directory, relative to the repo root. For restore
-     * extraction + pruning.
+     * extraction + pruning. Backups live under Spatie's normal
+     * storage/app/backups rather than the private_uploads tree, which
+     * every other private case uses.
      */
     public function privateDir(): ?string
     {
-        return $this->hasPrivateScope() ? 'storage/private_uploads/'.$this->value : null;
+        if (!$this->hasPrivateScope()) {
+            return null;
+        }
+
+        return match ($this) {
+            self::Backups => 'storage/app/backups',
+            default => 'storage/private_uploads/' . $this->value,
+        };
     }
 
     /**
@@ -176,5 +200,41 @@ enum FileStorage: string
         }
 
         return $out;
+    }
+
+    /**
+     * Public directories excluding those in SKIP_IN_RESTORE_PRUNE.
+     * Only RestoreFromBackup should reach for this. Any other caller
+     * that wants the full public enumeration uses publicDirs().
+     *
+     * @return list<string>
+     */
+    public static function publicDirsForRestore(): array
+    {
+        return array_values(array_filter(
+            self::publicDirs(),
+            fn(string $dir) => !in_array(basename($dir), self::SKIP_IN_RESTORE_PRUNE, true),
+        ));
+    }
+
+    /**
+     * Private directories excluding those in SKIP_IN_RESTORE_PRUNE.
+     * Alias entries are matched by their alias key, not their
+     * destination value, because the alias key is what carries the
+     * on-disk subdir name of a historical backup.
+     *
+     * @return array<int|string, string>
+     */
+    public static function privateDirsForRestore(): array
+    {
+        return array_filter(
+            self::privateDirs(),
+            fn(string $dir, int|string $key) => !in_array(
+                basename(is_string($key) ? $key : $dir),
+                self::SKIP_IN_RESTORE_PRUNE,
+                true,
+            ),
+            ARRAY_FILTER_USE_BOTH,
+        );
     }
 }

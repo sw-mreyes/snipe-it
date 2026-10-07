@@ -74,4 +74,41 @@ class FileStorageTest extends TestCase
             }
         }
     }
+
+    public function test_backups_resolve_to_spatie_dir_not_private_uploads_tree(): void
+    {
+        $this->assertTrue(FileStorage::Backups->hasPrivateScope());
+        $this->assertFalse(FileStorage::Backups->hasPublicScope());
+        $this->assertSame('storage/app/backups', FileStorage::Backups->privateDir());
+        $this->assertNull(FileStorage::Backups->publicDir());
+    }
+
+    public function test_backups_appear_in_full_private_dirs_enumeration(): void
+    {
+        // publicDirs() / privateDirs() are the authoritative "every dir
+        // of that scope" list. Backups has to be here so a future caller
+        // enumerating private storage locations sees it.
+        $this->assertContains('storage/app/backups', FileStorage::privateDirs());
+    }
+
+    public function test_restore_filtered_enumerations_exclude_backups(): void
+    {
+        // The restore pruning passes must leave Spatie's backup directory
+        // alone. Otherwise the archive being read from, plus every
+        // sibling rollback point, would be wiped mid-restore.
+        $this->assertNotContains('storage/app/backups', FileStorage::privateDirsForRestore());
+        $this->assertNotContains('storage/app/backups', FileStorage::publicDirsForRestore());
+    }
+
+    public function test_restore_filtered_private_enumeration_still_contains_regular_private_cases(): void
+    {
+        $pruneable = FileStorage::privateDirsForRestore();
+        $this->assertContains('storage/private_uploads/signatures', $pruneable);
+        $this->assertContains('storage/private_uploads/users', $pruneable);
+        $this->assertContains('storage/private_uploads/eula-pdfs', $pruneable);
+
+        // Historical alias entries carry through as string-keyed pairs
+        // because older archives still ship the old subdir names.
+        $this->assertArrayHasKey('storage/private_uploads/assetmodels', $pruneable);
+    }
 }
