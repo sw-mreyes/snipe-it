@@ -3964,16 +3964,21 @@
     }
 
 
-    function filePreviewFormatter(row, value) {
+    // bootstrap-table formatter signature is (value, row, index, field).
+    // The `image` column backing this formatter is a placeholder: no
+    // `image` key is emitted by UploadedFilesTransformer, so `value` is
+    // always undefined. The preview data (url, mediatype, inlineable)
+    // lives at the row root, so the formatter drives off `row` directly.
+    function filePreviewFormatter(value, row) {
 
-        if ((value) && (value.url) && (value.inlineable)) {
+        if ((row) && (row.url) && (row.inlineable)) {
 
-            if (value.mediatype == 'image') {
-                return '<a href="' + value.url + '?inline=true" data-toggle="lightbox" data-type="image"><img src="' + value.url + '" style="max-height: {{ $snipeSettings->thumbnail_max_h }}px; width: auto;" class="img-responsive" alt=""></a>';
-            } else if (value.mediatype == 'video') {
-                return '<a href="' + value.url + '?inline=true" data-toggle="lightbox" data-type="video"><video style="max-height: {{ $snipeSettings->thumbnail_max_h }}px; width: auto;" class="img-responsive"><source src="' + value.url + '?inline=true"></video></a>';
-            } else if (value.mediatype == 'audio') {
-                return '<audio controls><source src="' + value.url + '?inline=true" type="audio/mp3">Your browser does not support the audio element.</audio>';
+            if (row.mediatype == 'image') {
+                return '<a href="' + row.url + '?inline=true" data-toggle="lightbox" data-type="image"><img src="' + row.url + '" style="max-height: {{ $snipeSettings->thumbnail_max_h }}px; width: auto;" class="img-responsive" alt=""></a>';
+            } else if (row.mediatype == 'video') {
+                return '<a href="' + row.url + '?inline=true" data-toggle="lightbox" data-type="video"><video style="max-height: {{ $snipeSettings->thumbnail_max_h }}px; width: auto;" class="img-responsive"><source src="' + row.url + '?inline=true"></video></a>';
+            } else if (row.mediatype == 'audio') {
+                return '<audio controls><source src="' + row.url + '?inline=true" type="audio/mp3">Your browser does not support the audio element.</audio>';
             }
             return '{{ trans('general.preview_not_available') }}';
         }
