@@ -51,13 +51,13 @@ class MoveUploadsToNewDisk extends Command
         // Public upload directories, resolved through FileStorage.
         $public_uploads = [];
         foreach (FileStorage::cases() as $case) {
-            if (!$case->hasPublicScope()) {
+            if (! $case->hasPublicScope()) {
                 continue;
             }
             if ($case === FileStorage::Barcodes) {
                 continue;
             }
-            $public_uploads[$case->value] = glob($case->publicDir() . '/*.*');
+            $public_uploads[$case->value] = glob($case->publicDir().'/*.*');
         }
 
         // iterate files
@@ -70,8 +70,15 @@ class MoveUploadsToNewDisk extends Command
                 $filename = basename($public_upload[$i]);
 
                 try {
-                    Storage::disk('public')->put('uploads/'.$public_type.'/'.$filename, file_get_contents($public_upload[$i]));
-                    $new_url = Storage::disk('public')->url('uploads/'.$public_type.'/'.$filename);
+                    // The `public` disk is already rooted at the uploads
+                    // directory on local and the per-install bucket root
+                    // on S3, so the destination key is `<type>/<file>`
+                    // without an `uploads/` prefix. The application reads
+                    // image URLs via `FileStorage::<Case>->publicPath()`
+                    // which emits `<type>/`. Prefixing here would land
+                    // the file at a key the app never resolves.
+                    Storage::disk('public')->put($public_type.'/'.$filename, file_get_contents($public_upload[$i]));
+                    $new_url = Storage::disk('public')->url($public_type.'/'.$filename);
                     $this->info($type_count.'. PUBLIC: '.$filename.' was copied to '.$new_url);
                 } catch (\Exception $e) {
                     Log::debug($e);
@@ -88,17 +95,19 @@ class MoveUploadsToNewDisk extends Command
             $this->info($logo);
             $type_count++;
             $filename = basename($logo);
-            Storage::disk('public')->put('uploads/'.$filename, file_get_contents($logo));
-            $this->info($type_count.'. LOGO: '.$filename.' was copied to '.config('filesystems.disks.public_aws.url').'/uploads/'.$filename);
+            // Branding logos (logo.*, favicon.*, Setting-*) live at the
+            // root of the public disk, so no subdirectory prefix.
+            Storage::disk('public')->put($filename, file_get_contents($logo));
+            $this->info($type_count.'. LOGO: '.$filename.' was copied to '.Storage::disk('public')->url($filename));
         }
 
         // Private upload directories, resolved through FileStorage.
         $private_uploads = [];
         foreach (FileStorage::cases() as $case) {
-            if (!$case->hasPrivateScope()) {
+            if (! $case->hasPrivateScope()) {
                 continue;
             }
-            $private_uploads[$case->value] = glob($case->privateDir() . '/*.*');
+            $private_uploads[$case->value] = glob($case->privateDir().'/*.*');
         }
 
         foreach ($private_uploads as $private_type => $private_upload) {
