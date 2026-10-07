@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Account;
 
+use App\Enums\FileStorage;
 use App\Events\CheckoutAccepted;
 use App\Events\CheckoutDeclined;
 use App\Helpers\Helper;
@@ -151,15 +152,15 @@ class AcceptanceController extends Controller
         /**
          * Check for the signature directory
          */
-        if (! Storage::exists('private_uploads/signatures')) {
-            Storage::makeDirectory('private_uploads/signatures', 775);
+        if (! Storage::exists(rtrim(FileStorage::Signatures->privateStorageKey(), '/'))) {
+            Storage::makeDirectory(rtrim(FileStorage::Signatures->privateStorageKey(), '/'), 775);
         }
 
         /**
          * Check for the eula-pdfs directory
          */
-        if (! Storage::exists('private_uploads/eula-pdfs')) {
-            Storage::makeDirectory('private_uploads/eula-pdfs', 775);
+        if (! Storage::exists(rtrim(FileStorage::EulaPdfs->privateStorageKey(), '/'))) {
+            Storage::makeDirectory(rtrim(FileStorage::EulaPdfs->privateStorageKey(), '/'), 775);
         }
 
         $item = $acceptance->checkoutable_type::find($acceptance->checkoutable_id);
@@ -213,7 +214,7 @@ class AcceptanceController extends Controller
                 // evidence file did not exist. Refuse to advance when the
                 // write did not land. Reported by Christopher Finks
                 // (christopherfi-dev) on 2026-08-02.
-                if (! Storage::put('private_uploads/signatures/'.$sig_filename, (string) $decoded_image)) {
+                if (! Storage::put(FileStorage::Signatures->privateStorageKey().$sig_filename, (string) $decoded_image)) {
                     Log::warning('Acceptance signature write failed for '.$sig_filename);
 
                     return redirect()->back()->with('error', trans('admin/users/message.accept_signature_write_failed'));
@@ -295,7 +296,7 @@ class AcceptanceController extends Controller
             // evidence file did not exist. Refuse to advance when the
             // write did not land. Reported by Christopher Finks
             // (christopherfi-dev) on 2026-08-02.
-            if (! Storage::put('private_uploads/eula-pdfs/'.$pdf_filename, $pdf_content)) {
+            if (! Storage::put(FileStorage::EulaPdfs->privateStorageKey().$pdf_filename, $pdf_content)) {
                 Log::warning('Acceptance PDF write failed for '.$pdf_filename);
 
                 return redirect()->back()->with('error', trans('admin/users/message.accept_pdf_write_failed'));

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\FileStorage;
 use App\Http\Traits\UniqueUndeletedTrait;
 use App\Models\Traits\CompanyableTrait;
 use App\Models\Traits\HasUploads;
@@ -14,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Watson\Validating\ValidatingTrait;
 
@@ -118,6 +120,37 @@ class Location extends SnipeModel
         'manager' => ['first_name', 'last_name', 'display_name'],
         'adminuser' => ['first_name', 'last_name', 'display_name'],
     ];
+
+    /**
+     * On hard-delete, wipe the image file and Files-tab attachments.
+     * Soft-delete leaves everything alone so a restore comes back with
+     * the image + files intact. The attachment action_log rows get
+     * soft-deleted (not hard-deleted) so the audit trail of what was
+     * attached-and-when survives even after the parent is gone.
+     */
+    protected static function booted(): void
+    {
+        static::forceDeleted(function (self $location) {
+            if ($location->image) {
+                try {
+                    Storage::disk('public')->delete(FileStorage::Locations->publicPath().$location->image);
+                } catch (\Exception $e) {
+                    Log::info($e->getMessage());
+                }
+            }
+
+            foreach ($location->uploads as $upload) {
+                if (($path = $upload->uploads_file_path()) !== null) {
+                    try {
+                        Storage::delete($path);
+                    } catch (\Exception $e) {
+                        Log::info($e->getMessage());
+                    }
+                }
+                $upload->delete();
+            }
+        });
+    }
 
     /**
      * Determine whether or not this location can be deleted.
@@ -394,7 +427,7 @@ class Location extends SnipeModel
             $location->use_text = $prefix === ''
                 ? $location->name
                 : $prefix.' '.$location->name;
-            $location->use_image = ($location->image) ? Storage::disk('public')->url('locations/'.$location->image) : null;
+            $location->use_image = ($location->image) ? Storage::disk('public')->url(FileStorage::Locations->publicPath().$location->image) : null;
             $results[] = $location;
             if (array_key_exists($location->id, $locations_with_children)) {
                 $results = array_merge($results, self::indenter($locations_with_children, $location->id, $prefix.'--'));

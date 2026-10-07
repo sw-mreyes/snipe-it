@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\FileStorage;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -47,18 +48,17 @@ class MoveUploadsToNewDisk extends Command
         }
         $delete_local = $this->argument('delete_local');
 
-        $public_uploads['accessories'] = glob('public/uploads/accessories'.'/*.*');
-        $public_uploads['assets'] = glob('public/uploads/assets'.'/*.*');
-        $public_uploads['avatars'] = glob('public/uploads/avatars'.'/*.*');
-        $public_uploads['categories'] = glob('public/uploads/categories'.'/*.*');
-        $public_uploads['companies'] = glob('public/uploads/companies'.'/*.*');
-        $public_uploads['components'] = glob('public/uploads/components'.'/*.*');
-        $public_uploads['consumables'] = glob('public/uploads/consumables'.'/*.*');
-        $public_uploads['departments'] = glob('public/uploads/departments'.'/*.*');
-        $public_uploads['locations'] = glob('public/uploads/locations'.'/*.*');
-        $public_uploads['manufacturers'] = glob('public/uploads/manufacturers'.'/*.*');
-        $public_uploads['suppliers'] = glob('public/uploads/suppliers'.'/*.*');
-        $public_uploads['assetmodels'] = glob('public/uploads/models'.'/*.*');
+        // Public upload directories, resolved through FileStorage.
+        $public_uploads = [];
+        foreach (FileStorage::cases() as $case) {
+            if (! $case->hasPublicScope()) {
+                continue;
+            }
+            if ($case === FileStorage::Barcodes) {
+                continue;
+            }
+            $public_uploads[$case->value] = glob($case->publicDir().'/*.*');
+        }
 
         // iterate files
         foreach ($public_uploads as $public_type => $public_upload) {
@@ -70,8 +70,15 @@ class MoveUploadsToNewDisk extends Command
                 $filename = basename($public_upload[$i]);
 
                 try {
-                    Storage::disk('public')->put('uploads/'.$public_type.'/'.$filename, file_get_contents($public_upload[$i]));
-                    $new_url = Storage::disk('public')->url('uploads/'.$public_type.'/'.$filename);
+                    // The `public` disk is already rooted at the uploads
+                    // directory on local and the per-install bucket root
+                    // on S3, so the destination key is `<type>/<file>`
+                    // without an `uploads/` prefix. The application reads
+                    // image URLs via `FileStorage::<Case>->publicPath()`
+                    // which emits `<type>/`. Prefixing here would land
+                    // the file at a key the app never resolves.
+                    Storage::disk('public')->put($public_type.'/'.$filename, file_get_contents($public_upload[$i]));
+                    $new_url = Storage::disk('public')->url($public_type.'/'.$filename);
                     $this->info($type_count.'. PUBLIC: '.$filename.' was copied to '.$new_url);
                 } catch (\Exception $e) {
                     Log::debug($e);
@@ -88,18 +95,20 @@ class MoveUploadsToNewDisk extends Command
             $this->info($logo);
             $type_count++;
             $filename = basename($logo);
-            Storage::disk('public')->put('uploads/'.$filename, file_get_contents($logo));
-            $this->info($type_count.'. LOGO: '.$filename.' was copied to '.config('filesystems.disks.public_aws.url').'/uploads/'.$filename);
+            // Branding logos (logo.*, favicon.*, Setting-*) live at the
+            // root of the public disk, so no subdirectory prefix.
+            Storage::disk('public')->put($filename, file_get_contents($logo));
+            $this->info($type_count.'. LOGO: '.$filename.' was copied to '.Storage::disk('public')->url($filename));
         }
 
-        $private_uploads['assets'] = glob('storage/private_uploads/assets'.'/*.*');
-        $private_uploads['signatures'] = glob('storage/private_uploads/signatures'.'/*.*');
-        $private_uploads['audits'] = glob('storage/private_uploads/audits'.'/*.*');
-        $private_uploads['assetmodels'] = glob('storage/private_uploads/models'.'/*.*');
-        $private_uploads['imports'] = glob('storage/private_uploads/imports'.'/*.*');
-        $private_uploads['licenses'] = glob('storage/private_uploads/licenses'.'/*.*');
-        $private_uploads['users'] = glob('storage/private_uploads/users'.'/*.*');
-        $private_uploads['backups'] = glob('storage/private_uploads/backups'.'/*.*');
+        // Private upload directories, resolved through FileStorage.
+        $private_uploads = [];
+        foreach (FileStorage::cases() as $case) {
+            if (! $case->hasPrivateScope()) {
+                continue;
+            }
+            $private_uploads[$case->value] = glob($case->privateDir().'/*.*');
+        }
 
         foreach ($private_uploads as $private_type => $private_upload) {
 

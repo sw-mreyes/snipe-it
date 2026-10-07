@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\FileStorage;
 use App\Helpers\StorageHelper;
 use App\Http\Requests\UploadFileRequest;
 use App\Models\Actionlog;
@@ -188,7 +189,7 @@ class UploadedFilesController extends Controller
                 return redirect()->back()->with('error', trans('general.file_upload_status.file_not_found'));
             }
 
-            $storedPath = 'private_uploads/imports/'.$import->file_path;
+            $storedPath = FileStorage::Imports->privateStorageKey().$import->file_path;
             if (! Storage::exists($storedPath)) {
                 return redirect()->back()->with('error', trans('general.file_upload_status.file_not_found'));
             }

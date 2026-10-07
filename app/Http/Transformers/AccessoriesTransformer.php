@@ -2,6 +2,7 @@
 
 namespace App\Http\Transformers;
 
+use App\Enums\FileStorage;
 use App\Helpers\Helper;
 use App\Models\Accessory;
 use Illuminate\Database\Eloquent\Collection;
@@ -32,7 +33,7 @@ class AccessoriesTransformer
         $array = [
             'id' => $accessory->id,
             'name' => e($accessory->name),
-            'image' => ($accessory->image) ? Storage::disk('public')->url('accessories/'.e($accessory->image)) : null,
+            'image' => ($accessory->image) ? Storage::disk('public')->url(FileStorage::Accessories->publicPath().e($accessory->image)) : null,
             'qr_code_url' => route('qr_code/common', ['object_type' => 'accessories', 'id' => $accessory->id]),
             'company' => ($accessory->company) ? [
                 'id' => $accessory->company->id,

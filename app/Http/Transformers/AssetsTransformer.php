@@ -2,6 +2,7 @@
 
 namespace App\Http\Transformers;
 
+use App\Enums\FileStorage;
 use App\Helpers\Helper;
 use App\Models\AccessoryCheckout;
 use App\Models\Asset;
@@ -98,8 +99,8 @@ class AssetsTransformer
             ] : null,
             'image' => ($asset->getImageUrl()) ? $asset->getImageUrl() : null,
             'qr_code_url' => route('qr_code/common', ['object_type' => 'hardware', 'id' => $asset->id]),
-            'qr' => ($setting->qr_code == '1') ? Storage::disk('public')->url('barcodes/qr-'.str_slug($asset->asset_tag).'-'.str_slug($asset->id).'.png') : null,
-            'alt_barcode' => ($setting->alt_barcode_enabled == '1') ? Storage::disk('public')->url('barcodes/'.str_slug($setting->alt_barcode).'-'.str_slug($asset->asset_tag).'.png') : null,
+            'qr' => ($setting->qr_code == '1') ? Storage::disk('public')->url(FileStorage::Barcodes->publicPath().'qr-'.str_slug($asset->asset_tag).'-'.str_slug($asset->id).'.png') : null,
+            'alt_barcode' => ($setting->alt_barcode_enabled == '1') ? Storage::disk('public')->url(FileStorage::Barcodes->publicPath().str_slug($setting->alt_barcode).'-'.str_slug($asset->asset_tag).'.png') : null,
             'assigned_to' => $this->transformAssignedTo($asset),
             'warranty_months' => ($asset->warranty_months > 0) ? e($asset->warranty_months.' '.trans('admin/hardware/form.months')) : null,
             'warranty_expires' => ($asset->warranty_months > 0) ? Helper::getFormattedDateObject($asset->warranty_expires, 'date') : null,
@@ -422,7 +423,7 @@ class AssetsTransformer
                     'name' => e($accessory_checkout->accessory->display_name),
                 ],
                 'assigned_to' => $accessory_checkout->assigned_to,
-                'image' => ($accessory_checkout->accessory->image) ? Storage::disk('public')->url('accessories/'.e($accessory_checkout->accessory->image)) : null,
+                'image' => ($accessory_checkout->accessory->image) ? Storage::disk('public')->url(FileStorage::Accessories->publicPath().e($accessory_checkout->accessory->image)) : null,
                 'note' => $accessory_checkout->note ? e($accessory_checkout->note) : null,
                 'created_by' => $accessory_checkout->adminuser ? [
                     'id' => (int) $accessory_checkout->adminuser->id,

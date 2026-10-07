@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\FileStorage;
 use App\Models\Traits\Acceptable;
 use App\Models\Traits\AdjustsQuantity;
 use App\Models\Traits\CompanyableTrait;
@@ -18,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Watson\Validating\ValidatingTrait;
 
@@ -132,6 +134,37 @@ class Consumable extends SnipeModel
         // the Orders table so historical order references still match.
         'orders' => ['order_number'],
     ];
+
+    /**
+     * On hard-delete, wipe the image file and Files-tab attachments.
+     * Soft-delete leaves everything alone so a restore comes back with
+     * the image + files intact. The attachment action_log rows get
+     * soft-deleted (not hard-deleted) so the audit trail of what was
+     * attached-and-when survives even after the parent is gone.
+     */
+    protected static function booted(): void
+    {
+        static::forceDeleted(function (self $consumable) {
+            if ($consumable->image) {
+                try {
+                    Storage::disk('public')->delete(FileStorage::Consumables->publicPath().$consumable->image);
+                } catch (\Exception $e) {
+                    Log::info($e->getMessage());
+                }
+            }
+
+            foreach ($consumable->uploads as $upload) {
+                if (($path = $upload->uploads_file_path()) !== null) {
+                    try {
+                        Storage::delete($path);
+                    } catch (\Exception $e) {
+                        Log::info($e->getMessage());
+                    }
+                }
+                $upload->delete();
+            }
+        });
+    }
 
     /**
      * Normalize the requestable form input so an empty string from an
@@ -275,11 +308,11 @@ class Consumable extends SnipeModel
     {
         // If there is a consumable image, use that
         if ($this->image) {
-            return Storage::disk('public')->url(app('consumables_upload_path').$this->image);
+            return Storage::disk('public')->url(FileStorage::Consumables->publicPath().$this->image);
 
             // Otherwise check for a category image
         } elseif (($this->category) && ($this->category->image)) {
-            return Storage::disk('public')->url(app('categories_upload_path').e($this->category->image));
+            return Storage::disk('public')->url(FileStorage::Categories->publicPath().e($this->category->image));
         }
 
         return false;
