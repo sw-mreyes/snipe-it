@@ -499,12 +499,6 @@ parameters:
 			path: app/Console/Commands/RestoreFromBackup.php
 
 		-
-			message: '#^Result of method Illuminate\\Console\\Command\:\:warn\(\) \(void\) is used\.$#'
-			identifier: method.void
-			count: 1
-			path: app/Console/Commands/RestoreFromBackup.php
-
-		-
 			message: '#^Throwing object of an unknown class App\\Console\\Commands\\Exception\.$#'
 			identifier: class.notFound
 			count: 1
@@ -1489,12 +1483,6 @@ parameters:
 			path: app/Http/Controllers/Api/ImportController.php
 
 		-
-			message: '#^Method App\\Http\\Transformers\\LabelsTransformer\:\:transformLabels\(\) invoked with 3 parameters, 2 required\.$#'
-			identifier: arguments.count
-			count: 1
-			path: app/Http/Controllers/Api/LabelsController.php
-
-		-
 			message: '#^Call to an undefined method App\\Models\\LicenseSeat\:\:getErrors\(\)\.$#'
 			identifier: method.notFound
 			count: 2
@@ -2107,7 +2095,7 @@ parameters:
 			path: app/Http/Controllers/Assets/AssetsController.php
 
 		-
-			message: '#^Method App\\Http\\Controllers\\Assets\\AssetsController\:\:getBarCode\(\) should return Illuminate\\Http\\Response but returns Symfony\\Component\\HttpFoundation\\BinaryFileResponse\.$#'
+			message: '#^Method App\\Http\\Controllers\\Assets\\AssetsController\:\:getBarCode\(\) should return Illuminate\\Http\\Response but returns Symfony\\Component\\HttpFoundation\\StreamedResponse\.$#'
 			identifier: return.type
 			count: 1
 			path: app/Http/Controllers/Assets/AssetsController.php
@@ -2827,50 +2815,8 @@ parameters:
 			path: app/Http/Controllers/Kits/PredefinedKitsController.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\Asset\:\:\$is_label_preview\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/LabelsController.php
-
-		-
-			message: '#^Property App\\Models\\Asset\:\:\$company is not writable\.$#'
-			identifier: assign.propertyReadOnly
-			count: 1
-			path: app/Http/Controllers/LabelsController.php
-
-		-
-			message: '#^Property App\\Models\\Asset\:\:\$defaultLoc is not writable\.$#'
-			identifier: assign.propertyReadOnly
-			count: 1
-			path: app/Http/Controllers/LabelsController.php
-
-		-
-			message: '#^Property App\\Models\\Asset\:\:\$location is not writable\.$#'
-			identifier: assign.propertyReadOnly
-			count: 1
-			path: app/Http/Controllers/LabelsController.php
-
-		-
-			message: '#^Property App\\Models\\Asset\:\:\$model is not writable\.$#'
-			identifier: assign.propertyReadOnly
-			count: 1
-			path: app/Http/Controllers/LabelsController.php
-
-		-
-			message: '#^Property App\\Models\\Asset\:\:\$purchase_date \(Carbon\\Carbon\|null\) does not accept string\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Http/Controllers/LabelsController.php
-
-		-
-			message: '#^Property App\\Models\\Asset\:\:\$supplier is not writable\.$#'
-			identifier: assign.propertyReadOnly
-			count: 1
-			path: app/Http/Controllers/LabelsController.php
-
-		-
-			message: '#^Property App\\Models\\Asset\:\:\$warranty_months \(int\|null\) does not accept string\.$#'
-			identifier: assign.propertyType
+			message: '#^Offset 0 on non\-empty\-list\<string\> in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.offset
 			count: 1
 			path: app/Http/Controllers/LabelsController.php
 
@@ -3229,6 +3175,12 @@ parameters:
 			path: app/Http/Controllers/SettingsController.php
 
 		-
+			message: '#^Access to an undefined property App\\Models\\Setting\:\:\$label2_template_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/SettingsController.php
+
+		-
 			message: '#^Access to an undefined property App\\Models\\SnipeModel\:\:\$default_avatar\.$#'
 			identifier: property.notFound
 			count: 1
@@ -3290,6 +3242,12 @@ parameters:
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>blocked_api_user_agents" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/SettingsController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Http/Controllers/SettingsController.php
@@ -4789,18 +4747,6 @@ parameters:
 			path: app/Livewire/OauthClients.php
 
 		-
-			message: '#^Access to an undefined property App\\Livewire\\SlackSettingsForm\:\:\$webhook_options\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/SlackSettingsForm.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Http\\Client\\Response\:\:getStatusCode\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Livewire/SlackSettingsForm.php
-
-		-
 			message: '#^Access to an undefined property App\\Models\\Asset\:\:\$eula\.$#'
 			identifier: property.notFound
 			count: 1
@@ -5179,6 +5125,12 @@ parameters:
 			path: app/Models/Accessory.php
 
 		-
+			message: '#^Access to an undefined property App\\Models\\Accessory\:\:\$uploads\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Accessory.php
+
+		-
 			message: '#^Access to an undefined property App\\Models\\Actionlog\:\:\$created_by\.$#'
 			identifier: property.notFound
 			count: 6
@@ -5241,12 +5193,6 @@ parameters:
 		-
 			message: '#^Cannot access property \$id on class\-string\|object\.$#'
 			identifier: property.nonObject
-			count: 1
-			path: app/Models/Accessory.php
-
-		-
-			message: '#^If condition is always false\.$#'
-			identifier: if.alwaysFalse
 			count: 1
 			path: app/Models/Accessory.php
 
@@ -5500,6 +5446,12 @@ parameters:
 			message: '#^Access to an undefined property App\\Models\\Asset\:\:\$license_id\.$#'
 			identifier: property.notFound
 			count: 5
+			path: app/Models/Asset.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Asset\:\:\$uploads\.$#'
+			identifier: property.notFound
+			count: 1
 			path: app/Models/Asset.php
 
 		-
@@ -5870,6 +5822,12 @@ parameters:
 
 		-
 			message: '#^Access to an undefined property App\\Models\\AssetModel\:\:\$model\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/AssetModel.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\AssetModel\:\:\$uploads\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Models/AssetModel.php
@@ -6271,6 +6229,12 @@ parameters:
 			path: app/Models/Company.php
 
 		-
+			message: '#^Access to an undefined property App\\Models\\Company\:\:\$uploads\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Company.php
+
+		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$company_id\.$#'
 			identifier: property.notFound
 			count: 2
@@ -6452,6 +6416,12 @@ parameters:
 
 		-
 			message: '#^Access to an undefined property App\\Models\\Component\:\:\$sum_unconstrained_assets\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Component.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Component\:\:\$uploads\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Models/Component.php
@@ -6691,6 +6661,12 @@ parameters:
 			path: app/Models/Consumable.php
 
 		-
+			message: '#^Access to an undefined property App\\Models\\Consumable\:\:\$uploads\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Consumable.php
+
+		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$company_id\.$#'
 			identifier: property.notFound
 			count: 2
@@ -6925,6 +6901,12 @@ parameters:
 			path: app/Models/Department.php
 
 		-
+			message: '#^Access to an undefined property App\\Models\\Department\:\:\$uploads\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Department.php
+
+		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$company_id\.$#'
 			identifier: property.notFound
 			count: 2
@@ -7123,6 +7105,168 @@ parameters:
 			path: app/Models/Group.php
 
 		-
+			message: '#^Access to an undefined property App\\Models\\Labels\\CustomLabels\\CustomSheetLabel\:\:\$barcode2Margin\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Labels/CustomLabels/CustomSheetLabel.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Labels\\CustomLabels\\CustomSheetLabel\:\:\$height\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Labels/CustomLabels/CustomSheetLabel.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Labels\\CustomLabels\\CustomSheetLabel\:\:\$marginBottom\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Labels/CustomLabels/CustomSheetLabel.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Labels\\CustomLabels\\CustomSheetLabel\:\:\$marginLeft\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Labels/CustomLabels/CustomSheetLabel.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Labels\\CustomLabels\\CustomSheetLabel\:\:\$marginRight\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Labels/CustomLabels/CustomSheetLabel.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Labels\\CustomLabels\\CustomSheetLabel\:\:\$marginTop\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Labels/CustomLabels/CustomSheetLabel.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Labels\\CustomLabels\\CustomSheetLabel\:\:\$width\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Labels/CustomLabels/CustomSheetLabel.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Labels\\CustomLabels\\CustomTapeLabel\:\:\$barcode2Margin\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Labels/CustomLabels/CustomTapeLabel.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Labels\\CustomLabels\\CustomTapeLabel\:\:\$columns\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Models/Labels/CustomLabels/CustomTapeLabel.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Labels\\CustomLabels\\CustomTapeLabel\:\:\$labelColumnSpacing\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Models/Labels/CustomLabels/CustomTapeLabel.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Labels\\CustomLabels\\CustomTapeLabel\:\:\$labelHeight\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Models/Labels/CustomLabels/CustomTapeLabel.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Labels\\CustomLabels\\CustomTapeLabel\:\:\$labelMarginBottom\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Models/Labels/CustomLabels/CustomTapeLabel.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Labels\\CustomLabels\\CustomTapeLabel\:\:\$labelMarginLeft\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Models/Labels/CustomLabels/CustomTapeLabel.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Labels\\CustomLabels\\CustomTapeLabel\:\:\$labelMarginRight\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Models/Labels/CustomLabels/CustomTapeLabel.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Labels\\CustomLabels\\CustomTapeLabel\:\:\$labelMarginTop\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Models/Labels/CustomLabels/CustomTapeLabel.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Labels\\CustomLabels\\CustomTapeLabel\:\:\$labelRowSpacing\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Models/Labels/CustomLabels/CustomTapeLabel.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Labels\\CustomLabels\\CustomTapeLabel\:\:\$labelWidth\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Models/Labels/CustomLabels/CustomTapeLabel.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Labels\\CustomLabels\\CustomTapeLabel\:\:\$pageHeight\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Models/Labels/CustomLabels/CustomTapeLabel.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Labels\\CustomLabels\\CustomTapeLabel\:\:\$pageMarginBottom\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Models/Labels/CustomLabels/CustomTapeLabel.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Labels\\CustomLabels\\CustomTapeLabel\:\:\$pageMarginLeft\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Models/Labels/CustomLabels/CustomTapeLabel.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Labels\\CustomLabels\\CustomTapeLabel\:\:\$pageMarginRight\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Models/Labels/CustomLabels/CustomTapeLabel.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Labels\\CustomLabels\\CustomTapeLabel\:\:\$pageMarginTop\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Models/Labels/CustomLabels/CustomTapeLabel.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Labels\\CustomLabels\\CustomTapeLabel\:\:\$pageWidth\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Models/Labels/CustomLabels/CustomTapeLabel.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Labels\\CustomLabels\\CustomTapeLabel\:\:\$rows\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Models/Labels/CustomLabels/CustomTapeLabel.php
+
+		-
+			message: '#^Call to function method_exists\(\) with \$this\(App\\Models\\Labels\\CustomLabels\\CustomTapeLabel\) and ''getBarcode2DMargin'' will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Models/Labels/CustomLabels/CustomTapeLabel.php
+
+		-
+			message: '#^Call to function method_exists\(\) with \$this\(App\\Models\\Labels\\CustomLabels\\CustomTapeLabel\) and ''getLogoPlacement'' will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Models/Labels/CustomLabels/CustomTapeLabel.php
+
+		-
+			message: '#^Call to function method_exists\(\) with \$this\(App\\Models\\Labels\\CustomLabels\\CustomTapeLabel\) and ''getTagPositionMode'' will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 3
+			path: app/Models/Labels/CustomLabels/CustomTapeLabel.php
+
+		-
 			message: '#^Access to an undefined property App\\Models\\Asset\:\:\$assigned\.$#'
 			identifier: property.notFound
 			count: 1
@@ -7133,6 +7277,84 @@ parameters:
 			identifier: catch.neverThrown
 			count: 1
 			path: app/Models/Labels/FieldOption.php
+
+		-
+			message: '#^Call to an undefined method App\\Models\\Labels\\Label\:\:get2DBarcodeSize\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Models/Labels/Label.php
+
+		-
+			message: '#^Call to an undefined method App\\Models\\Labels\\Label\:\:getBarcodeMargin\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Models/Labels/Label.php
+
+		-
+			message: '#^Call to an undefined method App\\Models\\Labels\\Label\:\:getBarcodeSize\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Models/Labels/Label.php
+
+		-
+			message: '#^Call to an undefined method App\\Models\\Labels\\Label\:\:getFieldMargin\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Models/Labels/Label.php
+
+		-
+			message: '#^Call to an undefined method App\\Models\\Labels\\Label\:\:getFieldSize\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Models/Labels/Label.php
+
+		-
+			message: '#^Call to an undefined method App\\Models\\Labels\\Label\:\:getLabelMargin\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Models/Labels/Label.php
+
+		-
+			message: '#^Call to an undefined method App\\Models\\Labels\\Label\:\:getLabelSize\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Models/Labels/Label.php
+
+		-
+			message: '#^Call to an undefined method App\\Models\\Labels\\Label\:\:getLogoMargin\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Models/Labels/Label.php
+
+		-
+			message: '#^Call to an undefined method App\\Models\\Labels\\Label\:\:getLogoMaxWidth\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Models/Labels/Label.php
+
+		-
+			message: '#^Call to an undefined method App\\Models\\Labels\\Label\:\:getTagAlignment\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Models/Labels/Label.php
+
+		-
+			message: '#^Call to an undefined method App\\Models\\Labels\\Label\:\:getTagSize\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Models/Labels/Label.php
+
+		-
+			message: '#^Call to an undefined method App\\Models\\Labels\\Label\:\:getTitleMargin\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Models/Labels/Label.php
+
+		-
+			message: '#^Call to an undefined method App\\Models\\Labels\\Label\:\:getTitleSize\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Models/Labels/Label.php
 
 		-
 			message: '#^Call to function is_bool\(\) with bool will always evaluate to true\.$#'
@@ -7175,6 +7397,12 @@ parameters:
 			identifier: booleanOr.alwaysFalse
 			count: 6
 			path: app/Models/Labels/Label.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Asset\:\:\$is_label_preview\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Labels/LabelPreviewAsset.php
 
 		-
 			message: '#^Call to method AddPage\(\) on an unknown class App\\Models\\Labels\\TCPDF\.$#'
@@ -7241,6 +7469,12 @@ parameters:
 			identifier: class.notFound
 			count: 1
 			path: app/Models/Labels/Sheet.php
+
+		-
+			message: '#^Constant App\\Models\\Labels\\Sheets\\Avery\\_5267\:\:ROW2_Y is unused\.$#'
+			identifier: classConstant.unused
+			count: 1
+			path: app/Models/Labels/Sheets/Avery/_5267.php
 
 		-
 			message: '#^Property App\\Models\\Labels\\Tapes\\Generic\\Continuous_53mm\:\:\$tapeHeight is never read, only written\.$#'
@@ -7550,6 +7784,12 @@ parameters:
 
 		-
 			message: '#^Access to an undefined property App\\Models\\Location\:\:\$model\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Location.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Location\:\:\$uploads\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Models/Location.php
@@ -7988,6 +8228,12 @@ parameters:
 
 		-
 			message: '#^Access to an undefined property App\\Models\\Supplier\:\:\$model\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Supplier.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Supplier\:\:\$uploads\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Models/Supplier.php
@@ -10259,9 +10505,3 @@ parameters:
 			identifier: assign.propertyType
 			count: 1
 			path: routes/console.php
-
-		-
-			message: '#^Class App\\Mail\\CheckoutComponentMail constructor invoked with 0 parameters, 5 required\.$#'
-			identifier: arguments.count
-			count: 1
-			path: routes/web.php

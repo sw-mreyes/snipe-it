@@ -377,7 +377,7 @@ class RestoreFromBackup extends Command
                         // print("INTERESTING - last_pos is $last_pos when searching $raw_path for $dir - last_pos+strlen(\$dir) is: ".($last_pos+strlen($dir))." and strlen(\$rawpath) is: ".strlen($raw_path)."\n");
                         // print("We would copy $raw_path to $dir.\n"); //FIXME append to a path?
                         // the CSV bit, below, is because we store CSV files as "blahcsv" - without an extension
-                        if (! in_array($extension, $allowed_extensions) && ! ($dir == 'storage/private_uploads/imports' && substr($raw_path, -3) == 'csv' && $extension == '')) {
+                        if (! in_array($extension, $allowed_extensions) && ! ($dir == FileStorage::Imports->privateDir() && substr($raw_path, -3) == 'csv' && $extension == '')) {
                             $unsafe_files[] = $raw_path;
                             Log::debug($raw_path.' from directory '.$dir.' is being skipped');
                         } else {

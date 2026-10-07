@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\FileStorage;
 use App\Events\CheckoutableCheckedIn;
 use App\Helpers\Helper;
 use App\Http\Controllers\Controller;
@@ -1849,7 +1850,7 @@ class AssetsController extends Controller
             $file_name = null;
             // Legacy `image` posts are aliased to `file[0]` in UploadFileRequest::prepareForValidation.
             if ($request->hasFile('file.0')) {
-                $file_name = $request->handleFile('private_uploads/audits/', 'audit-'.$asset->id, $request->file('file.0'));
+                $file_name = $request->handleFile(FileStorage::Audits->privateStorageKey(), 'audit-'.$asset->id, $request->file('file.0'));
                 $payload['image'] = $file_name;
             }
 

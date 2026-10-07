@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\FileStorage;
 use App\Models\Traits\Acceptable;
 use App\Models\Traits\AdjustsQuantity;
 use App\Models\Traits\CompanyableTrait;
@@ -152,6 +153,37 @@ class Accessory extends SnipeModel
     // default_* template fields on items with no order history yet).
 
     /**
+     * On hard-delete, wipe the image file and Files-tab attachments.
+     * Soft-delete leaves everything alone so a restore comes back with
+     * the image + files intact. The attachment action_log rows get
+     * soft-deleted (not hard-deleted) so the audit trail of what was
+     * attached-and-when survives even after the parent is gone.
+     */
+    protected static function booted(): void
+    {
+        static::forceDeleted(function (self $accessory) {
+            if ($accessory->image) {
+                try {
+                    Storage::disk('public')->delete(FileStorage::Accessories->publicPath().$accessory->image);
+                } catch (\Exception $e) {
+                    Log::info($e->getMessage());
+                }
+            }
+
+            foreach ($accessory->uploads as $upload) {
+                if (($path = $upload->uploads_file_path()) !== null) {
+                    try {
+                        Storage::delete($path);
+                    } catch (\Exception $e) {
+                        Log::info($e->getMessage());
+                    }
+                }
+                $upload->delete();
+            }
+        });
+    }
+
+    /**
      * Parent-level "typical supplier" template. Distinct from
      * per-acquisition supplier (which lives on Order.supplier_id).
      * Used by the searchable-relation join for list-page search and by
@@ -295,7 +327,7 @@ class Accessory extends SnipeModel
     public function getImageUrl($path = null)
     {
         if ($this->image) {
-            return Storage::disk('public')->url(app('accessories_upload_path').$this->image);
+            return Storage::disk('public')->url(FileStorage::Accessories->publicPath().$this->image);
         }
 
         return false;

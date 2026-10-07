@@ -147,13 +147,71 @@ enum FileStorage: string
      */
     public function privateDir(): ?string
     {
-        if (!$this->hasPrivateScope()) {
+        if (! $this->hasPrivateScope()) {
             return null;
         }
 
         return match ($this) {
             self::Backups => 'storage/app/backups',
-            default => 'storage/private_uploads/' . $this->value,
+            default => 'storage/private_uploads/'.$this->value,
+        };
+    }
+
+    /**
+     * Storage facade key for the default disk (local root is storage/app),
+     * with trailing slash. Suitable for appending a filename for
+     * `Storage::put(...)`, `Storage::delete(...)`, etc. Backups return
+     * `backups/` because they live directly under storage/app, every other
+     * private case returns `private_uploads/<name>/`.
+     */
+    public function privateStorageKey(): ?string
+    {
+        if (! $this->hasPrivateScope()) {
+            return null;
+        }
+
+        return match ($this) {
+            self::Backups => 'backups/',
+            default => 'private_uploads/'.$this->value.'/',
+        };
+    }
+
+    /**
+     * The Eloquent model class that owns files stored under this case, or
+     * null when no single parent model does. Audits, Signatures, EulaPdfs,
+     * Imports, and Backups return null because their files are not keyed
+     * to a single parent (audits are tied to action_logs across all
+     * assets, signatures / EULAs ride on acceptance records, imports are
+     * admin-queued uploads not owned by a model, Backups is Spatie
+     * output). Barcodes also returns null because that directory stores
+     * generated label PNGs rather than user uploads.
+     *
+     * Closes the loop with `HasImageUpload`, which declares the inverse
+     * (model -> FileStorage case) via `static::fileStorage()`.
+     *
+     * Returns a class string rather than a class-string<Model> union to
+     * avoid pulling the Eloquent namespace into the enum layer.
+     *
+     * @return class-string|null
+     */
+    public function modelClass(): ?string
+    {
+        return match ($this) {
+            self::Accessories => \App\Models\Accessory::class,
+            self::Assets => \App\Models\Asset::class,
+            self::Avatars, self::Users => \App\Models\User::class,
+            self::Categories => \App\Models\Category::class,
+            self::Companies => \App\Models\Company::class,
+            self::Components => \App\Models\Component::class,
+            self::Consumables => \App\Models\Consumable::class,
+            self::Departments => \App\Models\Department::class,
+            self::Licenses => \App\Models\License::class,
+            self::Locations => \App\Models\Location::class,
+            self::Maintenances => \App\Models\Maintenance::class,
+            self::Manufacturers => \App\Models\Manufacturer::class,
+            self::Models => \App\Models\AssetModel::class,
+            self::Suppliers => \App\Models\Supplier::class,
+            self::Audits, self::Backups, self::Barcodes, self::EulaPdfs, self::Imports, self::Signatures => null,
         };
     }
 
@@ -213,7 +271,7 @@ enum FileStorage: string
     {
         return array_values(array_filter(
             self::publicDirs(),
-            fn(string $dir) => !in_array(basename($dir), self::SKIP_IN_RESTORE_PRUNE, true),
+            fn (string $dir) => ! in_array(basename($dir), self::SKIP_IN_RESTORE_PRUNE, true),
         ));
     }
 
@@ -229,7 +287,7 @@ enum FileStorage: string
     {
         return array_filter(
             self::privateDirs(),
-            fn(string $dir, int|string $key) => !in_array(
+            fn (string $dir, int|string $key) => ! in_array(
                 basename(is_string($key) ? $key : $dir),
                 self::SKIP_IN_RESTORE_PRUNE,
                 true,

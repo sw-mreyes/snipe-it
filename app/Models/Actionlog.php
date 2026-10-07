@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ActionType;
+use App\Enums\FileStorage;
 use App\Models\Traits\CompanyableTrait;
 use App\Models\Traits\Searchable;
 use App\Presenters\ActionlogPresenter;
@@ -699,41 +700,30 @@ class Actionlog extends SnipeModel
     {
 
         if (($this->action_type == 'accepted') || ($this->action_type == 'declined')) {
-            return 'private_uploads/eula-pdfs/'.$this->filename;
+            return FileStorage::EulaPdfs->privateStorageKey().$this->filename;
         }
 
         if ($this->action_type == 'audit') {
-            return 'private_uploads/audits/'.$this->filename;
+            return FileStorage::Audits->privateStorageKey().$this->filename;
         }
 
-        switch ($this->item_type) {
-            case Accessory::class:
-                return 'private_uploads/accessories/'.$this->filename;
-            case Asset::class:
-                return 'private_uploads/assets/'.$this->filename;
-            case AssetModel::class:
-                return 'private_uploads/models/'.$this->filename;
-            case Company::class:
-                return 'private_uploads/companies/'.$this->filename;
-            case Consumable::class:
-                return 'private_uploads/consumables/'.$this->filename;
-            case Department::class:
-                return 'private_uploads/departments/'.$this->filename;
-            case Component::class:
-                return 'private_uploads/components/'.$this->filename;
-            case License::class:
-                return 'private_uploads/licenses/'.$this->filename;
-            case Location::class:
-                return 'private_uploads/locations/'.$this->filename;
-            case Maintenance::class:
-                return 'private_uploads/maintenances/'.$this->filename;
-            case Supplier::class:
-                return 'private_uploads/suppliers/'.$this->filename;
-            case User::class:
-                return 'private_uploads/users/'.$this->filename;
-            default:
-                return null;
-        }
+        $case = match ($this->item_type) {
+            Accessory::class => FileStorage::Accessories,
+            Asset::class => FileStorage::Assets,
+            AssetModel::class => FileStorage::Models,
+            Company::class => FileStorage::Companies,
+            Consumable::class => FileStorage::Consumables,
+            Department::class => FileStorage::Departments,
+            Component::class => FileStorage::Components,
+            License::class => FileStorage::Licenses,
+            Location::class => FileStorage::Locations,
+            Maintenance::class => FileStorage::Maintenances,
+            Supplier::class => FileStorage::Suppliers,
+            User::class => FileStorage::Users,
+            default => null,
+        };
+
+        return $case ? $case->privateStorageKey().$this->filename : null;
     }
 
     // Manually sets $this->source for determineActionSource()
