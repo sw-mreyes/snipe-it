@@ -56,13 +56,7 @@ class LdapSync extends Command
         // and the observer-driven writes User saves trigger) as `ldap`
         // so the activity report distinguishes LDAP-created entries
         // from gui / api / sync-adapter origins.
-        $previousActionSource = Actionlog::setAmbientSource('ldap');
-
-        try {
-            return $this->runSync();
-        } finally {
-            Actionlog::setAmbientSource($previousActionSource);
-        }
+        return Actionlog::withActionSource('ldap', fn () => $this->runSync());
     }
 
     private function runSync()
