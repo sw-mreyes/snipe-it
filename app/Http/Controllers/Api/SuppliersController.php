@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Actions\Suppliers\DestroySupplierAction;
+use App\Enums\FileStorage;
 use App\Exceptions\Handler;
 use App\Exceptions\ItemStillHasAccessories;
 use App\Exceptions\ItemStillHasAssets;
@@ -276,7 +277,7 @@ class SuppliersController extends Controller
         // they may not have a ->name value but we want to display something anyway
         foreach ($suppliers as $supplier) {
             $supplier->use_text = $supplier->name;
-            $supplier->use_image = ($supplier->image) ? Storage::disk('public')->url('suppliers/'.$supplier->image, $supplier->image) : null;
+            $supplier->use_image = ($supplier->image) ? Storage::disk('public')->url(FileStorage::Suppliers->publicPath().$supplier->image, $supplier->image) : null;
         }
 
         return (new SelectlistTransformer)->transformSelectlist($suppliers);

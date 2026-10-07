@@ -2,6 +2,7 @@
 
 namespace App\Actions\Companies;
 
+use App\Enums\FileStorage;
 use App\Exceptions\ItemStillHasAccessories;
 use App\Exceptions\ItemStillHasAssets;
 use App\Exceptions\ItemStillHasChildCompanies;
@@ -69,7 +70,7 @@ class DestroyCompanyAction
 
         if ($company->image) {
             try {
-                Storage::disk('public')->delete('companies/'.$company->image);
+                Storage::disk('public')->delete(FileStorage::Companies->publicPath().$company->image);
             } catch (\Exception $e) {
                 Log::info($e->getMessage());
             }

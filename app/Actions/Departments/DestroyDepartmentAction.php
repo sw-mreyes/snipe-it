@@ -2,6 +2,7 @@
 
 namespace App\Actions\Departments;
 
+use App\Enums\FileStorage;
 use App\Exceptions\ItemStillHasUsers;
 use App\Models\Department;
 use Illuminate\Support\Facades\Log;
@@ -22,7 +23,7 @@ class DestroyDepartmentAction
 
         if ($department->image) {
             try {
-                Storage::disk('public')->delete('departments/'.$department->image);
+                Storage::disk('public')->delete(FileStorage::Departments->publicPath().$department->image);
             } catch (\Exception $e) {
                 Log::info($e->getMessage());
             }

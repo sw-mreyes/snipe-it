@@ -2,6 +2,7 @@
 
 namespace App\Http\Transformers;
 
+use App\Enums\FileStorage;
 use App\Helpers\Helper;
 use App\Models\Component;
 use Illuminate\Database\Eloquent\Collection;
@@ -30,7 +31,7 @@ class ComponentsTransformer
         $array = [
             'id' => (int) $component->id,
             'name' => e($component->name),
-            'image' => ($component->image) ? Storage::disk('public')->url('components/'.e($component->image)) : null,
+            'image' => ($component->image) ? Storage::disk('public')->url(FileStorage::Components->publicPath().e($component->image)) : null,
             'qr_code_url' => route('qr_code/common', ['object_type' => 'components', 'id' => $component->id]),
             'serial' => ($component->serial) ? e($component->serial) : null,
             'location' => ($component->location) ? [

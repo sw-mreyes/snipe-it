@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\FileStorage;
 use App\Http\Traits\UniqueUndeletedTrait;
 use App\Models\Traits\CompanyableTrait;
 use App\Models\Traits\HasUploads;
@@ -254,7 +255,7 @@ final class Company extends SnipeModel
 
             $company->use_text = $breadcrumb;
             $company->use_image = ($company->image)
-                ? Storage::disk('public')->url('companies/'.$company->image)
+                ? Storage::disk('public')->url(FileStorage::Companies->publicPath().$company->image)
                 : null;
             $results[] = $company;
 

@@ -2,6 +2,7 @@
 
 namespace App\Actions\Manufacturers;
 
+use App\Enums\FileStorage;
 use App\Exceptions\ItemStillHasAccessories;
 use App\Exceptions\ItemStillHasAssets;
 use App\Exceptions\ItemStillHasComponents;
@@ -48,7 +49,7 @@ class DestroyManufacturerAction
 
         if ($manufacturer->image) {
             try {
-                Storage::disk('public')->delete('manufacturers/'.$manufacturer->image);
+                Storage::disk('public')->delete(FileStorage::Manufacturers->publicPath().$manufacturer->image);
             } catch (\Exception $e) {
                 Log::info($e);
             }

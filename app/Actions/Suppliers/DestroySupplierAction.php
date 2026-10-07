@@ -2,6 +2,7 @@
 
 namespace App\Actions\Suppliers;
 
+use App\Enums\FileStorage;
 use App\Exceptions\ItemStillHasAccessories;
 use App\Exceptions\ItemStillHasAssets;
 use App\Exceptions\ItemStillHasComponents;
@@ -58,7 +59,7 @@ class DestroySupplierAction
 
         if ($supplier->image) {
             try {
-                Storage::disk('public')->delete('suppliers/'.$supplier->image);
+                Storage::disk('public')->delete(FileStorage::Suppliers->publicPath().$supplier->image);
             } catch (\Exception $e) {
                 Log::info($e->getMessage());
             }

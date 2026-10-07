@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\FileStorage;
 use App\Http\Traits\UniqueUndeletedTrait;
 use App\Models\Traits\CompanyableTrait;
 use App\Models\Traits\HasUploads;
@@ -394,7 +395,7 @@ class Location extends SnipeModel
             $location->use_text = $prefix === ''
                 ? $location->name
                 : $prefix.' '.$location->name;
-            $location->use_image = ($location->image) ? Storage::disk('public')->url('locations/'.$location->image) : null;
+            $location->use_image = ($location->image) ? Storage::disk('public')->url(FileStorage::Locations->publicPath().$location->image) : null;
             $results[] = $location;
             if (array_key_exists($location->id, $locations_with_children)) {
                 $results = array_merge($results, self::indenter($locations_with_children, $location->id, $prefix.'--'));
