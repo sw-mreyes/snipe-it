@@ -111,4 +111,68 @@ class FileStorageTest extends TestCase
         // because older archives still ship the old subdir names.
         $this->assertArrayHasKey('storage/private_uploads/assetmodels', $pruneable);
     }
+
+    public function test_private_storage_key_resolves_to_default_disk_key_with_trailing_slash(): void
+    {
+        $this->assertSame('private_uploads/signatures/', FileStorage::Signatures->privateStorageKey());
+        $this->assertSame('private_uploads/users/', FileStorage::Users->privateStorageKey());
+        $this->assertSame('private_uploads/eula-pdfs/', FileStorage::EulaPdfs->privateStorageKey());
+        $this->assertSame('private_uploads/accessories/', FileStorage::Accessories->privateStorageKey());
+    }
+
+    public function test_private_storage_key_special_cases_backups_outside_private_uploads(): void
+    {
+        // Backups live at storage/app/backups (Spatie's convention), not
+        // under storage/app/private_uploads, so the default-disk key has
+        // no private_uploads/ prefix.
+        $this->assertSame('backups/', FileStorage::Backups->privateStorageKey());
+    }
+
+    public function test_private_storage_key_is_null_for_public_only_cases(): void
+    {
+        $this->assertNull(FileStorage::Avatars->privateStorageKey());
+        $this->assertNull(FileStorage::Barcodes->privateStorageKey());
+    }
+
+    public function test_model_class_resolves_each_case_to_its_eloquent_owner(): void
+    {
+        $this->assertSame(\App\Models\Accessory::class, FileStorage::Accessories->modelClass());
+        $this->assertSame(\App\Models\Asset::class, FileStorage::Assets->modelClass());
+        $this->assertSame(\App\Models\Category::class, FileStorage::Categories->modelClass());
+        $this->assertSame(\App\Models\Company::class, FileStorage::Companies->modelClass());
+        $this->assertSame(\App\Models\Component::class, FileStorage::Components->modelClass());
+        $this->assertSame(\App\Models\Consumable::class, FileStorage::Consumables->modelClass());
+        $this->assertSame(\App\Models\Department::class, FileStorage::Departments->modelClass());
+        $this->assertSame(\App\Models\License::class, FileStorage::Licenses->modelClass());
+        $this->assertSame(\App\Models\Location::class, FileStorage::Locations->modelClass());
+        $this->assertSame(\App\Models\Maintenance::class, FileStorage::Maintenances->modelClass());
+        $this->assertSame(\App\Models\Manufacturer::class, FileStorage::Manufacturers->modelClass());
+        $this->assertSame(\App\Models\Supplier::class, FileStorage::Suppliers->modelClass());
+    }
+
+    public function test_model_class_maps_rename_cases_to_their_owner(): void
+    {
+        // Avatars is the public case for the User model's avatar column,
+        // Users is the private case for User's Files-tab uploads. Both
+        // tie back to User despite the two case names.
+        $this->assertSame(\App\Models\User::class, FileStorage::Avatars->modelClass());
+        $this->assertSame(\App\Models\User::class, FileStorage::Users->modelClass());
+
+        // Models is the public case for the AssetModel model's image.
+        $this->assertSame(\App\Models\AssetModel::class, FileStorage::Models->modelClass());
+    }
+
+    public function test_model_class_is_null_for_non_model_owned_cases(): void
+    {
+        // Signatures, EULA PDFs, audits, imports, backups, and the
+        // barcode cache do not belong to a single parent model, so
+        // modelClass() returns null for all of them. Callers iterating
+        // cases to build a model->path map skip these.
+        $this->assertNull(FileStorage::Audits->modelClass());
+        $this->assertNull(FileStorage::Backups->modelClass());
+        $this->assertNull(FileStorage::Barcodes->modelClass());
+        $this->assertNull(FileStorage::EulaPdfs->modelClass());
+        $this->assertNull(FileStorage::Imports->modelClass());
+        $this->assertNull(FileStorage::Signatures->modelClass());
+    }
 }
