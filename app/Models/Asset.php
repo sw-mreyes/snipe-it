@@ -1031,11 +1031,11 @@ class Asset extends Depreciable
     public function getImageUrl($path = null)
     {
         if ($this->image && ! empty($this->image)) {
-            return Storage::disk('public')->url(app('assets_upload_path').e($this->image));
+            return Storage::disk('public')->url(FileStorage::Assets->publicPath().e($this->image));
         } elseif ($this->model && ! empty($this->model->image)) {
-            return Storage::disk('public')->url(app('models_upload_path').e($this->model->image));
+            return Storage::disk('public')->url(FileStorage::Models->publicPath().e($this->model->image));
         } elseif ($this->model?->category && ! empty($this->model->category->image)) {
-            return Storage::disk('public')->url(app('categories_upload_path').e($this->model->category->image));
+            return Storage::disk('public')->url(FileStorage::Categories->publicPath().e($this->model->category->image));
         }
 
         return false;

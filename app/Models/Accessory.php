@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\FileStorage;
 use App\Models\Traits\Acceptable;
 use App\Models\Traits\AdjustsQuantity;
 use App\Models\Traits\CompanyableTrait;
@@ -295,7 +296,7 @@ class Accessory extends SnipeModel
     public function getImageUrl($path = null)
     {
         if ($this->image) {
-            return Storage::disk('public')->url(app('accessories_upload_path').$this->image);
+            return Storage::disk('public')->url(FileStorage::Accessories->publicPath().$this->image);
         }
 
         return false;

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\FileStorage;
 use App\Models\Traits\Acceptable;
 use App\Models\Traits\AdjustsQuantity;
 use App\Models\Traits\CompanyableTrait;
@@ -275,11 +276,11 @@ class Consumable extends SnipeModel
     {
         // If there is a consumable image, use that
         if ($this->image) {
-            return Storage::disk('public')->url(app('consumables_upload_path').$this->image);
+            return Storage::disk('public')->url(FileStorage::Consumables->publicPath().$this->image);
 
             // Otherwise check for a category image
         } elseif (($this->category) && ($this->category->image)) {
-            return Storage::disk('public')->url(app('categories_upload_path').e($this->category->image));
+            return Storage::disk('public')->url(FileStorage::Categories->publicPath().e($this->category->image));
         }
 
         return false;
