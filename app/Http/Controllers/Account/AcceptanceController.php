@@ -149,20 +149,6 @@ class AcceptanceController extends Controller
             return redirect()->back()->with('error', trans('admin/users/message.error.accept_or_decline'));
         }
 
-        /**
-         * Check for the signature directory
-         */
-        if (! Storage::exists(rtrim(FileStorage::Signatures->privateStorageKey(), '/'))) {
-            Storage::makeDirectory(rtrim(FileStorage::Signatures->privateStorageKey(), '/'), 775);
-        }
-
-        /**
-         * Check for the eula-pdfs directory
-         */
-        if (! Storage::exists(rtrim(FileStorage::EulaPdfs->privateStorageKey(), '/'))) {
-            Storage::makeDirectory(rtrim(FileStorage::EulaPdfs->privateStorageKey(), '/'), 775);
-        }
-
         $item = $acceptance->checkoutable_type::find($acceptance->checkoutable_id);
 
         $username_slug = Str::slug($assignedUser->username);

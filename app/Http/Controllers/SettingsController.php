@@ -16,6 +16,7 @@ use App\Models\Actionlog;
 use App\Models\Asset;
 use App\Models\CustomField;
 use App\Models\Group;
+use App\Models\Labels\CustomUserLabel;
 use App\Models\Setting;
 use App\Models\User;
 use App\Notifications\MailTest;
@@ -37,7 +38,6 @@ use League\Csv\EscapeFormula;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use ZipArchive;
-use App\Models\Labels\CustomUserLabel;
 
 /**
  * This controller handles all actions related to Settings for
@@ -603,7 +603,7 @@ class SettingsController extends Controller
         $setting = Setting::getSettings();
 
         if (str_starts_with($setting->label2_template, 'custom:')) {
-            $customLabelId = (int)str_replace('custom:', '', $setting->label2_template);
+            $customLabelId = (int) str_replace('custom:', '', $setting->label2_template);
 
             $setting->label2_template_name = CustomUserLabel::find($customLabelId)?->name
                 ?? $setting->label2_template;
@@ -700,7 +700,7 @@ class SettingsController extends Controller
             CustomUserLabel::where('is_default', true)->update(['is_default' => false]);
 
             if (str_starts_with($selectedTemplate, 'custom:')) {
-                $customLabelId = (int)str_replace('custom:', '', $selectedTemplate);
+                $customLabelId = (int) str_replace('custom:', '', $selectedTemplate);
 
                 CustomUserLabel::whereKey($customLabelId)->update([
                     'is_default' => true,
@@ -1126,24 +1126,21 @@ class SettingsController extends Controller
         Log::channel('sync-adapters')->info("{$instance->slug} sync starting (UI)");
 
         try {
-            foreach ($adapter->pull() as $record) {
-                try {
-                    $result = \App\SyncAdapters\SyncAdapter::syncFromRecord($record);
-                    if ($result === null) {
-                        $skipped++;
-                    } else {
-                        $seen++;
+            Actionlog::withActionSource('sync:'.$instance->slug, function () use ($adapter, $instance, &$seen, &$skipped, &$errors) {
+                foreach ($adapter->pull() as $record) {
+                    try {
+                        $result = \App\SyncAdapters\SyncAdapter::syncFromRecord($record);
+                        if ($result === null) {
+                            $skipped++;
+                        } else {
+                            $seen++;
+                        }
+                    } catch (\Throwable $e) {
+                        $errors++;
+                        Log::channel('sync-adapters')->warning($instance->slug.' sync: failed to upsert host '.$record->sourceId.': '.$e->getMessage());
                     }
-                } catch (\Throwable $e) {
-                    $errors++;
-                    Log::channel('sync-adapters')->warning(sprintf(
-                        '%s sync: failed to upsert host %s: %s',
-                        $instance->slug,
-                        $record->sourceId,
-                        $e->getMessage(),
-                    ));
                 }
-            }
+            });
         } catch (\Throwable $e) {
             // Log the full exception server-side so admins can dig into
             // response bodies, stack traces, etc. via the dedicated
@@ -1153,7 +1150,7 @@ class SettingsController extends Controller
             // message on 4xx/5xx, and internal error pages regularly
             // contain sensitive info we don't want to bounce into the
             // admin's browser.
-            Log::channel('sync-adapters')->warning(sprintf('%s sync aborted: %s', $instance->slug, $e->getMessage()), [
+            Log::channel('sync-adapters')->warning($instance->slug.' sync aborted: '.$e->getMessage(), [
                 'exception' => $e,
             ]);
 

@@ -2,6 +2,8 @@
 
 namespace App\View;
 
+use App\Enums\FileStorage;
+use App\Helpers\Helper;
 use App\Helpers\StorageHelper;
 use App\Models\Labels\CustomLabels\PreviewSheetLabel;
 use App\Models\Labels\CustomLabels\PreviewTapeLabel;
@@ -9,10 +11,13 @@ use App\Models\Labels\CustomUserLabel;
 use App\Models\Labels\Field;
 use App\Models\Labels\Label as LabelModel;
 use App\Models\Labels\Sheet;
+use Com\Tecnick\Barcode\Barcode;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Traits\Macroable;
 use TCPDF;
+use Throwable;
 
 class Label implements View
 {
@@ -80,7 +85,8 @@ class Label implements View
                 ->with('assets', $assets)
                 ->with('settings', $settings)
                 ->with('bulkedit', $this->data->get('bulkedit'))
-                ->with('count', $this->data->get('count'));
+                ->with('count', $this->data->get('count'))
+                ->with('barcode_urls', $this->prepareLegacyBarcodeUrls($assets, $settings));
         }
 
         if ($template === null) {
@@ -94,7 +100,7 @@ class Label implements View
         $template->validate();
 
         $labelGap = method_exists($template, 'getLabelGap')
-            ? (float)$template->getLabelGap()
+            ? (float) $template->getLabelGap()
             : 0.0;
 
         $pdf = new TCPDF(
@@ -146,7 +152,7 @@ class Label implements View
                     // downstream getimagesize() both need a real path, so it has to land on the
                     // disk.
                     if ($settings->label2_asset_logo && $asset->company && $asset->company->image != '') {
-                        $logo = StorageHelper::readablePath('companies/' . e($asset->company->image));
+                        $logo = StorageHelper::readablePath('companies/'.e($asset->company->image));
                     } elseif (! empty($settings->label_logo)) {
                         // Use the general site label logo, if available
                         $logo = StorageHelper::readablePath(e(basename($settings->label_logo)));
@@ -289,6 +295,104 @@ class Label implements View
 
         $filename = $assets->count() > 1 ? 'assets.pdf' : $assets->first()->asset_tag.'.pdf';
         $pdf->Output($filename, $this->destination);
+    }
+
+    /**
+     * Generate QR and 1D barcode PNGs for the legacy label template
+     * once per render, so the Blade output can point its <img> tags at
+     * the storage URL directly instead of round-tripping through PHP
+     * per image. On S3, 60 inline <img src> fetches per 30-label sheet
+     * each paid session + auth + policy + headObject + getObject +
+     * stream, timing out the print preview. This pays those costs once
+     * server-side and lets the browser fetch the PNGs in parallel from
+     * S3.
+     */
+    private function prepareLegacyBarcodeUrls(Collection $assets, $settings): array
+    {
+        $publicDisk = Storage::disk('public');
+        $barcodeDir = FileStorage::Barcodes->publicPath();
+
+        // Loose comparison on the toggle values to match the Blade
+        // template's `== '1'` gating. These columns can round-trip
+        // between int and string depending on how they were last
+        // written.
+        $qrEnabled = $settings->qr_code == '1' && $settings->label2_2d_type !== 'none';
+        $barcodeEnabled = $settings->alt_barcode_enabled == '1' && $settings->label2_1d_type !== '';
+
+        if (! $qrEnabled && ! $barcodeEnabled) {
+            return [];
+        }
+
+        $qrSize = $qrEnabled ? Helper::barcodeDimensions($settings->label2_2d_type) : null;
+
+        // The 1D barcode width math mirrors AssetsController::getBarCode
+        // so the generated file matches that endpoint byte-for-byte and
+        // reuses the same cache key.
+        $barcodeWidth = $barcodeEnabled
+            ? min(300, ($settings->labels_width - $settings->labels_display_sgutter) * 200.000000000001)
+            : null;
+
+        // One list-objects call up front, then in-memory membership
+        // checks for every asset. On S3 this replaces N headObject
+        // round-trips per sheet (500+ labels times two barcodes each
+        // was timing the print preview out) with one ListObjects call
+        // that returns up to 1000 keys per page.
+        $cachedFiles = array_flip($publicDisk->files(rtrim($barcodeDir, '/')));
+
+        $urls = [];
+
+        foreach ($assets as $asset) {
+            if (! isset($asset->id, $asset->asset_tag)) {
+                continue;
+            }
+
+            $perAsset = [];
+
+            if ($qrEnabled) {
+                // QR cache key matches QrCodeController::show('hardware', $id).
+                $qrKey = $barcodeDir.'qr-hardware-'.str_slug($asset->id).'.png';
+
+                if (! isset($cachedFiles[$qrKey])) {
+                    $barcode = new Barcode;
+                    $barcodeObj = $barcode->getBarcodeObj(
+                        $settings->label2_2d_type,
+                        route('hardware.show', $asset->id),
+                        $qrSize['height'],
+                        $qrSize['width'],
+                        'black',
+                        [-2, -2, -2, -2]
+                    );
+                    $publicDisk->put($qrKey, $barcodeObj->getPngData());
+                    $cachedFiles[$qrKey] = true;
+                }
+
+                $perAsset['qr'] = $publicDisk->url($qrKey);
+            }
+
+            if ($barcodeEnabled) {
+                // 1D cache key matches AssetsController::getBarCode.
+                $barcodeKey = $barcodeDir.str_slug($settings->label2_1d_type).'-'.str_slug($asset->asset_tag).'.png';
+
+                if (! isset($cachedFiles[$barcodeKey])) {
+                    try {
+                        $barcode = new Barcode;
+                        $barcodeObj = $barcode->getBarcodeObj($settings->label2_1d_type, $asset->asset_tag, $barcodeWidth, 50);
+                        $publicDisk->put($barcodeKey, $barcodeObj->getPngData());
+                        $cachedFiles[$barcodeKey] = true;
+                    } catch (Throwable) {
+                        // Fall back to the "invalid" fixture the per-request
+                        // endpoint also hands out when getBarcodeObj throws.
+                        $perAsset['barcode'] = $publicDisk->url($barcodeDir.'invalid_barcode.gif');
+                    }
+                }
+
+                $perAsset['barcode'] = $perAsset['barcode'] ?? $publicDisk->url($barcodeKey);
+            }
+
+            $urls[$asset->id] = $perAsset;
+        }
+
+        return $urls;
     }
 
     /**
