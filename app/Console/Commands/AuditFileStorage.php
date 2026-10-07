@@ -49,9 +49,9 @@ use function Laravel\Prompts\warning;
  * S3 compat comes for free by routing everything through the Storage
  * facade.
  */
-class CheckOrphanUploads extends Command
+class AuditFileStorage extends Command
 {
-    protected $signature = 'snipeit:check-orphan-uploads
+    protected $signature = 'snipeit:audit-file-storage
         {--summary : Show only totals, not the full per-file listing}
         {--json : Emit machine-readable JSON instead of tables}
         {--csv= : Write mismatched rows to a CSV at this path (empty = no CSV)}
