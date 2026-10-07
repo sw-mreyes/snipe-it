@@ -452,6 +452,16 @@ class LoginController extends Controller
         }
 
         $user = auth()->user();
+
+        // Short-circuit if the stored secret is missing or too short to
+        // be a valid base32 TOTP seed. We cannot gate on two_factor_enrolled
+        // here because the first-time enrollment confirmation POSTs through this method
+        // too, with enrolled still at 0.
+        if (strlen((string) $user->two_factor_secret) < 16) {
+            \Log::debug('two_factor_secret is too short to be valid, redirecting to enrollment page');
+            return redirect()->route('two-factor-enroll');
+        }
+
         $secret = $request->input('two_factor_secret');
 
         if (Google2FA::verifyKey($user->two_factor_secret, $secret)) {
