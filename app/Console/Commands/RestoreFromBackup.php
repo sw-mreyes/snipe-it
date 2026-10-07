@@ -294,13 +294,17 @@ class RestoreFromBackup extends Command
         }
 
         // Upload directory enumeration lives in App\Enums\FileStorage
-        // as the single source of truth.
-        $private_dirs = FileStorage::privateDirs();
+        // as the single source of truth. The *ForRestore variants omit
+        // directories in FileStorage::SKIP_IN_RESTORE_PRUNE, so Spatie's
+        // backup archive directory (which may contain the archive we're
+        // currently reading from, plus the user's other rollback points)
+        // is left untouched by the pruning passes below.
+        $private_dirs = FileStorage::privateDirsForRestore();
         $private_files = [
             'storage/oauth-private.key',
             'storage/oauth-public.key',
         ];
-        $public_dirs = FileStorage::publicDirs();
+        $public_dirs = FileStorage::publicDirsForRestore();
 
         $public_files = self::PUBLIC_FILES;
 
