@@ -56,8 +56,8 @@ class IntuneClient
         if (is_array($scopeTagIds) && $scopeTagIds !== []) {
             // Graph expects: $filter=roleScopeTagIds/any(x: x eq 'id1' or x eq 'id2')
             // Quote each id and OR them inside a single any() clause.
-            $clauses = array_map(fn(string $id) => "x eq '" . addslashes($id) . "'", $scopeTagIds);
-            $query['$filter'] = 'roleScopeTagIds/any(x: ' . implode(' or ', $clauses) . ')';
+            $clauses = array_map(fn (string $id) => "x eq '".addslashes($id)."'", $scopeTagIds);
+            $query['$filter'] = 'roleScopeTagIds/any(x: '.implode(' or ', $clauses).')';
         }
 
         do {
@@ -88,7 +88,7 @@ class IntuneClient
     public function roleScopeTags(): array
     {
         $graphOrigin = $this->origin($this->graphBaseUrl);
-        $url = rtrim($this->graphBaseUrl, '/') . '/v1.0/deviceManagement/roleScopeTags';
+        $url = rtrim($this->graphBaseUrl, '/').'/v1.0/deviceManagement/roleScopeTags';
 
         $out = [];
         do {
@@ -125,7 +125,21 @@ class IntuneClient
             return null;
         }
 
-        return $origin.($parsed['path'] ?? '/').(isset($parsed['query']) ? '?'.$parsed['query'] : '');
+        // Reject path-relative cursors with no leading slash
+        // ("page2" rather than "/page2"). Rebasing those produced an
+        // unparseable "https://hostpage2" that aborted the sync on the
+        // next iteration. Fails safe but we'd rather be explicit
+        // (reported post-fix by Zer0Gate as a robustness note).
+        // Only path+query is kept from the supplied cursor on purpose,
+        // so any path prefix on the configured base URL (not Graph's
+        // case, but legal in general) is dropped. Absolute cursors are
+        // the standard shape here and this matches that.
+        $path = $parsed['path'] ?? '/';
+        if (! str_starts_with($path, '/')) {
+            return null;
+        }
+
+        return $origin.$path.(isset($parsed['query']) ? '?'.$parsed['query'] : '');
     }
 
     /**

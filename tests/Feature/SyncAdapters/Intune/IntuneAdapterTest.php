@@ -120,6 +120,36 @@ class IntuneAdapterTest extends TestCase
             && $request->hasHeader('Authorization', 'Bearer leak-canary'));
     }
 
+    /**
+     * Reporter-identified robustness note (Zer0Gate post-fix for
+     * GHSA-cf4m-f928-928g): if upstream emits a path-relative cursor
+     * with no leading slash (e.g. `"@odata.nextLink": "page2"`),
+     * `parse_url` returns `path => "page2"` and the earlier shape
+     * concatenated it directly onto the origin, producing an
+     * unparseable "https://hostpage2". Pagination aborted on the next
+     * iteration (fail-safe) but we'd rather be explicit. The
+     * rebasedCursor helper now rejects the cursor outright when its
+     * path lacks a leading slash.
+     */
+    public function test_relative_nextlink_cursor_without_leading_slash_terminates_pagination_without_malformed_request()
+    {
+        $adapter = $this->configuredAdapter();
+
+        Http::fake([
+            '*/oauth2/v2.0/token' => Http::response(['access_token' => 'stub', 'expires_in' => 3600]),
+            'graph.microsoft.com/v1.0/deviceManagement/managedDevices' => Http::response([
+                'value' => [$this->intuneDevice(id: 'guid-1', name: 'host-one')],
+                '@odata.nextLink' => 'page2',
+            ]),
+        ]);
+
+        $records = iterator_to_array($adapter->pull());
+
+        $this->assertCount(1, $records, 'First page should still process, pagination stops at malformed cursor.');
+        Http::assertNotSent(fn ($request) => str_contains($request->url(), 'graph.microsoft.compage2')
+            || str_contains($request->url(), 'graph.microsoft.com/page2'));
+    }
+
     public function test_scope_tag_filter_resolves_names_to_ids_and_sends_odata_filter()
     {
         $adapter = $this->configuredAdapter(scopeTagFilter: 'Marketing, 7');
