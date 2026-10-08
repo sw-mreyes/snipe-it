@@ -885,25 +885,33 @@ class LdapSettings extends Component
         // that's an optional sanity check the user runs on demand to make sure
         // their syncs will look right and map all of the right fields, not
         // a network gate we run for them. Save + advance to step 5.
+        // Blank optional mapping fields persist as NULL, not ''.
+        // The legacy LDAP form (ConvertEmptyStringsToNull on the HTTP
+        // middleware stack) already stored blanks as null, so this
+        // matches legacy behavior and prevents wizard-stored blanks from
+        // tripping downstream `is_null()` / `=== null` gates like the
+        // AD useraccountcontrol fetch in LdapSync (issue #19789).
+        // ldap_username_field + ldap_fname_field are required by
+        // step3SyntaxRules() so they always carry a value.
         $setting = Setting::getSettings();
         $setting->ldap_username_field = $this->ldap_username_field;
         $setting->ldap_fname_field = $this->ldap_fname_field;
-        $setting->ldap_lname_field = $this->ldap_lname_field;
-        $setting->ldap_display_name = $this->ldap_display_name;
-        $setting->ldap_email = $this->ldap_email;
-        $setting->ldap_emp_num = $this->ldap_emp_num;
-        $setting->ldap_phone_field = $this->ldap_phone_field;
-        $setting->ldap_mobile = $this->ldap_mobile;
-        $setting->ldap_jobtitle = $this->ldap_jobtitle;
-        $setting->ldap_manager = $this->ldap_manager;
-        $setting->ldap_dept = $this->ldap_dept;
-        $setting->ldap_address = $this->ldap_address;
-        $setting->ldap_city = $this->ldap_city;
-        $setting->ldap_state = $this->ldap_state;
-        $setting->ldap_zip = $this->ldap_zip;
-        $setting->ldap_country = $this->ldap_country;
-        $setting->ldap_location = $this->ldap_location;
-        $setting->ldap_active_flag = $this->ldap_active_flag;
+        $setting->ldap_lname_field = trim($this->ldap_lname_field) ?: null;
+        $setting->ldap_display_name = trim($this->ldap_display_name) ?: null;
+        $setting->ldap_email = trim($this->ldap_email) ?: null;
+        $setting->ldap_emp_num = trim($this->ldap_emp_num) ?: null;
+        $setting->ldap_phone_field = trim($this->ldap_phone_field) ?: null;
+        $setting->ldap_mobile = trim($this->ldap_mobile) ?: null;
+        $setting->ldap_jobtitle = trim($this->ldap_jobtitle) ?: null;
+        $setting->ldap_manager = trim($this->ldap_manager) ?: null;
+        $setting->ldap_dept = trim($this->ldap_dept) ?: null;
+        $setting->ldap_address = trim($this->ldap_address) ?: null;
+        $setting->ldap_city = trim($this->ldap_city) ?: null;
+        $setting->ldap_state = trim($this->ldap_state) ?: null;
+        $setting->ldap_zip = trim($this->ldap_zip) ?: null;
+        $setting->ldap_country = trim($this->ldap_country) ?: null;
+        $setting->ldap_location = trim($this->ldap_location) ?: null;
+        $setting->ldap_active_flag = trim($this->ldap_active_flag) ?: null;
         $setting->ldap_invert_active_flag = $this->ldap_invert_active_flag ? '1' : '0';
 
         $this->persistAndAdvance($setting);
@@ -1333,7 +1341,7 @@ class LdapSettings extends Component
         $settings = Setting::getSettings();
 
         if (Ldap::shouldUseSaslExternal($settings)) {
-            if (!@ldap_sasl_bind($conn, null, null, 'EXTERNAL')) {
+            if (! @ldap_sasl_bind($conn, null, null, 'EXTERNAL')) {
                 $ldapError = Ldap::bindError($conn);
                 @ldap_unbind($conn);
                 $this->recordTestResult(
