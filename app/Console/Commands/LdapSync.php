@@ -127,7 +127,11 @@ class LdapSync extends Command
              */
             $attributes = array_values(array_filter($ldap_map));
 
-            if (Setting::getSettings()->is_ad === 1 && is_null($ldap_map['activated'])) {
+            // empty() rather than is_null() because the LDAP wizard
+            // (App\Livewire\LdapSettings) persists an unset mapping as ''
+            // whereas the legacy form path routes through
+            // ConvertEmptyStringsToNull and persists it as null.
+            if (Setting::getSettings()->is_ad === 1 && empty($ldap_map['activated'])) {
                 $attributes[] = 'useraccountcontrol';
             }
 
