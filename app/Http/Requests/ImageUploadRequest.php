@@ -58,9 +58,28 @@ class ImageUploadRequest extends Request
         $max_kib = (int) ceil(Helper::file_upload_max_size() / 1024);
 
         return [
-            'image' => 'mimes:png,gif,jpg,jpeg,svg,bmp,svg+xml,webp,avif|max:' . $max_kib . '|dimensions:max_width=4096,max_height=4096',
-            'avatar' => 'mimes:png,gif,jpg,jpeg,svg,bmp,svg+xml,webp,avif|max:' . $max_kib . '|dimensions:max_width=4096,max_height=4096',
-            'favicon' => 'mimes:png,gif,jpg,jpeg,svg,bmp,svg+xml,webp,image/x-icon,image/vnd.microsoft.icon,ico|max:' . $max_kib . '|dimensions:max_width=1024,max_height=1024',
+            'image' => 'mimes:png,gif,jpg,jpeg,svg,bmp,svg+xml,webp,avif|max:'.$max_kib.'|dimensions:max_width=4096,max_height=4096',
+            'avatar' => 'mimes:png,gif,jpg,jpeg,svg,bmp,svg+xml,webp,avif|max:'.$max_kib.'|dimensions:max_width=4096,max_height=4096',
+            'favicon' => 'mimes:png,gif,jpg,jpeg,svg,bmp,svg+xml,webp,image/x-icon,image/vnd.microsoft.icon,ico|max:'.$max_kib.'|dimensions:max_width=1024,max_height=1024',
+        ];
+    }
+
+    /**
+     * Per-field overrides for the `max:` rule's validation message. The
+     * default Laravel message interpolates the rule argument raw, which
+     * reads as "greater than 2048 kilobytes" with our byte-to-KiB
+     * conversion. Swap in `file_upload_max_size_readable()` output
+     * ("2M", "20M", "2G") so the user-facing message matches the
+     * configured PHP limit without exposing the raw KiB value.
+     */
+    public function messages(): array
+    {
+        $max = Helper::file_upload_max_size_readable();
+
+        return [
+            'image.max' => trans('validation.image_file_too_large', ['max' => $max]),
+            'avatar.max' => trans('validation.image_file_too_large', ['max' => $max]),
+            'favicon.max' => trans('validation.image_file_too_large', ['max' => $max]),
         ];
     }
 
