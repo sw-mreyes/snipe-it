@@ -1039,7 +1039,7 @@ class AssetsController extends Controller
                 ]));
         }
 
-        $requests = CheckoutRequest::with('requestedItem')
+        $requests = CheckoutRequest::with('requestedItem', 'user')
             ->whereIn('id', $ids)
             ->whereNull('canceled_at')
             ->get();
@@ -1054,6 +1054,16 @@ class AssetsController extends Controller
             }
 
             if (! Company::isCurrentUserHasAccess($requestable)) {
+                continue;
+            }
+
+            // For AssetModel-parent requests, Company::isCurrentUserHasAccess
+            // short-circuits to true because AssetModel has no
+            // company_id column. Fall back to the requesting user's
+            // tenant visibility.
+            if ($checkoutRequest->requestable_type === AssetModel::class
+                && (!$checkoutRequest->user || !Company::isCurrentUserHasAccess($checkoutRequest->user))
+            ) {
                 continue;
             }
 
