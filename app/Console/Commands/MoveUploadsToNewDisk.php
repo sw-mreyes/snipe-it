@@ -341,7 +341,7 @@ class MoveUploadsToNewDisk extends Command
                 $counts['private_skipped'],
                 $counts['errors'],
             ];
-            foreach ($totals as $k => $_) {
+            foreach (array_keys($totals) as $k) {
                 $totals[$k] += $counts[$k];
             }
         }
