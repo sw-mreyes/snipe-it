@@ -540,7 +540,7 @@
          multiple candidates. Positioned after the standard + extras
          mapping so admins finish configuring the per-field targets
          before deciding what goes into the composed notes blob. --}}
-    @if ($adapter instanceof \App\SyncAdapters\PushableAdapter && $adapter->canPush())
+    @if ($adapter instanceof \App\SyncAdapters\PushableAdapter && $adapter->canPush() && $adapter->supportsComposedNotesPush())
         <fieldset>
             <x-form.legend icon="tip" help_text="{{ trans('admin/settings/sync_adapters.push_notes_section_intro') }}">
                 {{ trans('admin/settings/sync_adapters.push_notes_section_title') }}

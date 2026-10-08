@@ -1493,6 +1493,22 @@ abstract class SyncAdapter
     }
 
     /**
+     * Whether the composed-notes push UI should appear on this
+     * adapter's settings page. Default is "yes if the adapter is
+     * pushable at all" so existing adapters stay unchanged. Adapters
+     * targeting APIs that have no notes-like field anywhere in their
+     * push payload (Mosyle Manager v2's push elements, for example)
+     * override this to false so admins don't fill in a template that
+     * can never land. notesFieldTarget() returning null doesn't carry
+     * this meaning (Workspace ONE / NinjaOne return null legitimately
+     * because the admin picks the target).
+     */
+    public function supportsComposedNotesPush(): bool
+    {
+        return $this instanceof PushableAdapter && $this->canPush();
+    }
+
+    /**
      * Currently-selected target for a field, or the shipped default
      * when no per-instance override exists. Standard fields fall back
      * to MappingTargets::defaultTarget(). extras fall back to skip.

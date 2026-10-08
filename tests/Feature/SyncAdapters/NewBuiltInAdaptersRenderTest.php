@@ -25,8 +25,11 @@ class NewBuiltInAdaptersRenderTest extends TestCase
             ->getContent();
 
         $this->assertStringContainsString('Mosyle', $html);
-        // Schema field label from MosyleAdapter::settingsSchema()
-        $this->assertMatchesRegularExpression('/name="mosyle_token"/', $html);
+        // Schema field names from MosyleAdapter::settingsSchema() post-#19790.
+        // Mosyle Manager v2 requires accessToken + email + password on login.
+        $this->assertMatchesRegularExpression('/name="mosyle_access_token"/', $html);
+        $this->assertMatchesRegularExpression('/name="mosyle_email"/', $html);
+        $this->assertMatchesRegularExpression('/name="mosyle_password"/', $html);
     }
 
     public function test_meraki_systems_manager_renders_with_both_schema_fields()
