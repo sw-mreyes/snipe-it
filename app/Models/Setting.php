@@ -3,9 +3,9 @@
 namespace App\Models;
 
 use App\Helpers\Helper;
-use App\Rules\CssColor;
 use App\Models\Labels\CustomUserLabel;
 use App\Models\Labels\Label;
+use App\Rules\CssColor;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -310,6 +310,13 @@ class Setting extends Model
         // between two word chars), and `@importfoo` isn't a valid CSS
         // at-rule anyway.
         $custom_css = preg_replace('/@import\b[^;]*;?/i', '', $custom_css);
+
+        // Strip CSS image-loading functions that aren't url(). image(),
+        // image-set(), cross-fade() (and the -webkit- variants) all
+        // reach the same external-resource fetch primitive the url()
+        // allowlist below exists to gate.
+        $custom_css = self::stripImageLoadingFunctions($custom_css);
+
         $custom_css = preg_replace_callback(
             '/\burl\s*\(\s*([^)]*)\)/i',
             function (array $match): string {
@@ -346,6 +353,41 @@ class Setting extends Model
         );
 
         return $custom_css;
+    }
+
+    /**
+     * Strip every image-loading CSS function call that isn't url().
+     * Covers image(), image-set(), cross-fade(), and the -webkit-
+     * prefixed variants. Uses balanced-paren walking so a nested
+     * url() inside image-set() does not fool the stripper into
+     * stopping at the inner close paren. Case-insensitive, matches
+     * whitespace between the function name and the open paren.
+     */
+    private static function stripImageLoadingFunctions(string $css): string
+    {
+        $pattern = '/\b(?:-webkit-)?(?:image-set|image|cross-fade)\s*\(/i';
+        $result = '';
+        $pos = 0;
+        $len = strlen($css);
+
+        while (preg_match($pattern, $css, $m, PREG_OFFSET_CAPTURE, $pos)) {
+            $matchStart = $m[0][1];
+            $result .= substr($css, $pos, $matchStart - $pos);
+
+            $depth = 1;
+            $i = $matchStart + strlen($m[0][0]);
+            while ($i < $len && $depth > 0) {
+                if ($css[$i] === '(') {
+                    $depth++;
+                } elseif ($css[$i] === ')') {
+                    $depth--;
+                }
+                $i++;
+            }
+            $pos = $i;
+        }
+
+        return $result.substr($css, $pos);
     }
 
     public function isQrEnabled(): bool
